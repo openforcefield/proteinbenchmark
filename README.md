@@ -7,12 +7,22 @@ proteinbenchmark
 
 Benchmarks for OpenFF protein force fields
 
-### Copyright
 
-Copyright (c) 2022, Chapin E. Cavender
+## Installation
+
+This repository is still under development and should not be used for production results.
+To install the development version, clone this repository and then run
+`pip install -e .`
+in the top level directory.
 
 
-#### Acknowledgements
+## Copyright
+
+Copyright (c) 2022, Open Force Field Initiative, Chapin E. Cavender
+
+
+## Acknowledgements
  
 Project based on the 
 [Computational Molecular Science Python Cookiecutter](https://github.com/molssi/cookiecutter-cms) version 1.6.
+

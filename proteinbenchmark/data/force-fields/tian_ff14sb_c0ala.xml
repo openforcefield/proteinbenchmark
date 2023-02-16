@@ -1,0 +1,36 @@
+<ForceField>
+  <Info>
+    <DateGenerated>2022-12-13</DateGenerated>
+    <Source>Chapin Cavender</Source>
+    <Reference>Tian, C., Kasavajhala, K., Belfon, K.A.A., Raguette, L., Huang H., Migues, A.N., Bickel, J., Wang, Y., Pincay, J., Wu, Q., and Simmerling, C. (2020). ff19SB: Amino-Acid Specific Protein Backbone Parameters Trained against Quantum Mechanics Energy Surfaces in Solution. J. Chem. Theory Comput. 16, 528-552.</Reference>
+  </Info>
+  <Include file="amber/protein.ff14SB.xml"/>
+  <Residues>
+    <Residue name="C0ALA">
+      <Atom name="N" type="protein-N" charge="-0.4157"/>
+      <Atom name="H" type="protein-H" charge="0.2719"/>
+      <Atom name="CA" type="protein-CX" charge="0.0337"/>
+      <Atom name="HA" type="protein-H1" charge="0.0823"/>
+      <Atom name="CB" type="protein-CT" charge="-0.1825"/>
+      <Atom name="HB1" type="protein-HC" charge="0.0603"/>
+      <Atom name="HB2" type="protein-HC" charge="0.0603"/>
+      <Atom name="HB3" type="protein-HC" charge="0.0603"/>
+      <Atom name="C" type="protein-C" charge="0.6717"/>
+      <Atom name="O" type="protein-O" charge="-0.5303"/>
+      <Atom name="OXT" type="protein-OH" charge="-0.6122"/>
+      <Atom name="HXT" type="protein-HO" charge="0.5001"/>
+      <Bond atomName1="N" atomName2="H"/>
+      <Bond atomName1="N" atomName2="CA"/>
+      <Bond atomName1="CA" atomName2="HA"/>
+      <Bond atomName1="CA" atomName2="CB"/>
+      <Bond atomName1="CA" atomName2="C"/>
+      <Bond atomName1="CB" atomName2="HB1"/>
+      <Bond atomName1="CB" atomName2="HB2"/>
+      <Bond atomName1="CB" atomName2="HB3"/>
+      <Bond atomName1="C" atomName2="O"/>
+      <Bond atomName1="C" atomName2="OXT"/>
+      <Bond atomName1="OXT" atomName2="HXT"/>
+      <ExternalBond atomName="N"/>
+    </Residue>
+  </Residues>
+</ForceField>
