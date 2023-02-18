@@ -67,18 +67,8 @@ class ProteinBenchmarkSystem:
                     f'"{quantity}"'
                 )
 
-        pressure = target_parameters['pressure'].value_in_unit(unit.atmospheres)
-        temperature = target_parameters['temperature'].value_in_unit(
-            unit.kelvin
-        )
-        ph = target_parameters['ph']
-        ionic_strength = target_parameters['ionic_strength'].value_in_unit(
-            unit.molar
-        )
-
         self.system_name = (
-            f'{target_name}-{force_field_name}-{water_model_name}-'
-            f'{pressure:.2f}-{temperature:.2f}-{ph:.2f}-{ionic_strength:.2f}'
+            f'{target_name}-{force_field_name}-{water_model_name}'
         )
 
         # Create a directory to store results for this benchmark system
@@ -148,7 +138,7 @@ class ProteinBenchmarkSystem:
             # Get parameters for solvation and constructing OpenMM system
             if 'solvent_padding' in self.target_parameters:
                 solvent_padding = self.target_parameters['solvent_padding']
-            elif self.target_parameters['target_type'] == 'disordered':
+            elif self.target_parameters['target_type'] != 'folded':
                 solvent_padding = DISORDERED_SOLVENT_PADDING
             else:
                 solvent_padding = SOLVENT_PADDING

@@ -3,11 +3,11 @@ from openmm import unit
 
 
 # Default system setup parameters
-SOLVENT_PADDING = 1.0 * unit.nanometers
+SOLVENT_PADDING = 1.2 * unit.nanometers
 NONBONDED_CUTOFF = 0.9 * unit.nanometers
 VDW_SWITCH_WIDTH = 0.1 * unit.nanometers
 
-# Use larger solvent padding for disordered proteins
+# Use larger solvent padding for peptides and disordered proteins
 DISORDERED_SOLVENT_PADDING = 1.2 * unit.nanometers
 
 # Default minimization parameters

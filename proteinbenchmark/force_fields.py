@@ -8,8 +8,33 @@ from proteinbenchmark.utilities import package_data_directory
 force_fields = {
     'ff14sb': {
         'force_field_file': Path(
-            package_data_directory, 'force-fields',
-            'nerenberg_ff14sb_c0ala_c0gly_c0val.xml'
+            package_data_directory,
+            'force-fields',
+            'nerenberg_ff14sb_c0ala_c0gly_c0val.xml',
+        ),
+        'water_model': 'tip3p',
+    },
+    'null-0.0.1': {
+        'force_field_file': Path(
+            package_data_directory,
+            'force-fields',
+            'Protein-Null-0.0.1.offxml',
+        ),
+        'water_model': 'tip3p',
+    },
+    'null-0.0.2': {
+        'force_field_file': Path(
+            package_data_directory,
+            'force-fields',
+            'Protein-Null-0.0.2.offxml',
+        ),
+        'water_model': 'tip3p',
+    },
+    'specific-0.0.1': {
+        'force_field_file': Path(
+            package_data_directory,
+            'force-fields',
+            'Protein-Specific-0.0.1.offxml',
         ),
         'water_model': 'tip3p',
     },

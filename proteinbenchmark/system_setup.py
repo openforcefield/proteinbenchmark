@@ -1,4 +1,9 @@
 import numpy
+from openff.toolkit import (
+    ForceField as OFFForceField,
+    Molecule as OFFMolecule,
+    Topology as OFFTopology,
+)
 from openmm import app, unit
 import openmm
 from pathlib import Path
@@ -8,6 +13,30 @@ from proteinbenchmark.utilities import (
     write_pdb,
     write_xml
 )
+from typing import List
+
+
+class _OFFForceField(OFFForceField):
+    """
+    Dummy class that defines a `createSystem()` method so that this force field
+    can be passed to the `addSolvent() and `_addIons()` methods of
+    `openmm.app.Modeller`.
+    """
+
+    def __init__(self, unique_molecules, *args, **kwargs):
+
+        self._from_openmm_unique_molecules = unique_molecules
+        super().__init__(*args, **kwargs)
+
+    def createSystem(self, openmm_topology: app.topology.Topology):
+        """Return an OpenMM system from an OpenMM topology."""
+
+        off_topology = OFFTopology.from_openmm(
+            openmm_topology,
+            unique_molecules = self._from_openmm_unique_molecules,
+        )
+
+        return self.create_openmm_system(off_topology)
 
 
 def build_initial_coordinates(
@@ -204,7 +233,7 @@ def solvate(
     print(
         f'Solvating system with water model {water_model} and'
         '\n    solvent_padding '
-        f'{solvent_padding.value_in_unit(unit.angstrom):.3f} nm'
+        f'{solvent_padding.value_in_unit(unit.nanometer):.3f} nm'
         '\n    ionic_strength '
         f'{ionic_strength.value_in_unit(unit.molar):.3f} M'
         '\n    nonbonded_cutoff '
@@ -213,45 +242,58 @@ def solvate(
         f'{vdw_switch_width.value_in_unit(unit.nanometer):.3f} nm'
     )
 
-    protonated_pdb = app.PDBFile(protonated_pdb_file)
-    modeller = app.Modeller(
-        protonated_pdb.topology, protonated_pdb.positions
-    )
-
     # Set up force field
-    if water_model_file is None:
+    smirnoff = Path(force_field_file).suffix == '.offxml'
 
-        force_field = app.ForceField(force_field_file)
+    if smirnoff:
+
+        # SMIRNOFF force field
+
+        # Get unique molecules (solute, water, sodium ion, chloride ion) needed
+        # for openff.toolkit.topology.Topology.from_openmm()
+        solute_offmol = OFFMolecule.from_polymer_pdb(protonated_pdb_file)
+        unique_molecules = [
+            solute_offmol,
+            OFFMolecule.from_smiles('O'),
+            OFFMolecule.from_smiles('[Na+1]'),
+            OFFMolecule.from_smiles('[Cl-1]'),
+        ]
+
+        # Use the dummy class _OFFForceField so we can pass this to Modeller
+        force_field = _OFFForceField(unique_molecules, force_field_file)
         print(f'Force field read from\n    {force_field_file}')
+
+        # Set up solute topology and positions
+        solute_off_topology = solute_offmol.to_topology()
+        solute_interchange = force_field.create_interchange(solute_off_topology)
+        solute_topology = solute_interchange.topology.to_openmm()
+        solute_positions = solute_interchange.positions.to_openmm()
 
     else:
 
-        force_field = app.ForceField(force_field_file, water_model_file)
-        print(
-            f'Force field read from\n    {force_field_file}'
-            f'\n    and {water_model_file}'
-        )
+        if water_model_file is None:
+
+            # OpenMM force field with no separate water model
+            force_field = app.ForceField(force_field_file)
+            print(f'Force field read from\n    {force_field_file}')
+
+        else:
+
+            # OpenMM force field with separate water model
+            force_field = app.ForceField(force_field_file, water_model_file)
+            print(
+                f'Force field read from\n    {force_field_file}'
+                f'\n    and {water_model_file}'
+            )
+
+        # Set up solute topology and positions
+        solute_pdb = app.PDBFile(protonated_pdb_file)
+        solute_topology = solute_pdb.topology
+        solute_positions = solute_pdb.positions
 
     # Add water in a rhombic dodecahedral box with no ions
-    # https://github.com/openmm/openmm/blob/b33a7a5a10fb864f9fa63f5f967f48bae340e205/wrappers/python/openmm/app/modeller.py#L474-L494
-    #from openmm.vec3 import Vec3
-    #positions = modeller.positions.value_in_unit(unit.nanometer)
-    #padding = solvent_padding.value_in_unit(unit.nanometer)
-    #minRange = Vec3(*(min((pos[i] for pos in positions)) for i in range(3)))
-    #maxRange = Vec3(*(max((pos[i] for pos in positions)) for i in range(3)))
-    #center = 0.5 * (minRange + maxRange)
-    #radius = max(unit.norm(center - pos) for pos in positions)
-    #width = max(2 * radius + padding, 2 * padding)
-    #dodecahedron_vectors = (
-    #    Vec3(width, 0, 0), Vec3(0, width, 0), 
-    #    Vec3(0.5, 0.5, 0.5 * numpy.sqrt(2)) * width
-    #)
-    #modeller.addSolvent(
-    #    forcefield=force_field, model=water_model,
-    #    boxVectors=dodecahedron_vectors, ionicStrength=0*unit.molar,
-    #    neutralize=False
-    #)
-    # boxShape argument to modeller.addSolvent is not in a stable release
+    modeller = app.Modeller(solute_topology, solute_positions)
+
     modeller.addSolvent(
         forcefield = force_field,
         model = water_model,
@@ -328,12 +370,10 @@ def solvate(
 
         # Compute number of ions expected for neutral solute and for SLTCAP
         n_cation_expected_neutral = int(numpy.round(
-            solvent_volume * ionic_strength
-            + (charge_magnitude - total_charge) / 2
+            solvent_volume * ionic_strength - total_charge / 2
         ))
         n_anion_expected_neutral = int(numpy.round(
-            solvent_volume * ionic_strength
-            - (charge_magnitude - total_charge) / 2
+            solvent_volume * ionic_strength + total_charge / 2
         ))
         n_cation_expected_sltcap = int(numpy.round(
             solvent_volume * ionic_strength
@@ -347,7 +387,7 @@ def solvate(
         ))
 
         print(
-            'Solute-to-ion ratio |Q| / (2 e V_w C_0): {solute_ion_ratio:.f}'
+            f'Solute-to-ion ratio |Q| / (2 e V_w C_0): {solute_ion_ratio:f}'
             '\nEffective ionic strength: '
             f'{sltcap_effective_ionic_strength.value_in_unit(unit.molar):f} M'
             '\nExpected number of ions for neutral solute: '
@@ -363,6 +403,15 @@ def solvate(
         modeller._addIons(
             force_field, n_water, water_positions,
             ionicStrength = sltcap_effective_ionic_strength,
+            neutralize = True,
+        )
+
+    elif total_charge != 0:
+
+        # Neutralize if there are no bulk ions
+        modeller._addIons(
+            force_field, n_water, water_positions,
+            ionicStrength = ionic_strength,
             neutralize = True,
         )
 
@@ -383,14 +432,44 @@ def solvate(
     write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
 
     # Create an OpenMM System from the solvated system
-    switch_distance = nonbonded_cutoff - vdw_switch_width
-    openmm_system = force_field.createSystem(
-        modeller.topology,
-        nonbondedMethod = app.PME,
-        nonbondedCutoff = nonbonded_cutoff,
-        switchDistance = switch_distance,
-        constraints = app.HBonds,
+    if smirnoff:
+
+        openmm_system = force_field.createSystem(modeller.topology)
+
+    else:
+
+        switch_distance = nonbonded_cutoff - vdw_switch_width
+        openmm_system = force_field.createSystem(
+            modeller.topology,
+            nonbondedMethod = app.PME,
+            nonbondedCutoff = nonbonded_cutoff,
+            switchDistance = switch_distance,
+            constraints = app.HBonds,
+        )
+
+    # Validate total charge of solvated system
+    for i in range(openmm_system.getNumForces()):
+        if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
+
+            nonbonded_force = openmm_system.getForce(i)
+            break
+
+    else:
+        raise ValueError('The ForceField does not specify a NonbondedForce')
+
+    solvated_total_charge = unit.Quantity(0, unit.elementary_charge)
+    for i in range(nonbonded_force.getNumParticles()):
+        solvated_total_charge += nonbonded_force.getParticleParameters(i)[0]
+
+    solvated_total_charge = int(
+        numpy.round(solvated_total_charge.value_in_unit(unit.elementary_charge))
     )
+
+    if solvated_total_charge != 0:
+
+        raise ValueError(
+            f'Total charge of solvated system is {solvated_total_charge:d}'
+        )
 
     # Write OpenMM system to XML file
     write_xml(openmm_system_xml, openmm_system)
