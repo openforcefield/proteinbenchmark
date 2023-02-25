@@ -1,17 +1,16 @@
 name: openff-proteinbenchmark
 channels:
   - conda-forge
-  - omnia
   - openeye
   - defaults
 dependencies:
   - click
   - pip
-  - python=3.10
+  - python
     
   # MM calculations
   - ambertools
-  - cudatoolkit=11.4
+  - cudatoolkit
   - mdtraj
   - openeye-toolkits
   - openff-forcefields

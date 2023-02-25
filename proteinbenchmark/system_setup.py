@@ -13,7 +13,6 @@ from proteinbenchmark.utilities import (
     write_pdb,
     write_xml
 )
-from typing import List
 
 
 class _OFFForceField(OFFForceField):
@@ -40,7 +39,6 @@ class _OFFForceField(OFFForceField):
 
 
 def build_initial_coordinates(
-    
     build_method: str,
     ph: float,
     initial_pdb: str,

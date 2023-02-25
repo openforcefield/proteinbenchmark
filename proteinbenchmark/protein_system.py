@@ -2,6 +2,10 @@ import numpy
 from openmm import app, unit
 import openmm
 from pathlib import Path
+from proteinbenchmark.analysis import (
+    reimage_trajectory,
+    compute_scalar_couplings,
+)
 from proteinbenchmark.openmm_simulation import OpenMMSimulation
 from proteinbenchmark.system_setup import (
     build_initial_coordinates,
@@ -360,8 +364,54 @@ class ProteinBenchmarkSystem:
             production_simulation.resume_from_checkpoint()
 
 
-    def analyze(self):
+    def analyze_observables(self, replica: int = 1):
         """Process trajectories and estimate observables."""
 
-        pass
+        analysis_dir = Path(self.base_path, 'analysis')
+        analysis_dir.mkdir(parents = True, exist_ok = True)
+
+        analysis_prefix = Path(analysis_dir, self.system_name)
+
+        reimaged_topology = f'{analysis_prefix}-reimaged.pdb'
+        reimaged_trajectory = f'{analysis_prefix}-reimaged.dcd'
+
+        # Reimage production trajectory
+        if not exists_and_not_empty(reimaged_topology):
+
+            replica_dir = Path(self.base_path, f'replica-{replica:d}')
+            replica_prefix = Path(replica_dir, self.system_name)
+
+            reimage_trajectory(
+                topology_path = self.minimized_pdb,
+                trajectory_path = f'{replica_prefix}-production.dcd',
+                output_prefix = f'{analysis_prefix}-reimaged',
+                output_selection = 'chainid == "A"',
+            )
+
+        target_observables = self.target_parameters['observables']
+
+        # Scalar couplings
+        scalar_couplings = f'{analysis_prefix}-scalar-coupling-observables.dat'
+
+        if (
+            'scalar_couplings' in target_observables
+            and not exists_and_not_empty(scalar_couplings)
+        ):
+
+            print(f'Computing scalar couplings for target {self.target_name}')
+
+            if 'frame_length' in self.target_parameters:
+                frame_length = self.target_parameters['frame_length']
+            else:
+                frame_length = FRAME_LENGTH
+
+            data = target_observables['scalar_couplings']['observable_path']
+
+            compute_scalar_couplings(
+                observable_path = data,
+                topology_path = reimaged_topology,
+                trajectory_path = reimaged_trajectory,
+                frame_length = frame_length,
+                output_prefix = f'{analysis_prefix}-scalar-couplings'
+            )
 

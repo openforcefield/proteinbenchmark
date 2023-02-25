@@ -8,7 +8,7 @@ NONBONDED_CUTOFF = 0.9 * unit.nanometers
 VDW_SWITCH_WIDTH = 0.1 * unit.nanometers
 
 # Use larger solvent padding for peptides and disordered proteins
-DISORDERED_SOLVENT_PADDING = 1.2 * unit.nanometers
+DISORDERED_SOLVENT_PADDING = 1.4 * unit.nanometers
 
 # Default minimization parameters
 RESTRAINT_ENERGY_CONSTANT = 1.0 * unit.kilocalories_per_mole / unit.angstrom**2

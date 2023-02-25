@@ -38,6 +38,14 @@ force_fields = {
         ),
         'water_model': 'tip3p',
     },
+    'specific-0.0.2': {
+        'force_field_file': Path(
+            package_data_directory,
+            'force-fields',
+            'Protein-Specific-0.0.2.offxml',
+        ),
+        'water_model': 'tip3p',
+    },
 }
 
 # Add implicit water model files

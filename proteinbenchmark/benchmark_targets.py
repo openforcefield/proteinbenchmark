@@ -4,6 +4,9 @@ from pathlib import Path
 from proteinbenchmark.utilities import package_data_directory
 
 
+observable_directory = Path(package_data_directory, 'observables')
+pdb_directory = Path(package_data_directory, 'pdbs')
+
 # List of benchmark targets with observables and thermodynamic state (pressure,
 # temperature, pH, ionic strength)
 benchmark_targets = {
@@ -29,14 +32,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'graf_jacs_2007',
-            '2j_n_ca': 'graf_jacs_2007',
-            '3j_co_co': 'graf_jacs_2007',
-            '3j_ha_co': 'graf_jacs_2007',
-            '3j_hn_ca': 'graf_jacs_2007',
-            '3j_hn_cb': 'graf_jacs_2007',
-            '3j_hn_co': 'graf_jacs_2007',
-            '3j_hn_ha': 'graf_jacs_2007',
+            'scalar_couplings': {
+                'experimental_datasets': 'graf_jacs_2007',
+                'observable_path': Path(
+                    observable_directory, 'ala3', 'ala3_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'ala4': {
@@ -47,14 +48,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'graf_jacs_2007',
-            '2j_n_ca': 'graf_jacs_2007',
-            '3j_co_co': 'graf_jacs_2007',
-            '3j_ha_co': 'graf_jacs_2007',
-            '3j_hn_ca': 'graf_jacs_2007',
-            '3j_hn_cb': 'graf_jacs_2007',
-            '3j_hn_co': 'graf_jacs_2007',
-            '3j_hn_ha': 'graf_jacs_2007',
+            'scalar_couplings': {
+                'experimental_datasets': 'graf_jacs_2007',
+                'observable_path': Path(
+                    observable_directory, 'ala4', 'ala4_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'ala5': {
@@ -65,14 +64,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'graf_jacs_2007',
-            '2j_n_ca': 'graf_jacs_2007',
-            '3j_co_co': 'graf_jacs_2007',
-            '3j_ha_co': 'graf_jacs_2007',
-            '3j_hn_ca': 'graf_jacs_2007',
-            '3j_hn_cb': 'graf_jacs_2007',
-            '3j_hn_co': 'graf_jacs_2007',
-            '3j_hn_ha': 'graf_jacs_2007',
+            'scalar_couplings': {
+                'experimental_datasets': 'graf_jacs_2007',
+                'observable_path': Path(
+                    observable_directory, 'ala5', 'ala5_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'asyn': {
@@ -114,17 +111,17 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'hagarman_jacs_2010',
-            '2j_n_ca': 'hagarman_jacs_2010',
-            '3j_ha_co': 'hagarman_jacs_2010',
-            '3j_hn_cb': 'hagarman_jacs_2010',
-            '3j_hn_co': 'hagarman_jacs_2010',
-            '3j_hn_ha': 'hagarman_jacs_2010',
+            'scalar_couplings': {
+                'experimental_datasets': 'hagarman_jacs_2010',
+                'observable_path': Path(
+                    observable_directory, 'gag', 'gag_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'gb3': {
         'target_type': 'folded',
-        'initial_pdb': Path(package_data_directory, 'pdbs', 'gb3-1P7E.pdb'),
+        'initial_pdb': Path(pdb_directory, 'gb3-1P7E.pdb'),
         'pressure': 1.0 * unit.atmosphere,
         'temperature': 298.0 * unit.kelvin,
         'ph': 6.5,
@@ -138,7 +135,7 @@ benchmark_targets = {
     },
     'gb3-3j-ha-hb': {
         'target_type': 'folded',
-        'initial_pdb': Path(package_data_directory, 'pdbs', 'gb3-1P7E.pdb'),
+        'initial_pdb': Path(pdb_directory, 'gb3-1P7E.pdb'),
         'pressure': 1.0 * unit.atmosphere,
         'temperature': 298.0 * unit.kelvin,
         'ph': 5.6,
@@ -150,7 +147,7 @@ benchmark_targets = {
     },
     'gb3-3j-nc-cg': {
         'target_type': 'folded',
-        'initial_pdb': Path(package_data_directory, 'pdbs', 'gb3-1P7E.pdb'),
+        'initial_pdb': Path(pdb_directory, 'gb3-1P7E.pdb'),
         'pressure': 1.0 * unit.atmosphere,
         'temperature': 298.0 * unit.kelvin,
         'ph': 6.5,
@@ -162,7 +159,7 @@ benchmark_targets = {
     },
     'gb3-backbone-S2': {
         'target_type': 'folded',
-        'initial_pdb': Path(package_data_directory, 'pdbs', 'gb3-1P7E.pdb'),
+        'initial_pdb': Path(pdb_directory, 'gb3-1P7E.pdb'),
         'pressure': 1.0 * unit.atmosphere,
         'temperature': 298.0 * unit.kelvin,
         'ph': 6.5,
@@ -179,12 +176,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'hagarman_jacs_2010',
-            '2j_n_ca': 'hagarman_jacs_2010',
-            '3j_ha_co': 'hagarman_jacs_2010',
-            '3j_hn_cb': 'hagarman_jacs_2010',
-            '3j_hn_co': 'hagarman_jacs_2010',
-            '3j_hn_ha': 'hagarman_jacs_2010',
+            'scalar_couplings': {
+                'experimental_datasets': 'hagarman_jacs_2010',
+                'observable_path': Path(
+                    observable_directory, 'geg', 'geg_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'gfg': {
@@ -195,12 +192,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'hagarman_jacs_2010',
-            '2j_n_ca': 'hagarman_jacs_2010',
-            '3j_ha_co': 'hagarman_jacs_2010',
-            '3j_hn_cb': 'hagarman_jacs_2010',
-            '3j_hn_co': 'hagarman_jacs_2010',
-            '3j_hn_ha': 'hagarman_jacs_2010',
+            'scalar_couplings': {
+                'experimental_datasets': 'hagarman_jacs_2010',
+                'observable_path': Path(
+                    observable_directory, 'gfg', 'gfg_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'gkg': {
@@ -211,7 +208,12 @@ benchmark_targets = {
         'ph': 1.5,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '3j_hn_ha': 'hagarman_jacs_2010',
+            'scalar_couplings': {
+                'experimental_datasets': 'hagarman_jacs_2010',
+                'observable_path': Path(
+                    observable_directory, 'gkg', 'gkg_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'glg': {
@@ -222,12 +224,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'hagarman_jacs_2010',
-            '2j_n_ca': 'hagarman_jacs_2010',
-            '3j_ha_co': 'hagarman_jacs_2010',
-            '3j_hn_cb': 'hagarman_jacs_2010',
-            '3j_hn_co': 'hagarman_jacs_2010',
-            '3j_hn_ha': 'hagarman_jacs_2010',
+            'scalar_couplings': {
+                'experimental_datasets': 'hagarman_jacs_2010',
+                'observable_path': Path(
+                    observable_directory, 'glg', 'glg_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'gly3': {
@@ -238,14 +240,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'graf_jacs_2007',
-            '2j_n_ca': 'graf_jacs_2007',
-            '3j_co_co': 'graf_jacs_2007',
-            '3j_ha_co': 'graf_jacs_2007',
-            '3j_hn_ca': 'graf_jacs_2007',
-            '3j_hn_cb': 'graf_jacs_2007',
-            '3j_hn_co': 'graf_jacs_2007',
-            '3j_hn_ha': 'graf_jacs_2007',
+            'scalar_couplings': {
+                'experimental_datasets': 'graf_jacs_2007',
+                'observable_path': Path(
+                    observable_directory, 'gly3', 'gly3_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'gmg': {
@@ -257,6 +257,12 @@ benchmark_targets = {
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
             '3j_hn_ha': 'hagarman_jacs_2010',
+            'scalar_couplings': {
+                'experimental_datasets': 'hagarman_jacs_2010',
+                'observable_path': Path(
+                    observable_directory, 'gmg', 'gmg_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'gsg': {
@@ -267,12 +273,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'hagarman_jacs_2010',
-            '2j_n_ca': 'hagarman_jacs_2010',
-            '3j_ha_co': 'hagarman_jacs_2010',
-            '3j_hn_cb': 'hagarman_jacs_2010',
-            '3j_hn_co': 'hagarman_jacs_2010',
-            '3j_hn_ha': 'hagarman_jacs_2010',
+            'scalar_couplings': {
+                'experimental_datasets': 'hagarman_jacs_2010',
+                'observable_path': Path(
+                    observable_directory, 'gsg', 'gsg_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'gvg': {
@@ -283,19 +289,17 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'hagarman_jacs_2010',
-            '2j_n_ca': 'hagarman_jacs_2010',
-            '3j_ha_co': 'hagarman_jacs_2010',
-            '3j_hn_cb': 'hagarman_jacs_2010',
-            '3j_hn_co': 'hagarman_jacs_2010',
-            '3j_hn_ha': 'hagarman_jacs_2010',
+            'scalar_couplings': {
+                'experimental_datasets': 'hagarman_jacs_2010',
+                'observable_path': Path(
+                    observable_directory, 'gvg', 'gvg_scalar_couplings.dat'
+                ),
+            },
         }
     },
     'hewl': {
         'target_type': 'folded',
-        'initial_pdb': Path(
-            package_data_directory, 'pdbs', 'hewl-1E8L-model-1.pdb'
-        ),
+        'initial_pdb': Path(pdb_directory, 'hewl-1E8L-model-1.pdb'),
         'pressure': 1.0 * unit.atmosphere,
         'temperature': 308.0 * unit.kelvin,
         'ph': 3.8,
@@ -308,9 +312,7 @@ benchmark_targets = {
     },
     'hewl-sidechain-S2': {
         'target_type': 'folded',
-        'initial_pdb': Path(
-            package_data_directory, 'pdbs', 'hewl-1E8L-model-1.pdb'
-        ),
+        'initial_pdb': Path(pdb_directory, 'hewl-1E8L-model-1.pdb'),
         'pressure': 1.0 * unit.atmosphere,
         'temperature': 308.0 * unit.kelvin,
         'ph': 4.7,
@@ -321,9 +323,7 @@ benchmark_targets = {
     },
     'hewl-rdc': {
         'target_type': 'folded',
-        'initial_pdb': Path(
-            package_data_directory, 'pdbs', 'hewl-1E8L-model-1.pdb'
-        ),
+        'initial_pdb': Path(pdb_directory, 'hewl-1E8L-model-1.pdb'),
         'pressure': 1.0 * unit.atmosphere,
         'temperature': 308.0 * unit.kelvin,
         'ph': 6.5,
@@ -340,14 +340,12 @@ benchmark_targets = {
         'ph': 2.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '1j_n_ca': 'graf_jacs_2007',
-            '2j_n_ca': 'graf_jacs_2007',
-            '3j_co_co': 'graf_jacs_2007',
-            '3j_ha_co': 'graf_jacs_2007',
-            '3j_hn_ca': 'graf_jacs_2007',
-            '3j_hn_cb': 'graf_jacs_2007',
-            '3j_hn_co': 'graf_jacs_2007',
-            '3j_hn_ha': 'graf_jacs_2007',
+            'scalar_couplings': {
+                'experimental_datasets': 'graf_jacs_2007',
+                'observable_path': Path(
+                    observable_directory, 'val3', 'val3_scalar_couplings.dat'
+                ),
+            },
         }
     },
 }
