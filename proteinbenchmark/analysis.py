@@ -151,6 +151,21 @@ def compute_scalar_couplings(
     topology = loos.createSystem(topology_path)
     max_resid = topology.maxResid()
 
+    # Skip 1j_n_ca scalar couplings for C terminal residues because psi is
+    # undefined
+    indices_to_drop = list()
+    for index, row in observable_df.iterrows():
+
+        observable = row['Observable']
+        observable_resid = row['Resid']
+        observable_name = f'{observable}-{observable_resid}'
+
+        if observable_name == f'1j_n_ca-{max_resid}':
+            observable_df.drop(index, inplace = True)
+
+    observable_df.drop(indices_to_drop, inplace = True)
+    observable_df.reset_index(drop = True, inplace = True)
+
     # Select atoms for observables
     observable_dihedral_names = dict()
     dihedral_atoms = dict()
@@ -163,12 +178,6 @@ def compute_scalar_couplings(
         observable_name = f'{observable}-{observable_resid}'
         observable_parameters = karplus_parameters[observable]
         observable_dihedrals = observable_parameters['dihedral'].split(',')
-
-        # Skip 1j_n_ca scalar couplings for C terminal residues
-        if observable_name == f'1j_n_ca-{max_resid}':
-
-            observable_df.drop(index, inplace = True)
-            continue
 
         observable_dihedral_names[observable_name] = list()
 
