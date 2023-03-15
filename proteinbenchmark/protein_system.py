@@ -370,13 +370,17 @@ class ProteinBenchmarkSystem:
         analysis_dir = Path(self.base_path, 'analysis')
         analysis_dir.mkdir(parents = True, exist_ok = True)
 
-        analysis_prefix = Path(analysis_dir, self.system_name)
+        analysis_prefix = Path(analysis_dir, f'{self.system_name}-{replica}')
 
         reimaged_topology = f'{analysis_prefix}-reimaged.pdb'
         reimaged_trajectory = f'{analysis_prefix}-reimaged.dcd'
 
         # Reimage production trajectory
         if not exists_and_not_empty(reimaged_topology):
+
+            print(
+                f'Reimaging production trajectory for target {self.target_name}'
+            )
 
             replica_dir = Path(self.base_path, f'replica-{replica:d}')
             replica_prefix = Path(replica_dir, self.system_name)
@@ -391,7 +395,7 @@ class ProteinBenchmarkSystem:
         target_observables = self.target_parameters['observables']
 
         # Scalar couplings
-        scalar_couplings = f'{analysis_prefix}-scalar-coupling-observables.dat'
+        scalar_couplings = f'{analysis_prefix}-scalar-couplings-observables.dat'
 
         if (
             'scalar_couplings' in target_observables
