@@ -218,12 +218,7 @@ class OpenMMSimulation:
                 'exist or is empty.'
             )
 
-        with open(save_state_file, 'r') as xml_file:
-            state = openmm.XmlSerializer.deserialize(xml_file.read())
-
-        # Initialize positions and velocities from the serialized state
-        simulation.context.setPositions(state.getPositions())
-        simulation.context.setVelocities(state.getVelocities())
+        simulation.loadState(save_state_file)
 
         # Run dynamics
         self.run_dynamics(simulation, append = False)
