@@ -14,6 +14,14 @@ force_fields = {
         ),
         'water_model': 'tip3p',
     },
+    'ff14sb-tian': {
+        'force_field_file': Path(
+            package_data_directory,
+            'force-fields',
+            'tian_ff14sb_c0ala.xml',
+        ),
+        'water_model': 'tip3p',
+    },
     'null-0.0.1': {
         'force_field_file': Path(
             package_data_directory,
