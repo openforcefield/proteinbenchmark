@@ -220,6 +220,10 @@ class OpenMMSimulation:
 
         simulation.loadState(save_state_file)
 
+        # Set step number and simulation time to zero
+        simulation.context.setStepCount(0)
+        simulation.context.setTime(0.0 * unit.picosecond)
+
         # Run dynamics
         self.run_dynamics(simulation, append = False)
 
