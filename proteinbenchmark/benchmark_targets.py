@@ -40,6 +40,22 @@ benchmark_targets = {
             },
         }
     },
+    'ala3-neutral': {
+        'target_type': 'peptide',
+        'aa_sequence': 'AAA',
+        'pressure': 1.0 * unit.atmosphere,
+        'temperature': 300.0 * unit.kelvin,
+        'ph': 7.0,
+        'ionic_strength': 0.0 * unit.molar,
+        'observables': {
+            'scalar_couplings': {
+                'experimental_datasets': 'graf_jacs_2007',
+                'observable_path': Path(
+                    observable_directory, 'ala3', 'ala3_scalar_couplings.dat'
+                ),
+            },
+        }
+    },
     'ala4': {
         'target_type': 'peptide',
         'aa_sequence': 'AAAA',
@@ -56,12 +72,44 @@ benchmark_targets = {
             },
         }
     },
+    'ala4-neutral': {
+        'target_type': 'peptide',
+        'aa_sequence': 'AAAA',
+        'pressure': 1.0 * unit.atmosphere,
+        'temperature': 300.0 * unit.kelvin,
+        'ph': 7.0,
+        'ionic_strength': 0.0 * unit.molar,
+        'observables': {
+            'scalar_couplings': {
+                'experimental_datasets': 'graf_jacs_2007',
+                'observable_path': Path(
+                    observable_directory, 'ala4', 'ala4_scalar_couplings.dat'
+                ),
+            },
+        }
+    },
     'ala5': {
         'target_type': 'peptide',
         'aa_sequence': 'AAAAA',
         'pressure': 1.0 * unit.atmosphere,
         'temperature': 300.0 * unit.kelvin,
         'ph': 2.0,
+        'ionic_strength': 0.0 * unit.molar,
+        'observables': {
+            'scalar_couplings': {
+                'experimental_datasets': 'graf_jacs_2007',
+                'observable_path': Path(
+                    observable_directory, 'ala5', 'ala5_scalar_couplings.dat'
+                ),
+            },
+        }
+    },
+    'ala5-neutral': {
+        'target_type': 'peptide',
+        'aa_sequence': 'AAAAA',
+        'pressure': 1.0 * unit.atmosphere,
+        'temperature': 300.0 * unit.kelvin,
+        'ph': 7.0,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
             'scalar_couplings': {
