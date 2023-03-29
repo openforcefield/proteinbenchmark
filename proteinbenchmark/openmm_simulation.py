@@ -113,8 +113,8 @@ class OpenMMSimulation:
 
         print(
             'Running simulation with\n    temperature '
-            f'{temperature.value_in_unit(unit.kelvin)}'
-            f'\n    pressure {pressure.value_in_unit(unit.atmosphere):.3f}'
+            f'{temperature.value_in_unit(unit.kelvin)} K'
+            f'\n    pressure {pressure.value_in_unit(unit.atmosphere):.3f} atm'
             f'\n    langevin_friction '
             f'{langevin_friction.value_in_unit(unit.picosecond**-1):.1f} ps^-1'
             f'\n    barostat_frequency {barostat_frequency:d} steps'

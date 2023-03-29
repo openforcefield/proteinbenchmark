@@ -15,17 +15,17 @@ from typing import List
 DEG_TO_RAD = numpy.pi / 180.0
 
 
-def reimage_trajectory(
+def align_trajectory(
     topology_path: str,
     trajectory_path: str,
     output_prefix: str,
-    output_selection: str = None,
+    output_selection: str = 'chainid == "A"',
     align_selection: str = None,
     reference_path: str = None,
     reference_selection: str = None,
 ):
     """
-    Center, reimage, and align a subset of atoms in a trajectory.
+    Center and align a subset of atoms in a trajectory.
 
     Parameters
     ---------
@@ -34,7 +34,7 @@ def reimage_trajectory(
     trajectory_path
         The path to the trajectory.
     output_prefix
-        The prefix for the path to write the reimaged topology and trajectory.
+        The prefix for the path to write the aligned topology and trajectory.
     output_selection
         LOOS selection string for atoms to write to the output. Default is all
         atoms.
@@ -88,7 +88,7 @@ def reimage_trajectory(
         transform_matrix = align_atoms.superposition(reference_atoms)
 
         # Apply transformation to output atoms
-        #output_atoms.applyTransform(transform_matrix)
+        output_atoms.applyTransform(loos.loos.XForm(transform_matrix))
 
         # Recenter output atoms
         output_atoms.centerAtOrigin()
@@ -106,12 +106,156 @@ def reimage_trajectory(
                 pdb_file.write(str(pdb))
 
 
-def compute_scalar_couplings(
-    observable_path: str,
+def measure_dihedrals(
     topology_path: str,
     trajectory_path: str,
     frame_length: unit.Quantity,
-    output_prefix: str,
+    output_path: str,
+):
+    """
+    Measure backbone and sidechain dihedrals over the trajectory.
+
+    Parameters
+    ---------
+    topology_path
+        The path to the system topology, e.g. a PDB file.
+    trajectory_path
+        The path to the trajectory.
+    frame_length
+       The amount of simulation time between frames in the trajectory. 
+    output_path
+        The path to write the time series of dihedrals.
+    """
+
+    # Load topology
+    topology = loos.createSystem(topology_path)
+    min_resid = topology.minResid()
+    max_resid = topology.maxResid()
+
+    # Select atoms for dihedrals
+    dihedrals_by_residue = list()
+    atom_selections = dict()
+
+    for residue in topology.splitByResidue():
+
+        resid = residue[0].resid()
+        resname = residue[0].resname()
+
+        residue_dihedrals = dict()
+
+        for dihedral, dihedral_atom_dict in DIHEDRAL_ATOMS[resname].items():
+
+            if resid == min_resid and dihedral == 'phi':
+                continue
+
+            if resid == max_resid and dihedral in ['psi', 'omega']:
+                continue
+
+            # Get atoms in dihedral
+            atom_names = dihedral_atom_dict['atom_names']
+
+            if 'resid_offsets' in dihedral_atom_dict:
+
+                atom_resids = [
+                    resid + offset
+                    for offset in dihedral_atom_dict['resid_offsets']
+                ]
+
+            else:
+                atom_resids = [resid] * 4
+
+            atom_list = list()
+
+            for (atom_name, atom_resid) in zip(atom_names, atom_resids):
+
+                atom_full_name = f'{atom_name}-{atom_resid}'
+
+                # Atom selection is slow, so only do this once for each atom
+                if atom_full_name not in atom_selections:
+
+                    atom_selection = loos.selectAtoms(
+                        topology,
+                        f'resid == {atom_resid} && name == "{atom_name}"'
+                    )
+
+                    if len(atom_selection) == 0:
+
+                        raise ValueError(
+                            f'Unable to select atom {atom_name} with resid '
+                            f'{atom_resid} for dihedral {dihedral}.'
+                        )
+
+                    atom_selections[atom_full_name] = atom_selection[0]
+
+                atom_list.append(atom_selections[atom_full_name])
+
+            residue_dihedrals[dihedral] = atom_list
+
+        dihedrals_by_residue.append({
+            'resid': resid,
+            'resname': resname,
+            'dihedrals': residue_dihedrals,
+        })
+
+    # Set up trajectory
+    trajectory = Trajectory(trajectory_path, topology)
+
+    dihedrals = list()
+    frame_time = 0.0 * unit.picosecond
+
+    # Load one frame into memory at a time
+    for frame in trajectory:
+
+        frame_time += frame_length
+
+        frame_index = trajectory.index()
+        frame_time_ns = frame_time.value_in_unit(unit.nanosecond)
+
+        # Measure dihedrals
+        for residue_dict in dihedrals_by_residue:
+            for dihedral_name, atoms in residue_dict['dihedrals'].items():
+
+                dihedral = loos.torsion(atoms[0], atoms[1], atoms[2], atoms[3])
+
+                dihedrals.append({
+                    'Frame': frame_index,
+                    'Time (ns)': frame_time_ns,
+                    'Resid': residue_dict['resid'],
+                    'Resname': residue_dict['resname'],
+                    'Dihedral Name': dihedral_name,
+                    'Dihedral (deg)': dihedral,
+                })
+
+    dihedral_df = pandas.DataFrame(dihedrals)
+    dihedral_df.to_csv(output_path)
+
+
+def assign_ramachandran_cluster(
+    dihedrals_path: str,
+    output_path: str,
+):
+    """
+    Assign frames to Ramachandran clusters based on backbone dihedrals.
+
+    Parameters
+    ---------
+    dihedrals_path
+        Path to the time series of dihedrals.
+    output_path
+        Path to write Ramachandran cluster assignments.
+    """
+
+    # Read time series of dihedrals
+    dihedrals_df = pandas.read_csv(dihedrals_path, index_col = 0)
+
+    # Ramachandran clusters
+    
+
+
+def compute_scalar_couplings(
+    observable_path: str,
+    dihedrals_path: str,
+    output_path: str,
     karplus: str = 'best',
 ):
     """
@@ -121,15 +265,10 @@ def compute_scalar_couplings(
     ---------
     observable_path
         The path to the data for experimental observables.
-    topology_path
-        The path to the system topology, e.g. a PDB file.
-    trajectory_path
-        The path to the trajectory.
-    frame_length
-       The amount of simulation time between frames in the trajectory. 
-    output_prefix
-        The path to write the time series of dihedrals and computed scalar
-        couplings and chi^2.
+    dihedrals_path
+        The path to the time series of dihedrals.
+    output_path
+        The path to write the computed scalar couplings and chi^2 values.
     karplus
         The name of the set of Karplus parameters to use.
     """
@@ -147,118 +286,30 @@ def compute_scalar_couplings(
         names = ['Observable', 'Resid', 'Experiment', 'Uncertainty']
     )
 
-    # Load topology
-    topology = loos.createSystem(topology_path)
-    max_resid = topology.maxResid()
+    # Read time series of dihedrals
+    dihedral_df = pandas.read_csv(dihedrals_path, index_col = 0)
 
-    # Skip 1j_n_ca scalar couplings for C terminal residues because psi is
-    # undefined
+    # Skip observables that depend on dihedrals that are undefined
+    max_resid = dihedral_df['Resid'].max()
     indices_to_drop = list()
     for index, row in observable_df.iterrows():
 
         observable = row['Observable']
         observable_resid = row['Resid']
-        observable_name = f'{observable}-{observable_resid}'
+        observable_parameters = karplus_parameters[observable]
+        observable_dihedrals = observable_parameters['dihedral'].split(',')
 
-        if observable_name == f'1j_n_ca-{max_resid}':
-            observable_df.drop(index, inplace = True)
+        if observable_resid == 1 and 'phi' in observable_dihedrals:
+            indices_to_drop.append(index)
+
+        if observable_resid == max_resid and 'psi' in observable_dihedrals:
+            indices_to_drop.append(index)
 
     observable_df.drop(indices_to_drop, inplace = True)
     observable_df.reset_index(drop = True, inplace = True)
 
-    # Select atoms for observables
-    observable_dihedral_names = dict()
-    dihedral_atoms = dict()
-    atom_selections = dict()
-
-    for index, row in observable_df.iterrows():
-
-        observable = row['Observable']
-        observable_resid = row['Resid']
-        observable_name = f'{observable}-{observable_resid}'
-        observable_parameters = karplus_parameters[observable]
-        observable_dihedrals = observable_parameters['dihedral'].split(',')
-
-        observable_dihedral_names[observable_name] = list()
-
-        for dihedral in observable_dihedrals:
-
-            if dihedral == 'prev_psi':
-
-                dihedral = 'psi'
-                dihedral_resid = observable_resid - 1
-
-            else:
-                dihedral_resid = observable_resid
-
-            dihedral_name = f'{dihedral}-{dihedral_resid}'
-            observable_dihedral_names[observable_name].append(dihedral_name)
-
-            # Get atoms in dihedral
-            if dihedral_name in dihedral_atoms:
-                continue
-
-            atom_names = DIHEDRAL_ATOMS[dihedral]['atom_names']
-            atom_resids = [
-                dihedral_resid + offset
-                for offset in DIHEDRAL_ATOMS[dihedral]['resid_offsets']
-            ]
-
-            atom_list = list()
-
-            for (name, resid) in zip(atom_names, atom_resids):
-
-                # Atom selection is slow, so only do this once for each atom
-                if f'{name}-{resid}' not in atom_selections:
-
-                    atom_selection = loos.selectAtoms(
-                        topology, f'resid == {resid} && name == "{name}"'
-                    )
-
-                    if len(atom_selection) == 0:
-
-                        raise ValueError(
-                            f'Unable to select atom {name} with resid {resid} '
-                            f'for dihedral {dihedral_name} and observable '
-                            f'{observable_name}.'
-                        )
-
-                    atom_selections[f'{name}-{resid}'] = atom_selection[0]
-
-                atom_list.append(atom_selections[f'{name}-{resid}'])
-
-            dihedral_atoms[dihedral_name] = atom_list
-
-
-    # Set up trajectory
-    trajectory = Trajectory(trajectory_path, topology)
-
-    dihedrals = list()
-    frame_time = 0.0 * unit.picosecond
-
-    # Load one frame into memory at a time
-    for frame in trajectory:
-
-        frame_time += frame_length
-
-        frame_dihedrals = {
-            'Frame': trajectory.index(),
-            'Time(ns)': frame_time.value_in_unit(unit.nanosecond),
-        }
-
-        # Measure dihedrals
-        for dihedral_name, atoms in dihedral_atoms.items():
-
-            dihedral = loos.torsion(atoms[0], atoms[1], atoms[2], atoms[3])
-            frame_dihedrals[f'{dihedral_name}(deg)'] = dihedral
-
-        dihedrals.append(frame_dihedrals)
-
-    dihedral_df = pandas.DataFrame(dihedrals)
-
-    dihedral_df.to_csv(f'{output_prefix}-dihedrals.dat', sep = ' ')
-
     # Compute observables
+    trig_values = dict()
     trajectory_averages = dict()
     computed_observables = list()
 
@@ -266,10 +317,22 @@ def compute_scalar_couplings(
 
         observable = row['Observable']
         observable_resid = row['Resid']
-        observable_name = f'{observable}-{observable_resid}'
-        dihedral_names = observable_dihedral_names[observable_name]
-
         observable_parameters = karplus_parameters[observable]
+        observable_dihedrals = observable_parameters['dihedral'].split(',')
+
+        dihedral_names = list()
+
+        for dihedral_name in observable_dihedrals:
+
+            if dihedral_name == 'prev_psi':
+
+                dihedral_name = 'psi'
+                dihedral_resid = observable_resid - 1
+
+            else:
+                dihedral_resid = observable_resid
+
+            dihedral_names.append((dihedral_name, dihedral_resid))
 
         if observable == '3j_hn_ca':
 
@@ -282,32 +345,41 @@ def compute_scalar_couplings(
             karplus_cos_sin = observable_parameters['C_cos_phi_sin_psi']
             karplus_sin_cos = observable_parameters['C_sin_phi_cos_psi']
             karplus_sin_sin = observable_parameters['C_sin_phi_sin_psi']
-            karplus_C = observable_parameters['C_0']
+            karplus_C0 = observable_parameters['C_0']
 
-            for angle_name in dihedral_names:
+            angle_names = list()
 
-                karplus_angle = DEG_TO_RAD * dihedral_df[f'{angle_name}(deg)']
+            for dihedral_name, dihedral_resid in dihedral_names:
+
+                angle_name = f'{dihedral_name}-{dihedral_resid}'
+                angle_names.append(angle_name)
+
+                karplus_angle = DEG_TO_RAD * dihedral_df[
+                    (dihedral_df['Dihedral Name'] == dihedral_name)
+                    & (dihedral_df['Resid'] == dihedral_resid)
+                ]['Dihedral (deg)']
 
                 if f'Cos-{angle_name}' not in trajectory_averages:
 
                     cos_angle = karplus_angle.apply(numpy.cos)
-                    dihedral_df[f'Cos-{angle_name}'] = cos_angle
+                    cos_angle.reset_index(drop = True, inplace = True)
+                    trig_values[f'Cos-{angle_name}'] = cos_angle
                     trajectory_averages[f'Cos-{angle_name}'] = cos_angle.mean()
 
                 if f'Sin-{angle_name}' not in trajectory_averages:
 
                     sin_angle = karplus_angle.apply(numpy.sin)
-                    dihedral_df[f'Sin-{angle_name}'] = sin_angle
+                    sin_angle.reset_index(drop = True, inplace = True)
+                    trig_values[f'Sin-{angle_name}'] = sin_angle
                     trajectory_averages[f'Sin-{angle_name}'] = sin_angle.mean()
 
-            phi, psi = tuple(dihedral_names)
+            phi, psi = tuple(angle_names)
 
             for phi_name in [f'Cos-{phi}', f'Sin-{phi}']:
                 for psi_name in [f'Cos-{psi}', f'Sin-{psi}']:
 
                     product_name = f'{phi_name}-{psi_name}'
-                    product = dihedral_df[phi_name] * dihedral_df[psi_name]
-                    dihedral_df[product_name] = product
+                    product = trig_values[phi_name] * trig_values[psi_name]
                     trajectory_averages[product_name] = product.mean()
 
             # Compute estimate for scalar coupling
@@ -320,34 +392,37 @@ def compute_scalar_couplings(
                 + karplus_cos_sin * trajectory_averages[f'Cos-{phi}-Sin-{psi}']
                 + karplus_sin_cos * trajectory_averages[f'Sin-{phi}-Cos-{psi}']
                 + karplus_sin_sin * trajectory_averages[f'Sin-{phi}-Sin-{psi}']
-                + karplus_C
+                + karplus_C0
             )
 
         else:
 
             # Get averages of cos(theta + delta) and cos^2(theta + delta)
-            dihedral_name = dihedral_names[0]
+            dihedral_name, dihedral_resid = dihedral_names[0]
             karplus_A = observable_parameters['A']
             karplus_B = observable_parameters['B']
             karplus_C = observable_parameters['C']
             delta = observable_parameters['delta']
 
-            angle_name = dihedral_name
+            angle_name = f'{dihedral_name}-{dihedral_resid}'
             if delta != 0.0:
-                angle_name = f'{dihedral_name}+{delta:.1f}'
+                angle_name = f'{angle_name}+{delta:.1f}'
 
             if f'Cos^2-{angle_name}' not in trajectory_averages:
 
                 karplus_angle = DEG_TO_RAD * (
-                    dihedral_df[f'{dihedral_name}(deg)'] + delta
+                    dihedral_df[
+                        (dihedral_df['Dihedral Name'] == dihedral_name)
+                        & (dihedral_df['Resid'] == dihedral_resid)
+                    ]['Dihedral (deg)'] + delta
                 )
 
                 cos_angle = karplus_angle.apply(numpy.cos)
-                dihedral_df[f'Cos-{angle_name}'] = cos_angle
+                cos_angle.reset_index(drop = True, inplace = True)
+                trig_values[f'Cos-{angle_name}'] = cos_angle
                 trajectory_averages[f'Cos-{angle_name}'] = cos_angle.mean()
 
                 cos_sq_angle = cos_angle.apply(numpy.square)
-                dihedral_df[f'Cos^2-{angle_name}'] = cos_sq_angle
                 trajectory_averages[f'Cos^2-{angle_name}'] = cos_sq_angle.mean()
 
             # Compute estimate for scalar coupling
@@ -375,5 +450,5 @@ def compute_scalar_couplings(
         axis = 1
     )
 
-    scalar_coupling_df.to_csv(f'{output_prefix}-observables.dat', sep = ' ')
+    scalar_coupling_df.to_csv(output_path, sep = ' ')
 

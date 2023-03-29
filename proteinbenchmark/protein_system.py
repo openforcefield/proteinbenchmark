@@ -3,7 +3,8 @@ from openmm import app, unit
 import openmm
 from pathlib import Path
 from proteinbenchmark.analysis import (
-    reimage_trajectory,
+    align_trajectory,
+    measure_dihedrals,
     compute_scalar_couplings,
 )
 from proteinbenchmark.openmm_simulation import OpenMMSimulation
@@ -81,6 +82,7 @@ class ProteinBenchmarkSystem:
         # File paths for setup
         self.setup_dir = Path(self.base_path, 'setup')
         self.setup_prefix = Path(self.setup_dir, self.system_name)
+        self.initial_pdb = f'{self.setup_prefix}-initial.pdb'
         self.minimized_pdb = f'{self.setup_prefix}-minimized.pdb'
         self.openmm_system = f'{self.setup_prefix}-openmm-system.xml'
 
@@ -94,7 +96,6 @@ class ProteinBenchmarkSystem:
         # Create the setup directory if it doesn't already exist
         self.setup_dir.mkdir(parents = True, exist_ok = True)
 
-        initial_pdb = f'{self.setup_prefix}-initial.pdb'
         protonated_pdb = f'{self.setup_prefix}-protonated.pdb'
         solvated_pdb = f'{self.setup_prefix}-solvated.pdb'
 
@@ -106,14 +107,14 @@ class ProteinBenchmarkSystem:
             if 'initial_pdb' in self.target_parameters:
 
                 # Copy initial PDB to results directory
-                Path(initial_pdb).write_text(
+                Path(self.initial_pdb).write_text(
                     self.target_parameters['initial_pdb'].read_text()
                 )
 
                 build_initial_coordinates(
                     build_method = 'pdb',
                     ph = self.target_parameters['ph'],
-                    initial_pdb = initial_pdb,
+                    initial_pdb = self.initial_pdb,
                     protonated_pdb = protonated_pdb,
                 )
 
@@ -122,7 +123,7 @@ class ProteinBenchmarkSystem:
                 build_initial_coordinates(
                     build_method = 'extended',
                     ph = self.target_parameters['ph'],
-                    initial_pdb = initial_pdb,
+                    initial_pdb = self.initial_pdb,
                     protonated_pdb = protonated_pdb,
                     aa_sequence = self.target_parameters['aa_sequence'],
                 )
@@ -375,27 +376,48 @@ class ProteinBenchmarkSystem:
         reimaged_topology = f'{analysis_prefix}-reimaged.pdb'
         reimaged_trajectory = f'{analysis_prefix}-reimaged.dcd'
 
-        # Reimage production trajectory
+        if 'frame_length' in self.target_parameters:
+            frame_length = self.target_parameters['frame_length']
+        else:
+            frame_length = FRAME_LENGTH
+
+        # Align production trajectory
         if not exists_and_not_empty(reimaged_topology):
 
             print(
-                f'Reimaging production trajectory for target {self.target_name}'
+                f'Aligning production trajectory for target {self.target_name}'
             )
 
             replica_dir = Path(self.base_path, f'replica-{replica:d}')
             replica_prefix = Path(replica_dir, self.system_name)
 
-            reimage_trajectory(
+            align_trajectory(
                 topology_path = self.minimized_pdb,
                 trajectory_path = f'{replica_prefix}-production.dcd',
                 output_prefix = f'{analysis_prefix}-reimaged',
                 output_selection = 'chainid == "A"',
+                align_selection = 'name == "CA"',
+                reference_path = self.initial_pdb,
+            )
+
+        # Measure dihedrals
+        dihedrals = f'{analysis_prefix}-dihedrals.dat'
+
+        if not exists_and_not_empty(dihedrals):
+
+            print(f'Measuring dihedrals for target {self.target_name}')
+
+            measure_dihedrals(
+                topology_path = reimaged_topology,
+                trajectory_path = reimaged_trajectory,
+                frame_length = frame_length,
+                output_path = dihedrals,
             )
 
         target_observables = self.target_parameters['observables']
 
         # Scalar couplings
-        scalar_couplings = f'{analysis_prefix}-scalar-couplings-observables.dat'
+        scalar_couplings = f'{analysis_prefix}-scalar-couplings.dat'
 
         if (
             'scalar_couplings' in target_observables
@@ -404,18 +426,11 @@ class ProteinBenchmarkSystem:
 
             print(f'Computing scalar couplings for target {self.target_name}')
 
-            if 'frame_length' in self.target_parameters:
-                frame_length = self.target_parameters['frame_length']
-            else:
-                frame_length = FRAME_LENGTH
-
             data = target_observables['scalar_couplings']['observable_path']
 
             compute_scalar_couplings(
                 observable_path = data,
-                topology_path = reimaged_topology,
-                trajectory_path = reimaged_trajectory,
-                frame_length = frame_length,
-                output_prefix = f'{analysis_prefix}-scalar-couplings'
+                dihedrals_path = dihedrals,
+                output_path = f'{analysis_prefix}-scalar-couplings.dat',
             )
 
