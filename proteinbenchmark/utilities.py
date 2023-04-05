@@ -1,6 +1,7 @@
 """Utilities for file input and output."""
 import openmm
 from openmm import app
+import pandas
 from pathlib import Path
 
 
@@ -12,6 +13,40 @@ def exists_and_not_empty(file_name):
 
     path = Path(file_name)
     return path.exists() and path.stat().st_size > 0
+
+
+def list_of_dicts_to_csv(list_of_dicts, csv_path):
+    """Convert a list of dicts to a pandas DataFrame and then write to csv."""
+
+    df = pandas.DataFrame(list_of_dicts)
+    df.to_csv(csv_path)
+
+
+def merge_csvs(csv_prefix):
+    """Merge multiple CSV files into one CSV."""
+
+    parent_dir = Path(csv_prefix).parent
+    glob_prefix = Path(csv_prefix).name
+
+    # Get list of CSVs
+    file_indices = list()
+
+    for csv_file in parent_dir.glob(f'{glob_prefix}-*'):
+        file_indices.append(int(csv_file.suffix.split('-')[-1]))
+
+    # Write merged CSV
+    df = pandas.DataFrame()
+
+    for i in sorted(file_indices):
+
+        csv_file = Path(f'{csv_prefix}-{i}')
+        df = pandas.concat([df, pandas.read_csv(csv_file, index_col = 0)])
+
+    df.to_csv(Path(csv_prefix))
+
+    # Delete original CSVs
+    for i in sorted(file_indices):
+        Path(f'{csv_prefix}-{i}').unlink()
 
 
 def read_xml(xml_file_name):

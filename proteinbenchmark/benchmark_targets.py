@@ -167,6 +167,18 @@ benchmark_targets = {
             },
         }
     },
+    # Differences GB3 to GB1: Q2T V6I I7L K19E E24A A29V V42E
+    'gb1': {
+        'target_type': 'folded',
+        'initial_pdb': Path(pdb_directory, 'gb1-1PGB.pdb'),
+        'pressure': 1.0 * unit.atmosphere,
+        'temperature': 298.0 * unit.kelvin,
+        'ph': 5.6,
+        'ionic_strength': 0.0 * unit.molar,
+        'observables': {
+            '3j_n_co': 'cornilescu_jacs_1999',
+        }
+    },
     'gb3': {
         'target_type': 'folded',
         'initial_pdb': Path(pdb_directory, 'gb3-1P7E.pdb'),
@@ -190,7 +202,6 @@ benchmark_targets = {
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
             '3j_ha_hb': 'miclet_jbnmr_2005',
-            '3j_n_co': 'cornilescu_jacs_1999',
         }
     },
     'gb3-3j-nc-cg': {

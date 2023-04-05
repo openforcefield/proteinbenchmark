@@ -1,11 +1,15 @@
 """Default parameter values for analysis of trajectories."""
 from openmm import unit
+import pandas
+from pathlib import Path
+from proteinbenchmark.utilities import package_data_directory
 
 
 DCD_TIME_TO_PICOSECONDS = 0.04888821 * unit.picoseconds
 
+# Lists of atoms that make up named dihedrals in protein residues
 DIHEDRAL_ATOMS = {
-    residue: {
+    resname: {
         'phi': {
             'atom_names': ['C', 'N', 'CA', 'C'],
             'resid_offsets': [-1, 0, 0, 0],
@@ -19,27 +23,21 @@ DIHEDRAL_ATOMS = {
             'resid_offsets': [0, 0, 1, 1],
         },
     }
-    for residue in [
-        'ALA', 'ARG', 'ASH', 'ASN', 'ASP', 'CYS', 'CYX', 'GLH', 'GLN', 'GLU',
-        'GLY', 'HID', 'HIE', 'HIP', 'ILE', 'LEU', 'LYN', 'LYS', 'MET', 'PHE',
-        'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL',
+    for resname in [
+        'ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIE', 'ILE',
+        'LEU', 'LYS', 'MET', 'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL',
     ]
 }
+
 DIHEDRAL_ATOMS['ARG']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
-DIHEDRAL_ATOMS['ASH']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['ASN']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['ASP']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['CYS']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'SG']}
-DIHEDRAL_ATOMS['CYX']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'SG']}
-DIHEDRAL_ATOMS['GLH']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['GLN']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['GLU']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
-DIHEDRAL_ATOMS['HID']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['HIE']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
-DIHEDRAL_ATOMS['HIP']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['ILE']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG1']}
 DIHEDRAL_ATOMS['LEU']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
-DIHEDRAL_ATOMS['LYN']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['LYS']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['MET']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['PHE']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
@@ -50,18 +48,13 @@ DIHEDRAL_ATOMS['TRP']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['TYR']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG']}
 DIHEDRAL_ATOMS['VAL']['chi1'] = {'atom_names': ['N', 'CA', 'CB', 'CG1']}
 DIHEDRAL_ATOMS['ARG']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD']}
-DIHEDRAL_ATOMS['ASH']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'OD1']}
 DIHEDRAL_ATOMS['ASN']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'OD1']}
 DIHEDRAL_ATOMS['ASP']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'OD1']}
-DIHEDRAL_ATOMS['GLH']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD']}
 DIHEDRAL_ATOMS['GLN']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD']}
 DIHEDRAL_ATOMS['GLU']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD']}
-DIHEDRAL_ATOMS['HID']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'ND1']}
 DIHEDRAL_ATOMS['HIE']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'ND1']}
-DIHEDRAL_ATOMS['HIP']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'ND1']}
 DIHEDRAL_ATOMS['ILE']['chi2'] = {'atom_names': ['CA', 'CB', 'CG1', 'CD1']}
 DIHEDRAL_ATOMS['LEU']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD1']}
-DIHEDRAL_ATOMS['LYN']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD']}
 DIHEDRAL_ATOMS['LYS']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD']}
 DIHEDRAL_ATOMS['MET']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'SD']}
 DIHEDRAL_ATOMS['PHE']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD1']}
@@ -69,31 +62,70 @@ DIHEDRAL_ATOMS['PRO']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD']}
 DIHEDRAL_ATOMS['TRP']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD1']}
 DIHEDRAL_ATOMS['TYR']['chi2'] = {'atom_names': ['CA', 'CB', 'CG', 'CD1']}
 DIHEDRAL_ATOMS['ARG']['chi3'] = {'atom_names': ['CB', 'CG', 'CD', 'NE']}
-DIHEDRAL_ATOMS['GLH']['chi3'] = {'atom_names': ['CB', 'CG', 'CD', 'OE1']}
 DIHEDRAL_ATOMS['GLN']['chi3'] = {'atom_names': ['CB', 'CG', 'CD', 'OE1']}
 DIHEDRAL_ATOMS['GLU']['chi3'] = {'atom_names': ['CB', 'CG', 'CD', 'OE1']}
-DIHEDRAL_ATOMS['LYN']['chi3'] = {'atom_names': ['CB', 'CG', 'CD', 'CE']}
 DIHEDRAL_ATOMS['LYS']['chi3'] = {'atom_names': ['CB', 'CG', 'CD', 'CE']}
 DIHEDRAL_ATOMS['MET']['chi3'] = {'atom_names': ['CB', 'CG', 'SD', 'CE']}
 DIHEDRAL_ATOMS['ARG']['chi4'] = {'atom_names': ['CG', 'CD', 'NE', 'CZ']}
-DIHEDRAL_ATOMS['LYN']['chi4'] = {'atom_names': ['CG', 'CD', 'CE', 'NZ']}
 DIHEDRAL_ATOMS['LYS']['chi4'] = {'atom_names': ['CG', 'CD', 'CE', 'NZ']}
 DIHEDRAL_ATOMS['ARG']['chi5'] = {'atom_names': ['CD', 'NE', 'CZ', 'NH1']}
 
+DIHEDRAL_ATOMS['ASH'] = DIHEDRAL_ATOMS['ASP']
+DIHEDRAL_ATOMS['CYX'] = DIHEDRAL_ATOMS['CYS']
+DIHEDRAL_ATOMS['GLH'] = DIHEDRAL_ATOMS['GLU']
+DIHEDRAL_ATOMS['HID'] = DIHEDRAL_ATOMS['HIE']
+DIHEDRAL_ATOMS['HIP'] = DIHEDRAL_ATOMS['HIE']
+DIHEDRAL_ATOMS['LYN'] = DIHEDRAL_ATOMS['LYS']
+
 # Clusters on Ramachandran map from
 # Hollingsworth SA, Karplus PA. (2010). BioMol Concepts 1, 271-283.
-RAMACHANDRAN_CLUSTERS = {
-    '\alpha': {'phi': [285, 315], 'psi': [-60, -30]},
-    '\beta': {'phi': [180, 270], 'psi': [105, 195]},
-    '\gamma': {'phi': [65, 105], 'psi': [-90, -30]},
-    '\delta': {'phi': [225, 315], 'psi': [-60, 45]},
-    '\varepsilon': {'phi': [40, 185], 'psi': [120, 240]},
-    '\zeta': {'phi': [195, 255], 'psi': [45, 105]},
-    'P_{II}': {'phi': [270, 315], 'psi': [120, 195]},
-    "\gamma'": {'phi': [255, 300], 'psi': [45, 105]},
-    "\delta'": {'phi': [30, 120], 'psi': [-15, 75]},
-    "P_{II}'": {'phi': [45, 120], 'psi': [165, 240]},
-}
+# The alpha cluster is a subset of the delta cluster. Alpha must go after delta.
+HOLLINGSWORTH_RAMACHANDRAN_CLUSTERS = [
+    {'cluster': r'$\beta$', 'phi': [180, 270], 'psi': [105, 195]},
+    {'cluster': r'$\gamma$', 'phi': [60, 105], 'psi': [-90, -30]},
+    {'cluster': r'$\delta$', 'phi': [225, 315], 'psi': [-60, 45]},
+    {'cluster': r'$\alpha$', 'phi': [285, 315], 'psi': [-60, -30]},
+    {'cluster': r'$\varepsilon$', 'phi': [45, 180], 'psi': [120, 240]},
+    {'cluster': r'$\zeta$', 'phi': [195, 255], 'psi': [45, 105]},
+    {'cluster': r'$P_{II}$', 'phi': [270, 315], 'psi': [120, 195]},
+    {'cluster': r"$\gamma'$", 'phi': [255, 300], 'psi': [45, 105]},
+    {'cluster': r"$\delta'$", 'phi': [30, 120], 'psi': [-15, 75]},
+    {'cluster': r"$P_{II}'$", 'phi': [45, 120], 'psi': [165, 240]},
+]
+
+# Rotamer library from
+# Hintze BJ, Lewis SM, Richardson JS, Richardson DC. (2016). Proteins 84,
+#     1177-1189.
+rotamer_library_dir = Path(package_data_directory, 'rotamer-library')
+HINTZE_ROTAMER_LIBRARY = dict()
+
+for resname in [
+    'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'HIS', 'ILE', 'LEU', 'LYS', 'MET',
+    'PHE', 'PRO', 'SER', 'THR', 'TRP', 'TYR', 'VAL',
+]:
+
+    residue_df = pandas.read_csv(Path(rotamer_library_dir, f'{resname}.csv'))
+
+    if resname == 'HIS':
+        resname = 'HIE'
+
+    dihedral_columns = [col for col in residue_df.columns if 'chi' in col]
+    residue_df = residue_df[['rotamer', 'frequency%', *dihedral_columns]]
+    residue_df = residue_df.sort_values(by = 'frequency%', ignore_index = True)
+
+    HINTZE_ROTAMER_LIBRARY[resname] = residue_df
+
+HINTZE_ROTAMER_LIBRARY['ASH'] = HINTZE_ROTAMER_LIBRARY['ASP']
+HINTZE_ROTAMER_LIBRARY['CYX'] = HINTZE_ROTAMER_LIBRARY['CYS']
+HINTZE_ROTAMER_LIBRARY['GLH'] = HINTZE_ROTAMER_LIBRARY['GLU']
+HINTZE_ROTAMER_LIBRARY['HID'] = HINTZE_ROTAMER_LIBRARY['HIE']
+HINTZE_ROTAMER_LIBRARY['HIP'] = HINTZE_ROTAMER_LIBRARY['HIE']
+HINTZE_ROTAMER_LIBRARY['LYN'] = HINTZE_ROTAMER_LIBRARY['LYS']
+
+# 3j_n_co trans hydrogen bond scalar couplings
+# Eq 12 from Barfield M. (2002). J. Am. Chem. Soc. 124, 4158-4168.
+# Eq 2 from Sass HJ, Schmid FFF, Grzesiek S. (2007). J. Am. Chem. Soc. 129,
+#     5898-5903.
 
 # Karplus parameters in Hz for NMR scalar couplings from
 # Best RB, Zheng W, Mittal J. (2014). J. Chem. Theory Comput. 10, 5113-5124.

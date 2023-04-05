@@ -9,6 +9,7 @@ from proteinbenchmark.benchmark_targets import (
     benchmark_targets,
     experimental_datasets,
 )
+from proteinbenchmark.utilities import list_of_dicts_to_csv
 from typing import List
 
 
@@ -199,9 +200,9 @@ def measure_dihedrals(
 
     # Set up trajectory
     trajectory = Trajectory(trajectory_path, topology)
-
-    dihedrals = list()
     frame_time = 0.0 * unit.picosecond
+    fragment_index = 0
+    dihedrals = list()
 
     # Load one frame into memory at a time
     for frame in trajectory:
@@ -210,6 +211,14 @@ def measure_dihedrals(
 
         frame_index = trajectory.index()
         frame_time_ns = frame_time.value_in_unit(unit.nanosecond)
+
+        # Write dihedrals to file every 10 000 frames to avoid pandas
+        # out-of-memory
+        if frame_index % 10000 == 0 and frame_index > 0:
+
+            list_of_dicts_to_csv(dihedrals, f'{output_path}-{fragment_index}')
+            fragment_index += 1
+            dihedrals = list()
 
         # Measure dihedrals
         for residue_dict in dihedrals_by_residue:
@@ -226,16 +235,25 @@ def measure_dihedrals(
                     'Dihedral (deg)': dihedral,
                 })
 
-    dihedral_df = pandas.DataFrame(dihedrals)
-    dihedral_df.to_csv(output_path)
+    if fragment_index == 0:
+        list_of_dicts_to_csv(dihedrals, output)
+
+    else:
+
+        list_of_dicts_to_csv(dihedrals, f'{output_path}-{fragment_index}')
+
+    return fragment_index
 
 
-def assign_ramachandran_cluster(
+def assign_dihedral_clusters(
     dihedrals_path: str,
     output_path: str,
+    ramachandran: str = 'hollingsworth',
+    rotamer: str = 'hintze',
 ):
     """
-    Assign frames to Ramachandran clusters based on backbone dihedrals.
+    Assign frames to Ramachandran clusters based on backbone dihedrals and to
+    sidechain rotamers based on sidechain dihedrals.
 
     Parameters
     ---------
@@ -243,13 +261,99 @@ def assign_ramachandran_cluster(
         Path to the time series of dihedrals.
     output_path
         Path to write Ramachandran cluster assignments.
+    ramachandran
+        The name of the definitions of Ramachandran clusters.
+    rotamer
+        The name of the rotamer library.
     """
 
-    # Read time series of dihedrals
-    dihedrals_df = pandas.read_csv(dihedrals_path, index_col = 0)
+    # Check Ramachandran cluster definition
+    ramachandran = ramachandran.lower()
 
-    # Ramachandran clusters
-    
+    if ramachandran == 'hollingsworth':
+        ramachandran_clusters = HOLLINGSWORTH_RAMACHANDRAN_CLUSTERS
+
+    else:
+
+        raise ValueError(
+            'Argument `ramachandran` must be one of\n    hollinsworth'
+        )
+
+    # Check rotamer library
+    rotamer = rotamer.lower()
+
+    if rotamer == 'hintze':
+        rotamer_library = HINTZE_ROTAMER_LIBRARY
+
+    else:
+        raise ValueError('Argument `rotamer` must be one of\n    hintze')
+
+    # Read time series of dihedrals
+    dihedral_df = pandas.read_csv(dihedrals_path, index_col = 0)
+
+    dihedral_df = dihedral_df.pivot(
+        index = ['Frame', 'Time (ns)', 'Resid', 'Resname'],
+        columns = 'Dihedral Name',
+        values = 'Dihedral (deg)',
+    ).add_suffix(' (deg)').reset_index().rename_axis(columns = None)
+
+    # Wrap phi into [0, 360) and psi into [-120, 240) so that no clusters are
+    # split across a periodic boundary
+    # wrapped_value = (value - lower) % (upper - lower) + lower
+    phi = dihedral_df['phi (deg)'] % 360
+    psi = (dihedral_df['psi (deg)'] + 120) % 360 - 120
+
+    # Assign residues with defined phi and psi values to the outlier cluster
+    dihedral_df['Ramachandran Cluster'] = None
+    dihedral_df.loc[
+        ~((phi.isna()) | (psi.isna())), 'Ramachandran Cluster'
+    ] = 'Outlier'
+
+    # Assign Ramachandran clusters
+    for cluster in ramachandran_clusters:
+
+        dihedral_df.loc[
+            (phi > cluster['phi'][0]) & (phi < cluster['phi'][1])
+                & (psi > cluster['psi'][0]) & (psi < cluster['psi'][1]),
+            'Ramachandran Cluster'
+        ] = cluster['cluster']
+
+    # Get list of sidechain dihedrals in target
+    target_sidechain_dihedrals = [
+        f'chi{i}' for i in range(1, 5) if f'chi{i} (deg)' in dihedral_df.columns
+    ]
+
+    # Assign sidechain rotamers
+    dihedral_df['Sidechain Rotamer'] = None
+
+    for resname in dihedral_df['Resname'].unique():
+
+        if resname not in rotamer_library:
+            continue
+
+        # Assign residues with non-trivial sidechains to the outlier rotamer
+        resname_rows = dihedral_df['Resname'] == resname
+        dihedral_df.loc[resname_rows, 'Sidechain Rotamer'] = 'Outlier'
+
+        # Assign rotamers for this residue type
+        for rotamer_index, rotamer in rotamer_library[resname].iterrows():
+
+            selected_rows = resname_rows
+
+            for chi in ['chi1', 'chi2', 'chi3', 'chi4']:
+                if f'{chi}_mean' in residue_df.columns:
+
+                    diff = dihedral_df[f'{chi} (deg)'] - rotamer[f'{chi}_mean']
+                    abs_wrapped_diff = ((diff + 180) % 360 - 180).abs()
+                    selected_rows = selected_rows & (
+                        abs_wrapped_diff < rotamer[f'{chi}_esd']
+                    )
+
+            dihedral_df.loc[
+                selected_rows, 'Sidechain Rotamer'
+            ] = rotamer['rotamer']
+
+    dihedral_df.to_csv(output_path)
 
 
 def compute_scalar_couplings(
@@ -273,7 +377,10 @@ def compute_scalar_couplings(
         The name of the set of Karplus parameters to use.
     """
 
-    if karplus.lower() == 'best':
+    # Check Karplus parameters
+    karplus = karplus.lower()
+
+    if karplus == 'best':
         karplus_parameters = BEST_KARPLUS_PARAMETERS
     else:
         raise ValueError('Argument `karplus` must be one of\n    best')
@@ -450,5 +557,5 @@ def compute_scalar_couplings(
         axis = 1
     )
 
-    scalar_coupling_df.to_csv(output_path, sep = ' ')
+    scalar_coupling_df.to_csv(output_path)
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from proteinbenchmark.analysis import (
     align_trajectory,
     measure_dihedrals,
+    assign_dihedral_clusters,
     compute_scalar_couplings,
 )
 from proteinbenchmark.openmm_simulation import OpenMMSimulation
@@ -14,7 +15,7 @@ from proteinbenchmark.system_setup import (
     minimize,
 )
 from proteinbenchmark.simulation_parameters import *
-from proteinbenchmark.utilities import exists_and_not_empty
+from proteinbenchmark.utilities import exists_and_not_empty, merge_csvs
 
 
 class ProteinBenchmarkSystem:
@@ -407,13 +408,29 @@ class ProteinBenchmarkSystem:
 
             print(f'Measuring dihedrals for target {self.target_name}')
 
-            measure_dihedrals(
+            fragment_index = measure_dihedrals(
                 topology_path = reimaged_topology,
                 trajectory_path = reimaged_trajectory,
                 frame_length = frame_length,
                 output_path = dihedrals,
             )
 
+            if fragment_index > 0:
+                merge_csvs(dihedrals)
+
+        # Dihedral cluster assignments
+        dihedral_clusters = f'{analysis_prefix}-dihedral-clusters.dat'
+
+        if not exists_and_not_empty(dihedral_clusters):
+
+            print(f'Assigning dihedral clusters for target {self.target_name}')
+
+            assign_dihedral_clusters(
+                dihedrals_path = dihedrals,
+                output_path = dihedral_clusters,
+            )
+
+        # Compute observables
         target_observables = self.target_parameters['observables']
 
         # Scalar couplings
@@ -431,6 +448,6 @@ class ProteinBenchmarkSystem:
             compute_scalar_couplings(
                 observable_path = data,
                 dihedrals_path = dihedrals,
-                output_path = f'{analysis_prefix}-scalar-couplings.dat',
+                output_path = scalar_couplings,
             )
 

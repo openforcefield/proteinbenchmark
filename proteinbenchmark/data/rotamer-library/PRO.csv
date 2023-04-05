@@ -1,0 +1,3 @@
+res_type,rotamer,n,frequency%,chi1_mean,chi1_esd,chi2_mean,chi2_esd,chi3_mean,chi3_esd,CA_CB_CG_mean,CA_CB_CG_esd,CA_C_O_mean,CA_C_O_esd,CA_N_CD_mean,CA_N_CD_esd,CB_CA_C_mean,CB_CA_C_esd,CB_CG_CD_mean,CB_CG_CD_esd,N_CA_C_mean,N_CA_C_esd,N_CA_CB_mean,N_CA_CB_esd,N_CD_CG_mean,N_CD_CG_esd
+PRO,Cg_exo,30128,50.62,-25,7.2,36,7.8,-32,7.1,104.2,1.40,120.2,1.03,111.7,0.81,110.8,1.30,104.7,2.31,112.7,2.42,103.3,0.59,102.7,0.88
+PRO,Cg_endo,29192,49.05,27,7.7,-34,8.9,28,9.2,104.2,1.47,120.2,1.07,111.8,0.84,110.9,1.41,105.3,2.36,112.9,2.60,103.2,0.72,103.1,0.88
