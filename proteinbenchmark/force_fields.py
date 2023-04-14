@@ -34,7 +34,7 @@ force_fields = {
         'force_field_file': Path(
             package_data_directory,
             'force-fields',
-            'Protein-Null-0.0.2.offxml',
+            'Protein-Null-0.0.2-NH2.offxml',
         ),
         'water_model': 'tip3p',
     },
@@ -50,7 +50,7 @@ force_fields = {
         'force_field_file': Path(
             package_data_directory,
             'force-fields',
-            'Protein-Specific-0.0.2.offxml',
+            'Protein-Specific-0.0.2-NH2.offxml',
         ),
         'water_model': 'tip3p',
     },

@@ -24,6 +24,24 @@ benchmark_targets = {
         'checkpoint_length': 1.0 * unit.picosecond,
         'save_state_length': 1.0 * unit.picosecond,
     },
+    'aaqaa3': {
+        'target_type': 'peptide',
+        'aa_sequence': 'AAQAAAAQAAAAQAA',
+        'nterm_cap': 'ace',
+        'cterm_cap': 'nh2',
+        'pressure': 1.0 * unit.atmosphere,
+        'temperature': 274.0 * unit.kelvin,
+        'ph': 7.0,
+        'ionic_strength': 0.0 * unit.molar,
+        'observables': {
+            'fraction_helix': {
+                'experimental_datasets': 'shalongo_jacs_1994',
+                'observable_path': Path(
+                    observable_directory, 'aaqaa', 'aaqaa_fraction_helix.dat'
+                ),
+            },
+        }
+    },
     'ala3': {
         'target_type': 'peptide',
         'aa_sequence': 'AAA',
@@ -476,6 +494,12 @@ experimental_datasets = {
         ],
         'dataset_ids': ['bmrb 4831', 'pdb 1E8L'],
     },
+    'shalongo_jacs_1994': {
+        'references': [
+            'Shalongo W, Dugad L, Stellwagen E. (1994). J. Am. Chem. Soc. 116, '
+                '8288-8293.',
+        ],
+    },    
     'ulmer_jacs_2003': {
         'references': [
             'Ulmer TS, Ramirez BE, Delaglio F, Bax A. (2003). J. Am. Chem. '

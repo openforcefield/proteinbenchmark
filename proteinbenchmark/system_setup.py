@@ -44,6 +44,8 @@ def build_initial_coordinates(
     initial_pdb: str,
     protonated_pdb: str,
     aa_sequence: str = None,
+    nterm_cap: str = None,
+    cterm_cap: str = None,
 ):
     """
     Build initial coordinates and set protonation state.
@@ -64,6 +66,11 @@ def build_initial_coordinates(
         The path to write the protonated PDB with initial coordinates.
     aa_sequence
         The primary amino acid sequence for the "extended" build method.
+    nterm_cap
+        The capping group to add on the N terminus. Must be "ace" or None.
+    cterm_cap
+        The capping group to add on the C terminus. Must be "nh2", "nme", or
+        None.
     """
 
     from pdb2pqr.main import build_main_parser as pdb2pqr_build_main_parser
@@ -100,6 +107,54 @@ def build_initial_coordinates(
             residue.set_phi(-180, propagate = True)
             residue.set_psi(-180, propagate = True)
 
+        # Add N terminal cap
+        if nterm_cap is not None:
+
+            nterm_cap = nterm_cap.lower()
+
+            if nterm_cap == 'ace':
+                chain.add_nterm_cap()
+
+            else:
+                raise ValueError('Argument `nterm_cap` must be one of\n    ace')
+
+        # Add C terminal cap
+        if cterm_cap is not None:
+
+            cterm_cap = cterm_cap.lower()
+
+            if cterm_cap == 'nme':
+                chain.add_cterm_cap()
+
+            elif cterm_cap == 'nh2':
+
+                # pmx only supports Nme caps, so add the Nhe cap manually in a
+                # similar way to pmx.Chain.add_cterm_cap()
+                chain.cbuild('GLY')
+                cterm = chain.cterminus()
+
+                for atom in ['O', 'C', 'HA1', 'HA2']:
+                    del cterm[atom]
+
+                n, h, ca = cterm.fetchm(['N', 'H', 'CA'])
+                h.name = 'HN1'
+                ca.name = 'HN2'
+
+                n_to_h = numpy.array(n.x) - numpy.array(h.x)
+                n_to_ca = numpy.array(n.x) - numpy.array(ca.x)
+                n_h_dist = numpy.linalg.norm(n_to_h)
+                n_ca_dist = numpy.linalg.norm(n_to_ca)
+
+                ca.x = numpy.array(n.x) - n_to_ca * n_h_dist / n_ca_dist
+
+                cterm.set_resname('NH2')
+
+            else:
+
+                raise ValueError(
+                    'Argument `cterm_cap` must be one of\n    nh2\n    nme'
+                )
+
         # Write pmx system to PDB file
         chain.write(initial_pdb)
 
@@ -116,9 +171,9 @@ def build_initial_coordinates(
     cterm_pka = 3.2
     nterm_pka = 8.0
 
-    if ph < cterm_pka:
+    if ph < cterm_pka and cterm_cap is not None:
         pdb2pqr_ff = 'PARSE --neutralc'
-    elif ph > nterm_pka:
+    elif ph > nterm_pka and nterm_cap is not None:
         pdb2pqr_ff = 'PARSE --neutraln'
     else:
         pdb2pqr_ff = 'PARSE'
@@ -133,7 +188,7 @@ def build_initial_coordinates(
     pdb2pqr_main_driver(pdb2pqr_parser.parse_args(pdb2pqr_args.split()))
 
     # Special handling for protonated C terminus
-    if ph < cterm_pka:
+    if ph < cterm_pka and cterm_cap is not None:
 
         protonated_model = pmx.Model(protonated_pdb)
         c_term_residue = protonated_model.residues[-1]
@@ -541,7 +596,7 @@ def minimize(
                         )
 
     # Set up minimization and print initial energy
-    integrator = openmm.VerletIntegrator(1.0 * unit.femtoseconds)
+    integrator = openmm.VerletIntegrator(1.0 * unit.femtosecond)
     simulation = app.Simulation(
         solvated_pdb.topology,
         openmm_system,
