@@ -42,6 +42,25 @@ benchmark_targets = {
             },
         }
     },
+    'aaqaa3-helix': {
+        'target_type': 'disordered',
+        'build_method': 'helical',
+        'aa_sequence': 'AAQAAAAQAAAAQAA',
+        'nterm_cap': 'ace',
+        'cterm_cap': 'nh2',
+        'pressure': 1.0 * unit.atmosphere,
+        'temperature': 274.0 * unit.kelvin,
+        'ph': 7.0,
+        'ionic_strength': 0.0 * unit.molar,
+        'observables': {
+            'fraction_helix': {
+                'experimental_datasets': 'shalongo_jacs_1994',
+                'observable_path': Path(
+                    observable_directory, 'aaqaa', 'aaqaa_fraction_helix.dat'
+                ),
+            },
+        }
+    },
     'ala3': {
         'target_type': 'peptide',
         'aa_sequence': 'AAA',

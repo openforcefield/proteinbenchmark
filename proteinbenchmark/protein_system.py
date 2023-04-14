@@ -121,6 +121,11 @@ class ProteinBenchmarkSystem:
 
             elif 'aa_sequence' in self.target_parameters:
 
+                if 'build_method' in self.target_parameters:
+                    build_method = self.target_parameters['build_method']
+                else:
+                    build_method = 'extended'
+
                 if 'nterm_cap' in self.target_parameters:
                     nterm_cap = self.target_parameters['nterm_cap']
                 else:
@@ -132,7 +137,7 @@ class ProteinBenchmarkSystem:
                     cterm_cap = None
 
                 build_initial_coordinates(
-                    build_method = 'extended',
+                    build_method = build_method,
                     ph = self.target_parameters['ph'],
                     initial_pdb = self.initial_pdb,
                     protonated_pdb = protonated_pdb,

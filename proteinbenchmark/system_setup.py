@@ -85,27 +85,41 @@ def build_initial_coordinates(
             f'"pdb" with initial_pdb\n    {initial_pdb}'
         )
 
-    elif build_method == 'extended':
+    elif build_method in {'extended', 'helical'}:
 
         if aa_sequence is None:
 
             raise ValueError(
-                'aa_sequence must be set to use build_method "extended"'
+                'aa_sequence must be set to use build_method "extended" or '
+                "helical"
             )
 
         print(
             f'Building initial coordinates at pH {ph:.3f} using build_method '
-            f'"extended" with aa_sequence\n    {aa_sequence}'
+            f'"{build_method}" with aa_sequence\n    {aa_sequence}'
         )
 
         # Build sequence in pmx
         chain = pmx.Chain().create(aa_sequence)
 
-        # Set backbone dihedrals to -180 deg
+        # Set backbone dihedrals
+        if build_method == 'helical':
+
+            # Alpha helix values from
+            # Hollingsworth SA, Karplus PA. (2010). BioMol Concepts 1, 271-283.
+            build_phi = -63
+            build_psi = -43
+
+        else:
+
+            # Extended conformation with all backbone dihedrals at -180 deg
+            build_phi = -180
+            build_psi = -180
+
         for residue in chain.residues:
 
-            residue.set_phi(-180, propagate = True)
-            residue.set_psi(-180, propagate = True)
+            residue.set_phi(build_phi, propagate = True)
+            residue.set_psi(build_psi, propagate = True)
 
         # Add N terminal cap
         if nterm_cap is not None:
@@ -162,7 +176,11 @@ def build_initial_coordinates(
         remove_model_lines(initial_pdb)
 
     else:
-        raise ValueError('build_method must be one of "extended or "pdb"')
+
+        raise ValueError(
+            'Argument `build_method` must be one of\n    "extended"'
+            '\n    "helical"\n    "pdb"'
+        )
 
     # Clean up initial structure and assign protonation states using pdb2pqr
 
