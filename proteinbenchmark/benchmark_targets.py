@@ -25,7 +25,7 @@ benchmark_targets = {
         'save_state_length': 1.0 * unit.picosecond,
     },
     'aaqaa3': {
-        'target_type': 'peptide',
+        'target_type': 'disordered',
         'aa_sequence': 'AAQAAAAQAAAAQAA',
         'nterm_cap': 'ace',
         'cterm_cap': 'nh2',
