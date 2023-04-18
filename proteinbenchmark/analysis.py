@@ -1,6 +1,7 @@
 import loos
 from loos.pyloos import Trajectory
 import numpy
+from openff.toolkit import Molecule
 from openmm import unit
 import pandas
 from pathlib import Path
@@ -114,7 +115,8 @@ def measure_dihedrals(
     output_path: str,
 ):
     """
-    Measure backbone and sidechain dihedrals over the trajectory.
+    Measure the tau angle, backbone dihedrals, and sidechain dihedrals over a
+    trajectory.
 
     Parameters
     ---------
@@ -161,6 +163,9 @@ def measure_dihedrals(
                     resid + offset
                     for offset in dihedral_atom_dict['resid_offsets']
                 ]
+
+            elif dihedral == 'tau':
+                atom_resids = [resid] * 3
 
             else:
                 atom_resids = [resid] * 4
@@ -224,7 +229,14 @@ def measure_dihedrals(
         for residue_dict in dihedrals_by_residue:
             for dihedral_name, atoms in residue_dict['dihedrals'].items():
 
-                dihedral = loos.torsion(atoms[0], atoms[1], atoms[2], atoms[3])
+                if len(atoms) == 3:
+                    dihedral = loos.angle(atoms[0], atoms[1], atoms[2])
+
+                else:
+
+                    dihedral = loos.torsion(
+                        atoms[0], atoms[1], atoms[2], atoms[3]
+                    )
 
                 dihedrals.append({
                     'Frame': frame_index,
@@ -236,11 +248,357 @@ def measure_dihedrals(
                 })
 
     if fragment_index == 0:
-        list_of_dicts_to_csv(dihedrals, output)
+        list_of_dicts_to_csv(dihedrals, output_path)
+
+    else:
+        list_of_dicts_to_csv(dihedrals, f'{output_path}-{fragment_index}')
+
+    return fragment_index
+
+
+def measure_h_bond_geometries(
+    topology_path: str,
+    trajectory_path: str,
+    frame_length: unit.Quantity,
+    output_path: str,
+    h_bond_distance_cutoff: unit.Quantity = 2.5 * unit.angstrom,
+    h_bond_angle_cutoff: float = 30,
+    occupancy_threshold: float = 0.01,
+):
+    """
+    Measure the donor-acceptor distance, hydrogen-acceptor distance, and donor-
+    hydrogen-acceptor angle for hydrogen bonds over a trajectory. For backbone
+    N-H---O=C hydrogen bonds, also measure the H-O-C angle and H-O-C-N dihedral.
+
+    Parameters
+    ---------
+    topology_path
+        The path to the system topology, e.g. a PDB file.
+    trajectory_path
+        The path to the trajectory.
+    frame_length
+       The amount of simulation time between frames in the trajectory. 
+    output_path
+        The path to write the hydrogen bond geometries.
+    h_bond_distance_cutoff
+        Distance between non-hydrogen donor and acceptor below which a hydrogen
+        bond is considered to be occupied.
+    h_bond_angle_cutoff
+        Deviation in donor-hydrogen-acceptor angle from linear in degrees below
+        which a hydrogen bond is considered to be occupied.
+    occupancy_threshold
+        Fraction of frames in which a putative hydrogen bond must be occupied to
+        be considered observed and be measured.
+    """
+
+    # Load topology
+    topology = loos.createSystem(topology_path)
+    min_resid = topology.minResid()
+    max_resid = topology.maxResid()
+
+    # Select OFF atoms that can participate in hydrogen bonds
+    offmol = Molecule.from_polymer_pdb(topology_path)
+    putative_donors = offmol.chemical_environment_matches(
+        '[#7,#8,#16:1]-[#1:2]'
+    )
+    putative_acceptors = offmol.chemical_environment_matches('[#7,#8,#16:1]')
+
+    # Construct a list of [donor, hydrogen, acceptor] LOOS atom selections
+    putative_h_bonds = list()
+    atom_selections = dict()
+
+    for (donor_index, hydrogen_index) in putative_donors:
+
+        # Non-hydrogen atoms bonded to donor
+        donor_bonded_atoms = [
+            atom for atom in offmol.atoms[donor_index].bonded_atoms
+            if atom.atomic_number == 1
+        ]
+
+        # Get LOOS atom selections for donor and hydrogen
+        if donor_index not in atom_selections:
+
+            donor_resid = offmol.atoms[donor_index].metadata['residue_number']
+            donor_name = offmol.atoms[donor_index].name
+
+            atom_selection = loos.selectAtoms(
+                topology, f'resid == {donor_resid} && name == "{donor_name}"'
+            )
+
+            if len(atom_selection) == 0:
+
+                raise ValueError(
+                    f'Unable to select donor {donor_name} with resid '
+                    f'{donor_resid}.'
+                )
+
+            atom_selections[donor_index] = atom_selection[0]
+
+        if hydrogen_index not in atom_selections:
+
+            hydrogen_resid = (
+                offmol.atoms[hydrogen_index].metadata['residue_number']
+            )
+            hydrogen_name = offmol.atoms[hydrogen_index].name
+
+            atom_selection = loos.selectAtoms(
+                topology,
+                f'resid == {hydrogen_resid} && name == "{hydrogen_name}"'
+            )
+
+            if len(atom_selection) == 0:
+
+                raise ValueError(
+                    f'Unable to select hydrogen {hydrogen_name} with resid '
+                    f'{hydrogen_resid}.'
+                )
+
+            atom_selections[hydrogen_index] = atom_selection[0]
+
+        donor_atom = atom_selections[donor_index]
+        hydrogen_atom = atom_selections[hydrogen_index]
+
+        # Find acceptors for this donor
+        for (acceptor_index,) in putative_acceptors:
+
+            # Don't consider acceptors within two covalent bonds of the donor
+            if acceptor_index == donor_index or any([
+                acceptor_index == bonded_atom.molecule_atom_index
+                or offmol.atoms[acceptor_index].is_bonded_to(bonded_atom)
+                for bonded_atom in donor_bonded_atoms
+            ]):
+
+                continue
+
+            # Get LOOS atom selection for acceptor
+            if acceptor_index not in atom_selections:
+
+                acceptor_resid = (
+                    offmol.atoms[acceptor_index].metadata['residue_number']
+                )
+                acceptor_name = offmol.atoms[acceptor_index].name
+
+                atom_selection = loos.selectAtoms(
+                    topology,
+                    f'resid == {acceptor_resid} && name == "{acceptor_name}"'
+                )
+
+                if len(atom_selection) == 0:
+
+                    raise ValueError(
+                        f'Unable to select acceptor {acceptor_name} with resid '
+                        f'{acceptor_resid}.'
+                    )
+
+                atom_selections[acceptor_index] = atom_selection[0]
+
+            acceptor_atom = atom_selections[acceptor_index]
+
+            putative_h_bonds.append([donor_atom, hydrogen_atom, acceptor_atom])
+
+    # Set up trajectory
+    trajectory = Trajectory(trajectory_path, topology)
+
+    # Count observations of putative hydrogen bonds
+    h_bond_observations = numpy.zeros(len(putative_h_bonds))
+
+    for frame in trajectory:
+
+        # Set up HBondDetector to determine H bond occupancy from a distance and
+        # angle cutoff. Do this for each frame to grab the periodic box vectors.
+        h_bond_detector = loos.HBondDetector(
+            h_bond_distance_cutoff.value_in_unit(unit.angstrom),
+            h_bond_angle_cutoff,
+            frame,
+        )
+
+        # Check occupancy of remaining putative hydrogen bonds in this frame
+        for hb_index, h_bond in enumerate(putative_h_bonds):
+            if h_bond_detector.hBonded(h_bond[0], h_bond[1], h_bond[2]):
+                h_bond_observations[hb_index] += 1
+
+    # Find hydrogen bonds with occupancy above threshold
+    observation_threshold = occupancy_threshold * len(trajectory)
+    observed_h_bonds = [
+        {
+            'donor': h_bond[0],
+            'hydrogen': h_bond[1],
+            'acceptor': h_bond[2],
+        }
+        for hb_index, h_bond in enumerate(putative_h_bonds)
+        if h_bond_observations[hb_index] >= observation_threshold
+    ]
+
+    # Get atoms within two covalent bonds of acceptors in observed H bonds
+    acceptor_bonded_atoms = dict()
+
+    for h_bond in observed_h_bonds:
+
+        acceptor_index = h_bond['acceptor'].index()
+
+        # Keep track of this in a dictionary because a given acceptor may
+        # participate in multiple observed hydrogen bonds
+        if acceptor_index not in acceptor_bonded_atoms:
+
+            acceptor_bonded_atoms[acceptor_index] = list()
+
+            # Loop over non-hydrogen atoms covalently bonded to acceptor
+            acceptor_bonded_indices = [
+                atom.molecule_atom_index
+                for atom in offmol.atoms[acceptor_index].bonded_atoms
+                if atom.atomic_number != 1
+            ]
+
+            for bonded_index in acceptor_bonded_indices:
+
+                # Get LOOS atom selection for bonded atom
+                if bonded_index not in atom_selections:
+
+                    atom_selection = loos.selectAtoms(
+                        topology, f'index == {bonded_index}'
+                    )
+
+                    if len(atom_selection) == 0:
+                        raise ValueError(f'No atom with index {bonded_index}')
+
+                    atom_selections[bonded_index] = atom_selection[0]
+
+                # Loop over non-hydrogen atoms two covalent bonds from the
+                # acceptor
+                acceptor_bonded_2_indices = [
+                    atom.molecule_atom_index
+                    for atom in offmol.atoms[bonded_index].bonded_atoms
+                    if atom.atomic_number != 1
+                    and atom.molecule_atom_index != acceptor_index
+                ]
+
+                bonded_2_atom_list = list()
+
+                for bonded_2_index in acceptor_bonded_2_indices:
+
+                    # Get LOOS atom selection for bonded atom
+                    if bonded_2_index not in atom_selections:
+
+                        atom_selection = loos.selectAtoms(
+                            topology, f'index == {bonded_2_index}'
+                        )
+
+                        if len(atom_selection) == 0:
+
+                            raise ValueError(
+                                f'No atom with index {bonded_2_index}'
+                            )
+
+                        atom_selections[bonded_2_index] = atom_selection[0]
+
+                    bonded_2_atom_list.append(atom_selections[bonded_2_index])
+
+                acceptor_bonded_atoms[acceptor_index].append({
+                    'bonded_atom': atom_selections[bonded_index],
+                    'bonded_2_atoms': bonded_2_atom_list,
+                })
+
+        h_bond['acceptor_bonded_atoms'] = acceptor_bonded_atoms[acceptor_index]
+
+    # Reset Trajectory iterator
+    trajectory.reset()
+
+    # Measure hydrogen bond geometries
+    frame_time = 0.0 * unit.picosecond
+    fragment_index = 0
+    h_bond_geometries = list()
+
+    for frame in trajectory:
+
+        frame_time += frame_length
+
+        frame_index = trajectory.index()
+        frame_time_ns = frame_time.value_in_unit(unit.nanosecond)
+
+        # Write hydrogen bond geomtries to file every 10 000 frames to avoid
+        # pandas out-of-memory
+        if frame_index % 10000 == 0 and frame_index > 0:
+
+            list_of_dicts_to_csv(
+                h_bond_geometries, f'{output_path}-{fragment_index}'
+            )
+            fragment_index += 1
+            h_bond_geometries = list()
+
+        # Measure h_bond_geometries
+        for h_bond in observed_h_bonds:
+
+            donor = h_bond['donor']
+            hydrogen = h_bond['hydrogen']
+            acceptor = h_bond['acceptor']
+
+            donor_acceptor_distance = donor.coords().distance(acceptor.coords())
+            hydrogen_acceptor_distance = (
+                hydrogen.coords().distance(acceptor.coords())
+            )
+
+            donor_hydrogen_acceptor_angle = loos.angle(
+                donor, hydrogen, acceptor
+            )
+
+            for acceptor_bonded_atoms in h_bond['acceptor_bonded_atoms']:
+
+                bonded_atom = acceptor_bonded_atoms['bonded_atom']
+
+                hydrogen_acceptor_bonded_angle = loos.angle(
+                    hydrogen, acceptor, bonded_atom
+                )
+
+                for bonded_2_atom in acceptor_bonded_atoms['bonded_2_atoms']:
+
+                    dihedral = loos.torsion(
+                        hydrogen, acceptor, bonded_atom, bonded_2_atom
+                    )
+
+                    h_bond_geometries.append({
+                        'Frame': frame_index,
+                        'Time (ns)': frame_time_ns,
+                        'Donor Resid': donor.resid(),
+                        'Donor Resname': donor.resname(),
+                        'Donor Name': donor.name(),
+                        'Hydrogen Name': hydrogen.name(),
+                        'Acceptor Resid': acceptor.resid(),
+                        'Acceptor Resname': acceptor.resname(),
+                        'Acceptor Name': acceptor.name(),
+                        'Acceptor Bonded Name': bonded_atom.name(),
+                        'Acceptor Bonded 2 Name': bonded_2_atom.name(),
+                        'Donor Acceptor Distance (Angstrom)': (
+                            donor_acceptor_distance
+                        ),
+                        'Hydrogen Acceptor Distance (Angstrom)': (
+                            hydrogen_acceptor_distance
+                        ),
+                        'Donor Hydrogen Acceptor Angle (deg)': (
+                            donor_hydrogen_acceptor_angle
+                        ),
+                        'Hydrogen Acceptor Bonded Angle (deg)': (
+                            hydrogen_acceptor_bonded_angle
+                        ),
+                        'Dihedral (deg)': dihedral,
+                    })
+
+    # df['Occupied'] = (
+    #     (df['Hydrogen Acceptor Distance (Angstrom)'] < 2.5)
+    #     & (df['Donor Hydrogen Acceptor Angle (deg)'] > 150)
+    # )
+    # df.groupby(by = [
+    #     'Donor Resid', 'Donor Name', 'Hydrogen Name', 'Acceptor Resid',
+    #     'Acceptor Name'
+    # ])['Occupied'].mean().reset_index()
+
+    if fragment_index == 0:
+        list_of_dicts_to_csv(h_bond_geometries, output_path)
 
     else:
 
-        list_of_dicts_to_csv(dihedrals, f'{output_path}-{fragment_index}')
+        list_of_dicts_to_csv(
+            h_bond_geometries, f'{output_path}-{fragment_index}'
+        )
 
     return fragment_index
 
