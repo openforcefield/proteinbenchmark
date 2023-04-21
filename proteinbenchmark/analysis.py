@@ -429,76 +429,57 @@ def measure_h_bond_geometries(
         if h_bond_observations[hb_index] >= observation_threshold
     ]
 
-    # Get atoms within two covalent bonds of acceptors in observed H bonds
-    acceptor_bonded_atoms = dict()
+    # Get amide atoms for observed H bonds in backbone
+    acceptor_amide_atoms = dict()
 
     for h_bond in observed_h_bonds:
+
+        donor_resid = h_bond['donor'].resid()
+        donor_name = h_bond['donor'].name()
+        hydrogen_name = h_bond['hydrogen'].name()
+        acceptor_resid = h_bond['acceptor'].resid()
+        acceptor_name = h_bond['acceptor'].name()
+
+        # Only consider non-terminal backbone hydrogen bonds
+        if (
+            donor_name != "N" or hydrogen_name != "H" or acceptor_name != "O"
+            or donor_resid == min_resid or acceptor_resid == max_resid
+        ):
+
+            continue
 
         acceptor_index = h_bond['acceptor'].index()
 
         # Keep track of this in a dictionary because a given acceptor may
         # participate in multiple observed hydrogen bonds
-        if acceptor_index not in acceptor_bonded_atoms:
+        if acceptor_index not in acceptor_amide_atoms:
 
-            acceptor_bonded_atoms[acceptor_index] = list()
+            amide_c_selection = loos.selectAtoms(
+                topology, f'resid == {acceptor_resid} && name == "C"'
+            )
 
-            # Loop over non-hydrogen atoms covalently bonded to acceptor
-            acceptor_bonded_indices = [
-                atom.molecule_atom_index
-                for atom in offmol.atoms[acceptor_index].bonded_atoms
-                if atom.atomic_number != 1
-            ]
+            if len(amide_c_selection) == 0:
 
-            for bonded_index in acceptor_bonded_indices:
+                raise ValueError(
+                    f'Unable to select amide C with resid {acceptor_resid}.'
+                )
 
-                # Get LOOS atom selection for bonded atom
-                if bonded_index not in atom_selections:
+            amide_n_selection = loos.selectAtoms(
+                topology, f'resid == {acceptor_resid + 1} && name == "N"'
+            )
 
-                    atom_selection = loos.selectAtoms(
-                        topology, f'index == {bonded_index}'
-                    )
+            if len(amide_n_selection) == 0:
 
-                    if len(atom_selection) == 0:
-                        raise ValueError(f'No atom with index {bonded_index}')
+                raise ValueError(
+                    f'Unable to select amide N with resid {acceptor_resid + 1}.'
+                )
 
-                    atom_selections[bonded_index] = atom_selection[0]
+            acceptor_amide_atoms[acceptor_index] = {
+                'C': amide_c_selection[0], 'N': amide_n_selection[0]
+            }
 
-                # Loop over non-hydrogen atoms two covalent bonds from the
-                # acceptor
-                acceptor_bonded_2_indices = [
-                    atom.molecule_atom_index
-                    for atom in offmol.atoms[bonded_index].bonded_atoms
-                    if atom.atomic_number != 1
-                    and atom.molecule_atom_index != acceptor_index
-                ]
 
-                bonded_2_atom_list = list()
-
-                for bonded_2_index in acceptor_bonded_2_indices:
-
-                    # Get LOOS atom selection for bonded atom
-                    if bonded_2_index not in atom_selections:
-
-                        atom_selection = loos.selectAtoms(
-                            topology, f'index == {bonded_2_index}'
-                        )
-
-                        if len(atom_selection) == 0:
-
-                            raise ValueError(
-                                f'No atom with index {bonded_2_index}'
-                            )
-
-                        atom_selections[bonded_2_index] = atom_selection[0]
-
-                    bonded_2_atom_list.append(atom_selections[bonded_2_index])
-
-                acceptor_bonded_atoms[acceptor_index].append({
-                    'bonded_atom': atom_selections[bonded_index],
-                    'bonded_2_atoms': bonded_2_atom_list,
-                })
-
-        h_bond['acceptor_bonded_atoms'] = acceptor_bonded_atoms[acceptor_index]
+        h_bond['acceptor_amide_atoms'] = acceptor_amide_atoms[acceptor_index]
 
     # Reset Trajectory iterator
     trajectory.reset()
@@ -532,64 +513,38 @@ def measure_h_bond_geometries(
             hydrogen = h_bond['hydrogen']
             acceptor = h_bond['acceptor']
 
-            donor_acceptor_distance = donor.coords().distance(acceptor.coords())
-            hydrogen_acceptor_distance = (
-                hydrogen.coords().distance(acceptor.coords())
-            )
+            DA_distance = donor.coords().distance(acceptor.coords())
+            HA_distance = hydrogen.coords().distance(acceptor.coords())
+            DHA_angle = loos.angle(donor, hydrogen, acceptor)
 
-            donor_hydrogen_acceptor_angle = loos.angle(
-                donor, hydrogen, acceptor
-            )
+            h_bond_dict = {
+                'Frame': frame_index,
+                'Time (ns)': frame_time_ns,
+                'Donor Resid': donor.resid(),
+                'Donor Resname': donor.resname(),
+                'Donor Name': donor.name(),
+                'Hydrogen Name': hydrogen.name(),
+                'Acceptor Resid': acceptor.resid(),
+                'Acceptor Resname': acceptor.resname(),
+                'Acceptor Name': acceptor.name(),
+                'DA Distance (Angstrom)': DA_distance,
+                'HA Distance (Angstrom)': HA_distance,
+                'DHA Angle (deg)': DHA_angle,
+            }
 
-            for acceptor_bonded_atoms in h_bond['acceptor_bonded_atoms']:
+            if 'acceptor_amide_atoms' in h_bond:
 
-                bonded_atom = acceptor_bonded_atoms['bonded_atom']
+                amide_c = h_bond['acceptor_amide_atoms']['C']
+                amide_n = h_bond['acceptor_amide_atoms']['N']
 
-                hydrogen_acceptor_bonded_angle = loos.angle(
-                    hydrogen, acceptor, bonded_atom
+                h_bond_dict['HOC Angle (deg)'] = loos.angle(
+                    hydrogen, acceptor, amide_c
+                )
+                h_bond_dict['HOCN Dihedral (deg)'] = loos.torsion(
+                    hydrogen, acceptor, amide_c, amide_n
                 )
 
-                for bonded_2_atom in acceptor_bonded_atoms['bonded_2_atoms']:
-
-                    dihedral = loos.torsion(
-                        hydrogen, acceptor, bonded_atom, bonded_2_atom
-                    )
-
-                    h_bond_geometries.append({
-                        'Frame': frame_index,
-                        'Time (ns)': frame_time_ns,
-                        'Donor Resid': donor.resid(),
-                        'Donor Resname': donor.resname(),
-                        'Donor Name': donor.name(),
-                        'Hydrogen Name': hydrogen.name(),
-                        'Acceptor Resid': acceptor.resid(),
-                        'Acceptor Resname': acceptor.resname(),
-                        'Acceptor Name': acceptor.name(),
-                        'Acceptor Bonded Name': bonded_atom.name(),
-                        'Acceptor Bonded 2 Name': bonded_2_atom.name(),
-                        'Donor Acceptor Distance (Angstrom)': (
-                            donor_acceptor_distance
-                        ),
-                        'Hydrogen Acceptor Distance (Angstrom)': (
-                            hydrogen_acceptor_distance
-                        ),
-                        'Donor Hydrogen Acceptor Angle (deg)': (
-                            donor_hydrogen_acceptor_angle
-                        ),
-                        'Hydrogen Acceptor Bonded Angle (deg)': (
-                            hydrogen_acceptor_bonded_angle
-                        ),
-                        'Dihedral (deg)': dihedral,
-                    })
-
-    # df['Occupied'] = (
-    #     (df['Hydrogen Acceptor Distance (Angstrom)'] < 2.5)
-    #     & (df['Donor Hydrogen Acceptor Angle (deg)'] > 150)
-    # )
-    # df.groupby(by = [
-    #     'Donor Resid', 'Donor Name', 'Hydrogen Name', 'Acceptor Resid',
-    #     'Acceptor Name'
-    # ])['Occupied'].mean().reset_index()
+            h_bond_geometries.append(h_bond_dict)
 
     if fragment_index == 0:
         list_of_dicts_to_csv(h_bond_geometries, output_path)
@@ -718,7 +673,7 @@ def compute_scalar_couplings(
     observable_path: str,
     dihedrals_path: str,
     output_path: str,
-    karplus: str = 'best',
+    karplus: str = 'vogeli',
 ):
     """
     Compute NMR scalar couplings and chi^2 with respect to experimental values.
@@ -738,44 +693,62 @@ def compute_scalar_couplings(
     # Check Karplus parameters
     karplus = karplus.lower()
 
-    if karplus == 'best':
-        karplus_parameters = BEST_KARPLUS_PARAMETERS
+    if karplus == 'vogeli':
+        karplus_parameters = VOGELI_KARPLUS_PARAMETERS
+    elif karplus == 'hu':
+        karplus_parameters = HU_KARPLUS_PARAMETERS
+    elif karplus == 'case_dft1':
+        karplus_parameters = CASE_DFT1_KARPLUS_PARAMETERS
+    elif karplus == 'case_dft2':
+        karplus_parameters = CASE_DFT2_KARPLUS_PARAMETERS
+
     else:
-        raise ValueError('Argument `karplus` must be one of\n    best')
+
+        raise ValueError(
+            'Argument `karplus` must be one of\n    best\n    hu\n    case_dft1'
+            '\n    case_dft2'
+        )
+
+    karplus_parameters.update(WIRMER_KARPLUS_PARAMETERS)
+    karplus_parameters.update(DING_KARPLUS_PARAMETERS)
+    karplus_parameters.update(HENNIG_KARPLUS_PARAMETERS)
+    karplus_parameters.update(PEREZ_KARPLUS_PARAMETERS)
+    karplus_parameters.update(CHOU_KARPLUS_PARAMETERS)
 
     # Load data for experimental observables
     observable_df = pandas.read_csv(
         observable_path,
         sep = '\s+',
         skiprows = 1,
-        names = ['Observable', 'Resid', 'Experiment', 'Uncertainty']
+        names = ['Observable', 'Resid', 'Experiment', 'Uncertainty'],
     )
 
     # Read time series of dihedrals
     dihedral_df = pandas.read_csv(dihedrals_path, index_col = 0)
 
-    # Skip observables that depend on dihedrals that are undefined
+    # Skip observables that depend on dihedrals that are undefined or that
+    # don't have good Karplus models
     max_resid = dihedral_df['Resid'].max()
     indices_to_drop = list()
     for index, row in observable_df.iterrows():
 
         observable = row['Observable']
         observable_resid = row['Resid']
-        observable_parameters = karplus_parameters[observable]
-        observable_dihedrals = observable_parameters['dihedral'].split(',')
+        observable_dihedrals = (
+            karplus_parameters[observable]['dihedral'].split(',')
+        )
 
-        if observable_resid == 1 and 'phi' in observable_dihedrals:
-            indices_to_drop.append(index)
+        if (
+            (observable_resid == 1 and 'phi' in observable_dihedrals)
+            or (observable_resid == max_resid and 'psi' in observable_dihedrals)
+        ):
 
-        if observable_resid == max_resid and 'psi' in observable_dihedrals:
             indices_to_drop.append(index)
 
     observable_df.drop(indices_to_drop, inplace = True)
     observable_df.reset_index(drop = True, inplace = True)
 
     # Compute observables
-    trig_values = dict()
-    trajectory_averages = dict()
     computed_observables = list()
 
     for index, row in observable_df.iterrows():
@@ -783,124 +756,216 @@ def compute_scalar_couplings(
         observable = row['Observable']
         observable_resid = row['Resid']
         observable_parameters = karplus_parameters[observable]
-        observable_dihedrals = observable_parameters['dihedral'].split(',')
 
-        dihedral_names = list()
+        if observable == '3j_hn_ca':
 
-        for dihedral_name in observable_dihedrals:
+            # Compute sine and cosine of phi and psi
+            # Reset indices for products, e.g. cos phi * cos psi
+            phi = DEG_TO_RAD * dihedral_df[
+                (dihedral_df['Dihedral Name'] == 'phi')
+                & (dihedral_df['Resid'] == observable_resid)
+            ]['Dihedral (deg)']
+            phi.reset_index(drop = True, inplace = True)
 
-            if dihedral_name == 'prev_psi':
+            prev_psi = DEG_TO_RAD * dihedral_df[
+                (dihedral_df['Dihedral Name'] == 'psi')
+                & (dihedral_df['Resid'] == observable_resid - 1)
+            ]['Dihedral (deg)']
+            prev_psi.reset_index(drop = True, inplace = True)
+
+            cos_phi = numpy.cos(phi)
+            sin_phi = numpy.sin(phi)
+            cos_psi = numpy.cos(prev_psi)
+            sin_psi = numpy.sin(prev_psi)
+
+            # Compute estimate for scalar coupling
+            computed_coupling = (
+                observable_parameters['cos_phi'] * cos_phi
+                + observable_parameters['sin_phi'] * sin_phi
+                + observable_parameters['cos_psi'] * cos_psi
+                + observable_parameters['sin_psi'] * sin_psi
+                + observable_parameters['cos_phi_cos_psi'] * cos_phi * cos_psi
+                + observable_parameters['cos_phi_sin_psi'] * cos_phi * sin_psi
+                + observable_parameters['sin_phi_cos_psi'] * sin_phi * cos_psi
+                + observable_parameters['sin_phi_sin_psi'] * sin_phi * sin_psi
+                + observable_parameters['C']
+            ).mean()
+
+        else:
+
+            # Get relevant dihedral angle
+            if observable_parameters['dihedral'] == 'prev_psi':
 
                 dihedral_name = 'psi'
                 dihedral_resid = observable_resid - 1
 
             else:
+
+                dihedral_name = observable_parameters['dihedral']
                 dihedral_resid = observable_resid
 
-            dihedral_names.append((dihedral_name, dihedral_resid))
+            karplus_df = dihedral_df[
+                (dihedral_df['Dihedral Name'] == dihedral_name)
+                & (dihedral_df['Resid'] == dihedral_resid)
+            ]
 
-        if observable == '3j_hn_ca':
+            # Get residue specific parameters for sidechains
+            if observable in ['3j_n_cg1', '3j_n_cg2', '3j_co_cg1', '3j_co_cg2']:
 
-            # Get averages of trig functions of phi and psi
-            karplus_cos_phi = observable_parameters['C_cos_phi']
-            karplus_sin_phi = observable_parameters['C_sin_phi']
-            karplus_cos_psi = observable_parameters['C_cos_psi']
-            karplus_sin_psi = observable_parameters['C_sin_psi']
-            karplus_cos_cos = observable_parameters['C_cos_phi_cos_psi']
-            karplus_cos_sin = observable_parameters['C_cos_phi_sin_psi']
-            karplus_sin_cos = observable_parameters['C_sin_phi_cos_psi']
-            karplus_sin_sin = observable_parameters['C_sin_phi_sin_psi']
-            karplus_C0 = observable_parameters['C_0']
+                dihedral_resname = karplus_df['Resname'].iloc[0]
+                observable_parameters = observable_parameters[dihedral_resname]
 
-            angle_names = list()
+            elif observable in ['3j_ha_hb2', '3j_ha_hb3']:
 
-            for dihedral_name, dihedral_resid in dihedral_names:
+                dihedral_resname = (
+                    PEREZ_KARPLUS_RESIDUE_MAP[karplus_df['Resname'].iloc[0]]
+                )
+                observable_parameters = observable_parameters[dihedral_resname]
 
-                angle_name = f'{dihedral_name}-{dihedral_resid}'
-                angle_names.append(angle_name)
-
-                karplus_angle = DEG_TO_RAD * dihedral_df[
-                    (dihedral_df['Dihedral Name'] == dihedral_name)
-                    & (dihedral_df['Resid'] == dihedral_resid)
-                ]['Dihedral (deg)']
-
-                if f'Cos-{angle_name}' not in trajectory_averages:
-
-                    cos_angle = karplus_angle.apply(numpy.cos)
-                    cos_angle.reset_index(drop = True, inplace = True)
-                    trig_values[f'Cos-{angle_name}'] = cos_angle
-                    trajectory_averages[f'Cos-{angle_name}'] = cos_angle.mean()
-
-                if f'Sin-{angle_name}' not in trajectory_averages:
-
-                    sin_angle = karplus_angle.apply(numpy.sin)
-                    sin_angle.reset_index(drop = True, inplace = True)
-                    trig_values[f'Sin-{angle_name}'] = sin_angle
-                    trajectory_averages[f'Sin-{angle_name}'] = sin_angle.mean()
-
-            phi, psi = tuple(angle_names)
-
-            for phi_name in [f'Cos-{phi}', f'Sin-{phi}']:
-                for psi_name in [f'Cos-{psi}', f'Sin-{psi}']:
-
-                    product_name = f'{phi_name}-{psi_name}'
-                    product = trig_values[phi_name] * trig_values[psi_name]
-                    trajectory_averages[product_name] = product.mean()
-
-            # Compute estimate for scalar coupling
-            computed_coupling = (
-                karplus_cos_phi * trajectory_averages[f'Cos-{phi}']
-                + karplus_sin_phi * trajectory_averages[f'Sin-{phi}']
-                + karplus_cos_psi * trajectory_averages[f'Cos-{psi}']
-                + karplus_sin_psi * trajectory_averages[f'Sin-{psi}']
-                + karplus_cos_cos * trajectory_averages[f'Cos-{phi}-Cos-{psi}']
-                + karplus_cos_sin * trajectory_averages[f'Cos-{phi}-Sin-{psi}']
-                + karplus_sin_cos * trajectory_averages[f'Sin-{phi}-Cos-{psi}']
-                + karplus_sin_sin * trajectory_averages[f'Sin-{phi}-Sin-{psi}']
-                + karplus_C0
+            # Compute cos(theta + delta) and cos^2(theta + delta)
+            karplus_angle = DEG_TO_RAD * (
+                observable_parameters['delta'] + karplus_df['Dihedral (deg)']
             )
 
-        else:
-
-            # Get averages of cos(theta + delta) and cos^2(theta + delta)
-            dihedral_name, dihedral_resid = dihedral_names[0]
-            karplus_A = observable_parameters['A']
-            karplus_B = observable_parameters['B']
-            karplus_C = observable_parameters['C']
-            delta = observable_parameters['delta']
-
-            angle_name = f'{dihedral_name}-{dihedral_resid}'
-            if delta != 0.0:
-                angle_name = f'{angle_name}+{delta:.1f}'
-
-            if f'Cos^2-{angle_name}' not in trajectory_averages:
-
-                karplus_angle = DEG_TO_RAD * (
-                    dihedral_df[
-                        (dihedral_df['Dihedral Name'] == dihedral_name)
-                        & (dihedral_df['Resid'] == dihedral_resid)
-                    ]['Dihedral (deg)'] + delta
-                )
-
-                cos_angle = karplus_angle.apply(numpy.cos)
-                cos_angle.reset_index(drop = True, inplace = True)
-                trig_values[f'Cos-{angle_name}'] = cos_angle
-                trajectory_averages[f'Cos-{angle_name}'] = cos_angle.mean()
-
-                cos_sq_angle = cos_angle.apply(numpy.square)
-                trajectory_averages[f'Cos^2-{angle_name}'] = cos_sq_angle.mean()
+            cos_angle = numpy.cos(karplus_angle)
+            cos_sq_angle = numpy.square(cos_angle)
 
             # Compute estimate for scalar coupling
             # <J> = A <cos^2(theta)> + B <cos(theta)> + C
             computed_coupling = (
-                karplus_A * trajectory_averages[f'Cos^2-{angle_name}']
-                + karplus_B * trajectory_averages[f'Cos-{angle_name}']
-                + karplus_C
-            )
+                observable_parameters['A'] * cos_sq_angle
+                + observable_parameters['B'] * cos_angle
+                + observable_parameters['C']
+            ).mean()
 
         # Compute contribution to chi^2
         experimental_coupling = row['Experiment'] / unit.second
         uncertainty = observable_parameters['sigma']
+        chi_sq = numpy.square(
+            (computed_coupling - experimental_coupling) / uncertainty
+        )
+
+        computed_observables.append({
+            'Computed': computed_coupling.value_in_unit(unit.second**-1),
+            'Chi^2': chi_sq,
+        })
+
+    scalar_coupling_df = pandas.concat(
+        [observable_df, pandas.DataFrame(computed_observables)],
+        axis = 1
+    )
+
+    scalar_coupling_df.to_csv(output_path)
+
+
+def compute_h_bond_scalar_couplings(
+    observable_path: str,
+    h_bond_geometries_path: str,
+    output_path: str,
+    karplus: str = 'barfield',
+):
+    """
+    Compute NMR 3J_N_CO scalar couplings and chi^2 with respect to experimental
+    values.
+
+    Parameters
+    ---------
+    observable_path
+        The path to the data for experimental observables.
+    h_bond_geometries_path
+        The path to the time series of hydrogen bond geometries.
+    output_path
+        The path to write the computed scalar couplings and chi^2 values.
+    karplus
+        The name of the set of Karplus parameters to use.
+    """
+
+    # Check Karplus parameters
+    karplus = karplus.lower()
+
+    if karplus == 'barfield':
+        karplus_parameters = BARFIELD_KARPLUS_PARAMETERS['3j_n_co']
+    else:
+        raise ValueError('Argument `karplus` must be one of\n    barfield')
+
+    # 3J(R, theta, phi) = exp(-a * (R - R_0))
+    #     * ((A cos^2 phi + B cos phi + C) sin^2 theta + D cos^2 theta)
+    # 3J(R, theta, phi) = (
+    #     (exp(a R_0) A cos^2 phi + exp(a R_0) B cos phi + exp(a R_0) C)
+    #     * sin^2 theta + exp(a R_0) D cos^2 theta) * exp(-a R)
+    karplus_exp = karplus_parameters['exponent']
+    karplus_constant = numpy.exp(karplus_exp * karplus_parameters['min_dist'])
+    karplus_cos_sq = karplus_constant * karplus_parameters['D']
+    karplus_sin_sq_cos_sq = karplus_constant * karplus_parameters['A']
+    karplus_sin_sq_cos = karplus_constant * karplus_parameters['B']
+    karplus_sin_sq = karplus_constant * karplus_parameters['C']
+
+    # Load data for experimental observables
+    observable_df = pandas.read_csv(
+        observable_path,
+        sep = '\s+',
+        skiprows = 1,
+        names = [
+            'Observable', 'Resid N', 'Resid CO', 'Experiment', 'Uncertainty'
+        ],
+    )
+
+    # Read time series of hydrogen bond geometries
+    h_bond_df = pandas.read_csv(h_bond_geometries_path, index_col = 0)
+
+    # Compute observables
+    computed_observables = list()
+
+    for index, row in observable_df.iterrows():
+
+        observable = row['Observable']
+
+        if observable == '3j_n_co':
+
+            observable_resid_n = row['Resid N']
+            observable_resid_co = row['Resid CO']
+
+            geometry_df = h_bond_df[
+                (h_bond_df['Donor Resid'] == observable_resid_n)
+                & (h_bond_df['Acceptor Resid'] == observable_resid_co)
+                & (h_bond_df['Donor Name'] == 'N')
+                & (h_bond_df['Hydrogen Name'] == 'H')
+                & (h_bond_df['Acceptor Name'] == 'O')
+            ]
+
+            HO_distance = (
+                geometry_df['HA Distance (Angstrom)'] * unit.angstrom
+            )
+            HOC_angle = DEG_TO_RAD * geometry_df['HOC Angle (deg)']
+            HOCN_dihedral = DEG_TO_RAD * geometry_df['HOCN Dihedral (deg)']
+
+            exp_HO_distance = numpy.exp(-karplus_exp * HO_distance)
+            cos_sq_HOC_angle = numpy.square(numpy.cos(HOC_angle))
+            sin_sq_HOC_angle = numpy.square(numpy.sin(HOC_angle))
+            cos_HOCN_dihedral = numpy.cos(HOCN_dihedral)
+            cos_sq_HOCN_dihedral = numpy.square(cos_HOCN_dihedral)
+
+            # 3J(R, theta, phi) = (
+            #     (exp(a R_0) A cos^2 phi + exp(a R_0) B cos phi + exp(a R_0) C)
+            #     * sin^2 theta + exp(a R_0) D cos^2 theta) * exp(-a R)
+            # Order of multiplication must be Quantity * DataFrame rather than
+            # DataFrame * Quantity
+            computed_coupling = (
+                (
+                    (
+                        karplus_sin_sq_cos_sq * cos_sq_HOCN_dihedral
+                        + karplus_sin_sq_cos * cos_HOCN_dihedral
+                        + karplus_sin_sq
+                    ) * sin_sq_HOC_angle + karplus_cos_sq * cos_sq_HOC_angle
+                ) * exp_HO_distance
+            ).mean()
+
+        else:
+            continue
+
+        # Compute contribution to chi^2
+        experimental_coupling = row['Experiment'] / unit.second
+        uncertainty = karplus_parameters['sigma']
         chi_sq = numpy.square(
             (computed_coupling - experimental_coupling) / uncertainty
         )

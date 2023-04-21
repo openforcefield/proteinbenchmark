@@ -22,6 +22,9 @@ DIHEDRAL_ATOMS = {
             'atom_names': ['CA', 'C', 'N', 'CA'],
             'resid_offsets': [0, 0, 1, 1],
         },
+        'tau': {
+            'atom_names': ['N', 'CA', 'C'],
+        },
     }
     for resname in [
         'ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIE', 'ILE',
@@ -122,14 +125,9 @@ HINTZE_ROTAMER_LIBRARY['HID'] = HINTZE_ROTAMER_LIBRARY['HIE']
 HINTZE_ROTAMER_LIBRARY['HIP'] = HINTZE_ROTAMER_LIBRARY['HIE']
 HINTZE_ROTAMER_LIBRARY['LYN'] = HINTZE_ROTAMER_LIBRARY['LYS']
 
-# 3j_n_co trans hydrogen bond scalar couplings
-# Eq 12 from Barfield M. (2002). J. Am. Chem. Soc. 124, 4158-4168.
-# Eq 2 from Sass HJ, Schmid FFF, Grzesiek S. (2007). J. Am. Chem. Soc. 129,
-#     5898-5903.
-
-# Karplus parameters in Hz for NMR scalar couplings from
-# Best RB, Zheng W, Mittal J. (2014). J. Chem. Theory Comput. 10, 5113-5124.
-BEST_KARPLUS_PARAMETERS = {
+# Karplus parameters for backbone scalar couplings from
+# Wirmer J, Schwalbe H. (2002). J. Biomol. NMR 23, 47-55.
+WIRMER_KARPLUS_PARAMETERS = {
     '1j_n_ca': {
         'dihedral': 'psi',
         'delta':    0.0,
@@ -138,6 +136,11 @@ BEST_KARPLUS_PARAMETERS = {
         'C':  9.51 / unit.second,
         'sigma': 0.59 / unit.second,
     },
+}
+
+# Karplus parameters for backbone scalar couplings from
+# Ding K, Gronenborn AM. (2004). J. Am. Chem. Soc. 126, 6232-6233.
+DING_KARPLUS_PARAMETERS = {
     '2j_n_ca': {
         'dihedral': 'prev_psi',
         'delta':    0.0,
@@ -146,6 +149,29 @@ BEST_KARPLUS_PARAMETERS = {
         'C':  7.85 / unit.second,
         'sigma': 0.50 / unit.second,
     },
+}
+
+# Karplus parameters for backbone scalar couplings from
+# Hennig M, Bermel W, Schwalbe H, Griesinger C. (2000). J. Am. Chem. Soc. 122,
+#     6268-6277.
+HENNIG_KARPLUS_PARAMETERS = {
+    '3j_hn_ca': {
+        'dihedral': 'phi,prev_psi',
+        'cos_phi': -0.23 / unit.second,
+        'cos_psi': -0.20 / unit.second,
+        'sin_phi':  0.07 / unit.second,
+        'sin_psi':  0.08 / unit.second,
+        'cos_phi_cos_psi':  0.07 / unit.second,
+        'cos_phi_sin_psi':  0.12 / unit.second,
+        'sin_phi_cos_psi': -0.08 / unit.second,
+        'sin_phi_sin_psi': -0.14 / unit.second,
+        'C':   0.54 / unit.second,
+        'sigma': 0.10 / unit.second,
+    },
+}
+
+# Karplus parameters for backbone scalar couplings from
+VOGELI_KARPLUS_PARAMETERS = {
     '3j_co_co': {
         'dihedral': 'phi',
         'delta':    0.0,
@@ -161,19 +187,6 @@ BEST_KARPLUS_PARAMETERS = {
         'B': -2.18 / unit.second,
         'C':  1.28 / unit.second,
         'sigma': 0.38 / unit.second,
-    },
-    '3j_hn_ca': {
-        'dihedral': 'phi,prev_psi',
-        'C_cos_phi': -0.23 / unit.second,
-        'C_cos_psi': -0.20 / unit.second,
-        'C_sin_phi':  0.07 / unit.second,
-        'C_sin_psi':  0.08 / unit.second,
-        'C_cos_phi_cos_psi':  0.07 / unit.second,
-        'C_cos_phi_sin_psi':  0.12 / unit.second,
-        'C_sin_phi_cos_psi': -0.08 / unit.second,
-        'C_sin_phi_sin_psi': -0.14 / unit.second,
-        'C_0':   0.54 / unit.second,
-        'sigma': 0.10 / unit.second,
     },
     '3j_hn_cb': {
         'dihedral': 'phi',
@@ -201,26 +214,9 @@ BEST_KARPLUS_PARAMETERS = {
     },
 }
 
-# Karplus parameters in Hz for NMR scalar couplings from
-# Graf J, Nguyen PH, Stock G, Schwalbe H. (2007). J. Am. Chem. Soc. 129,
-#     1179-1189.
-GRAF_KARPLUS_PARAMETERS = {
-    '1j_n_ca': {
-        'dihedral': 'psi',
-        'delta':    0.0,
-        'A':  1.70 / unit.second,
-        'B': -0.98 / unit.second,
-        'C':  9.51 / unit.second,
-        'sigma': 0.59 / unit.second,
-    },
-    '2j_n_ca': {
-        'dihedral': 'prev_psi',
-        'delta':    0.0,
-        'A': -0.66 / unit.second,
-        'B': -1.52 / unit.second,
-        'C':  7.85 / unit.second,
-        'sigma': 0.50 / unit.second,
-    },
+# Karplus parameters for backbone scalar couplings from
+# Hu JS, Bax AJ (1997). J. Am. Chem. Soc. 119, 6360-6368.
+HU_KARPLUS_PARAMETERS = {
     '3j_co_co': {
         'dihedral': 'phi',
         'delta':    0.0,
@@ -236,19 +232,6 @@ GRAF_KARPLUS_PARAMETERS = {
         'B': -2.18 / unit.second,
         'C':  1.28 / unit.second,
         'sigma': 0.38 / unit.second,
-    },
-    '3j_hn_ca': {
-        'dihedral': 'phi,prev_psi',
-        'C_cos_phi': -0.23 / unit.second,
-        'C_cos_psi': -0.20 / unit.second,
-        'C_sin_phi':  0.07 / unit.second,
-        'C_sin_psi':  0.08 / unit.second,
-        'C_cos_phi_cos_psi':  0.07 / unit.second,
-        'C_cos_phi_sin_psi':  0.12 / unit.second,
-        'C_sin_phi_cos_psi': -0.08 / unit.second,
-        'C_sin_phi_sin_psi': -0.14 / unit.second,
-        'C_0':   0.54 / unit.second,
-        'sigma': 0.10 / unit.second,
     },
     '3j_hn_cb': {
         'dihedral': 'phi',
@@ -279,23 +262,7 @@ GRAF_KARPLUS_PARAMETERS = {
 # Karplus parameters in Hz for NMR scalar couplings of Ace-Ala-NMe from
 # Case DA, Scheurer C, Bruschweiler R. (2000). J. Am. Chem. Soc. 122,
 #     10390-10397.
-DFT1_KARPLUS_PARAMETERS = {
-    '1j_n_ca': {
-        'dihedral': 'psi',
-        'delta':    0.0,
-        'A':  1.70 / unit.second,
-        'B': -0.98 / unit.second,
-        'C':  9.51 / unit.second,
-        'sigma': 0.59 / unit.second,
-    },
-    '2j_n_ca': {
-        'dihedral': 'prev_psi',
-        'delta':    0.0,
-        'A': -0.66 / unit.second,
-        'B': -1.52 / unit.second,
-        'C':  7.85 / unit.second,
-        'sigma': 0.50 / unit.second,
-    },
+CASE_DFT1_KARPLUS_PARAMETERS = {
     '3j_co_co': {
         'dihedral': 'phi',
         'delta':    0.0,
@@ -311,19 +278,6 @@ DFT1_KARPLUS_PARAMETERS = {
         'B': -1.87 / unit.second,
         'C':  0.56 / unit.second,
         'sigma': 0.38 / unit.second,
-    },
-    '3j_hn_ca': {
-        'dihedral': 'phi,prev_psi',
-        'C_cos_phi': -0.23 / unit.second,
-        'C_cos_psi': -0.20 / unit.second,
-        'C_sin_phi':  0.07 / unit.second,
-        'C_sin_psi':  0.08 / unit.second,
-        'C_cos_phi_cos_psi':  0.07 / unit.second,
-        'C_cos_phi_sin_psi':  0.12 / unit.second,
-        'C_sin_phi_cos_psi': -0.08 / unit.second,
-        'C_sin_phi_sin_psi': -0.14 / unit.second,
-        'C_0':   0.54 / unit.second,
-        'sigma': 0.10 / unit.second,
     },
     '3j_hn_cb': {
         'dihedral': 'phi',
@@ -351,26 +305,10 @@ DFT1_KARPLUS_PARAMETERS = {
     },
 }
 
-# Karplus parameters in Hz for NMR scalar couplings of Ala-Ala-NH2 from
+# Karplus parameters for backbone scalar couplings of Ala-Ala-NH2 from
 # Case DA, Scheurer C, Bruschweiler R. (2000). J. Am. Chem. Soc. 122,
 #     10390-10397.
-DFT2_KARPLUS_PARAMETERS = {
-    '1j_n_ca': {
-        'dihedral': 'psi',
-        'delta':    0.0,
-        'A':  1.70 / unit.second,
-        'B': -0.98 / unit.second,
-        'C':  9.51 / unit.second,
-        'sigma': 0.59 / unit.second,
-    },
-    '2j_n_ca': {
-        'dihedral': 'prev_psi',
-        'delta':    0.0,
-        'A': -0.66 / unit.second,
-        'B': -1.52 / unit.second,
-        'C':  7.85 / unit.second,
-        'sigma': 0.50 / unit.second,
-    },
+CASE_DFT2_KARPLUS_PARAMETERS = {
     '3j_co_co': {
         'dihedral': 'phi',
         'delta':   -2.56,
@@ -386,19 +324,6 @@ DFT2_KARPLUS_PARAMETERS = {
         'B': -1.85 / unit.second,
         'C':  0.49 / unit.second,
         'sigma': 0.38 / unit.second,
-    },
-    '3j_hn_ca': {
-        'dihedral': 'phi,prev_psi',
-        'C_cos_phi': -0.23 / unit.second,
-        'C_cos_psi': -0.20 / unit.second,
-        'C_sin_phi':  0.07 / unit.second,
-        'C_sin_psi':  0.08 / unit.second,
-        'C_cos_phi_cos_psi':  0.07 / unit.second,
-        'C_cos_phi_sin_psi':  0.12 / unit.second,
-        'C_sin_phi_cos_psi': -0.08 / unit.second,
-        'C_sin_phi_sin_psi': -0.14 / unit.second,
-        'C_0':   0.54 / unit.second,
-        'sigma': 0.10 / unit.second,
     },
     '3j_hn_cb': {
         'dihedral': 'phi',
@@ -423,6 +348,129 @@ DFT2_KARPLUS_PARAMETERS = {
         'B': -2.28 / unit.second,
         'C': -0.29 / unit.second,
         'sigma': 0.91 / unit.second,
+    },
+}
+
+# Karplus parameters for sidechain scalar couplings from
+# Perez C, Lohr F, Ruterjans H, Schmidt JM. (2001). J. Am. Chem. Soc. 123,
+#     7081-7093.
+PEREZ_KARPLUS_RESIDUE_MAP = {
+    residue: 'ARG,ASN,ASP,GLN,GLU,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR'
+    for residue in [
+        'ARG', 'ASH', 'ASN', 'ASP', 'GLH', 'GLN', 'GLU', 'HID', 'HIE', 'HIP',
+        'LEU', 'LYN', 'LYS', 'MET', 'PHE', 'PRO', 'TRP', 'TYR',
+    ]
+}
+
+PEREZ_KARPLUS_PARAMETERS = {
+    '3j_ha_hb2': {
+        'dihedral': 'chi1',
+        'ARG,ASN,ASP,GLN,GLU,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR': {
+            'delta': -120.0,
+            'A':  7.23 / unit.second,
+            'B': -1.37 / unit.second,
+            'C':  2.40 / unit.second,
+            'sigma': 0.31 / unit.second,
+        },
+    },
+    '3j_ha_hb3': {
+        'dihedral': 'chi1',
+        'ARG,ASN,ASP,GLN,GLU,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR': {
+            'delta':    0.0,
+            'A':  7.23 / unit.second,
+            'B': -1.37 / unit.second,
+            'C':  2.40 / unit.second,
+            'sigma': 0.31 / unit.second,
+        },
+    },
+}
+
+# Karplus parameters for sidechain scalar couplings from
+# Chou JJ, Case DA, Bax A. (2003). J. Am. Chem. Soc. 125, 8959-8966.
+CHOU_KARPLUS_PARAMETERS = {
+    '3j_co_cg1': {
+        'dihedral': 'chi1',
+        'VAL': {
+            'delta': -115.0,
+            'A':  3.42 / unit.second,
+            'B': -0.59 / unit.second,
+            'C':  0.17 / unit.second,
+            'sigma': 0.25 / unit.second,
+        },
+    },
+    '3j_co_cg2': {
+        'dihedral': 'chi1',
+        'ILE': {
+            'delta':  125.0,
+            'A':  3.42 / unit.second,
+            'B': -0.59 / unit.second,
+            'C':  0.17 / unit.second,
+            'sigma': 0.25 / unit.second,
+        },
+        'THR': {
+            'delta':  137.0,
+            'A':  2.76 / unit.second,
+            'B': -0.67 / unit.second,
+            'C':  0.19 / unit.second,
+            'sigma': 0.21 / unit.second,
+        },
+        'VAL': {
+            'delta':    5.0,
+            'A':  3.42 / unit.second,
+            'B': -0.59 / unit.second,
+            'C':  0.17 / unit.second,
+            'sigma': 0.25 / unit.second,
+        },
+    },
+    '3j_n_cg1': {
+        'dihedral': 'chi1',
+        'VAL': {
+            'delta':    6.0,
+            'A':  2.64 / unit.second,
+            'B':  0.26 / unit.second,
+            'C': -0.22 / unit.second,
+            'sigma': 0.25 / unit.second,
+        },
+    },
+    '3j_n_cg2': {
+        'dihedral': 'chi1',
+        'ILE': {
+            'delta': -114.0,
+            'A':  2.64 / unit.second,
+            'B':  0.26 / unit.second,
+            'C': -0.22 / unit.second,
+            'sigma': 0.25 / unit.second,
+        },
+        'THR': {
+            'delta': -113.0,
+            'A':  2.01 / unit.second,
+            'B':  0.21 / unit.second,
+            'C': -0.12 / unit.second,
+            'sigma': 0.21 / unit.second,
+        },
+        'VAL': {
+            'delta':  126.0,
+            'A':  2.64 / unit.second,
+            'B':  0.26 / unit.second,
+            'C': -0.22 / unit.second,
+            'sigma': 0.25 / unit.second,
+        },
+    },
+}
+
+# 3j_n_co trans hydrogen bond scalar couplings
+# Eq 12 from Barfield M. (2002). J. Am. Chem. Soc. 124, 4158-4168.
+# Eq 2 from Sass HJ, Schmid FFF, Grzesiek S. (2007). J. Am. Chem. Soc. 129,
+#     5898-5903.
+BARFIELD_KARPLUS_PARAMETERS = {
+    '3j_n_co': {
+        'min_dist': 1.760 * unit.angstrom,
+        'exponent': 3.2 / unit.angstrom,
+        'A': 0.62 / unit.second,
+        'B': 0.92 / unit.second,
+        'C': 0.14 / unit.second,
+        'D': -1.31 / unit.second,
+        'sigma': 0.12 / unit.second,
     },
 }
 

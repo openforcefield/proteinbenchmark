@@ -5,8 +5,10 @@ from pathlib import Path
 from proteinbenchmark.analysis import (
     align_trajectory,
     measure_dihedrals,
+    measure_h_bond_geometries,
     assign_dihedral_clusters,
     compute_scalar_couplings,
+    compute_h_bond_scalar_couplings,
 )
 from proteinbenchmark.openmm_simulation import OpenMMSimulation
 from proteinbenchmark.system_setup import (
@@ -84,6 +86,7 @@ class ProteinBenchmarkSystem:
         self.setup_dir = Path(self.base_path, 'setup')
         self.setup_prefix = Path(self.setup_dir, self.system_name)
         self.initial_pdb = f'{self.setup_prefix}-initial.pdb'
+        self.protonated_pdb = f'{self.setup_prefix}-protonated.pdb'
         self.minimized_pdb = f'{self.setup_prefix}-minimized.pdb'
         self.openmm_system = f'{self.setup_prefix}-openmm-system.xml'
 
@@ -97,11 +100,10 @@ class ProteinBenchmarkSystem:
         # Create the setup directory if it doesn't already exist
         self.setup_dir.mkdir(parents = True, exist_ok = True)
 
-        protonated_pdb = f'{self.setup_prefix}-protonated.pdb'
         solvated_pdb = f'{self.setup_prefix}-solvated.pdb'
 
         # Build initial coordinates
-        if not exists_and_not_empty(protonated_pdb):
+        if not exists_and_not_empty(self.protonated_pdb):
 
             print(f'Building initial coordinates for target {self.target_name}')
 
@@ -116,7 +118,7 @@ class ProteinBenchmarkSystem:
                     build_method = 'pdb',
                     ph = self.target_parameters['ph'],
                     initial_pdb = self.initial_pdb,
-                    protonated_pdb = protonated_pdb,
+                    protonated_pdb = self.protonated_pdb,
                 )
 
             elif 'aa_sequence' in self.target_parameters:
@@ -140,7 +142,7 @@ class ProteinBenchmarkSystem:
                     build_method = build_method,
                     ph = self.target_parameters['ph'],
                     initial_pdb = self.initial_pdb,
-                    protonated_pdb = protonated_pdb,
+                    protonated_pdb = self.protonated_pdb,
                     aa_sequence = self.target_parameters['aa_sequence'],
                     nterm_cap = nterm_cap,
                     cterm_cap = cterm_cap,
@@ -181,7 +183,7 @@ class ProteinBenchmarkSystem:
                 ionic_strength = self.target_parameters['ionic_strength'],
                 nonbonded_cutoff = nonbonded_cutoff,
                 vdw_switch_width = vdw_switch_width,
-                protonated_pdb_file = protonated_pdb,
+                protonated_pdb_file = self.protonated_pdb,
                 solvated_pdb_file = solvated_pdb,
                 openmm_system_xml = self.openmm_system,
                 water_model = self.water_model,
@@ -435,6 +437,26 @@ class ProteinBenchmarkSystem:
             if fragment_index > 0:
                 merge_csvs(dihedrals)
 
+        # Measure hydrogen bond geometries
+        h_bond_geometries = f'{analysis_prefix}-hydrogen-bond-geometries.dat'
+
+        if not exists_and_not_empty(h_bond_geometries):
+
+            print(
+                'Measuring hydrogen bond geometries for target '
+                f'{self.target_name}'
+            )
+
+            fragment_index = measure_h_bond_geometries(
+                topology_path = self.protonated_pdb,
+                trajectory_path = reimaged_trajectory,
+                frame_length = frame_length,
+                output_path = h_bond_geometries,
+            )
+
+            if fragment_index > 0:
+                merge_csvs(h_bond_geometries)
+
         # Dihedral cluster assignments
         dihedral_clusters = f'{analysis_prefix}-dihedral-clusters.dat'
 
@@ -466,5 +488,30 @@ class ProteinBenchmarkSystem:
                 observable_path = data,
                 dihedrals_path = dihedrals,
                 output_path = scalar_couplings,
+            )
+
+        # Scalar couplings
+        h_bond_scalar_couplings = (
+            f'{analysis_prefix}-h-bond-scalar-couplings.dat'
+        )
+
+        if (
+            'h_bond_scalar_couplings' in target_observables
+            and not exists_and_not_empty(h_bond_scalar_couplings)
+        ):
+
+            print(
+                'Computing hydrogen bond scalar couplings for target '
+                f'{self.target_name}'
+            )
+
+            data = (
+                target_observables['h_bond_scalar_couplings']['observable_path']
+            )
+
+            compute_h_bond_scalar_couplings(
+                observable_path = data,
+                h_bond_geometries_path = h_bond_geometries,
+                output_path = h_bond_scalar_couplings,
             )
 

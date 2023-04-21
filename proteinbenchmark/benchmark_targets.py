@@ -224,9 +224,22 @@ benchmark_targets = {
         'ph': 6.5,
         'ionic_strength': 0.0 * unit.molar,
         'observables': {
-            '3j_hn_cb': 'vogeli_jacs_2007',
-            '3j_hn_co': 'vogeli_jacs_2007',
-            '3j_hn_ha': 'vogeli_jacs_2007',
+            'scalar_couplings': {
+                'experimental_datasets': [
+                    'chou_jacs_2003',
+                    'miclet_jbnmr_2005',
+                    'vogeli_jacs_2007',
+                ],
+                'observable_path': Path(
+                    observable_directory, 'gb3', 'gb3_scalar_couplings.dat'
+                ),
+            },
+            'h_bond_scalar_couplings': {
+                'experimental_datasets': 'cornilescu_jacs_1999',
+                'observable_path': Path(
+                    observable_directory, 'gb3', 'gb3_3j_n_co.dat'
+                ),
+            },
             'backbone_rdc': 'ulmer_jacs_2003',
         }
     },
