@@ -7,6 +7,7 @@ from openff.toolkit import (
 from openmm import app, unit
 import openmm
 from pathlib import Path
+from proteinbenchmark.force_fields import water_model_files
 from proteinbenchmark.utilities import (
     read_xml,
     remove_model_lines,
@@ -22,20 +23,72 @@ class _OFFForceField(OFFForceField):
     `openmm.app.Modeller`.
     """
 
-    def __init__(self, unique_molecules, *args, **kwargs):
+    def __init__(
+        self,
+        unique_molecules,
+        *args,
+        remove_water_virtual_sites = False,
+        **kwargs
+    ):
 
         self._from_openmm_unique_molecules = unique_molecules
+        self._remove_water_virtual_sites = remove_water_virtual_sites
         super().__init__(*args, **kwargs)
 
-    def createSystem(self, openmm_topology: app.topology.Topology):
+    def createSystem(self, openmm_topology: app.Topology):
         """Return an OpenMM system from an OpenMM topology."""
 
-        off_topology = OFFTopology.from_openmm(
-            openmm_topology,
-            unique_molecules = self._from_openmm_unique_molecules,
-        )
+        if self._remove_water_virtual_sites:
 
-        return self.create_openmm_system(off_topology)
+            # Create a new OpenMM topology without water virtual sites
+            no_vsite_topology = app.Topology()
+            no_vsite_topology.setPeriodicBoxVectors(
+                openmm_topology.getPeriodicBoxVectors()
+            )
+            no_vsite_atoms = dict()
+
+            for chain in openmm_topology.chains():
+
+                no_vsite_chain = no_vsite_topology.addChain(chain.id)
+
+                for residue in chain.residues():
+
+                    no_vsite_residue = no_vsite_topology.addResidue(
+                        residue.name, no_vsite_chain, residue.id,
+                        residue.insertionCode
+                    )
+
+                    for atom in residue.atoms():
+
+                        if residue.name != 'HOH' or atom.name in {'O', 'H1', 'H2'}:
+
+                            no_vsite_atom = no_vsite_topology.addAtom(
+                                atom.name, atom.element, no_vsite_residue
+                            )
+                            no_vsite_atoms[atom] = no_vsite_atom
+
+            # Include bonds only between non-virtual site atoms
+            for bond in openmm_topology.bonds():
+
+                if bond[0] in no_vsite_atoms and bond[1] in no_vsite_atoms:
+
+                    no_vsite_topology.addBond(
+                        no_vsite_atoms[bond[0]], no_vsite_atoms[bond[1]]
+                    )
+
+            openff_topology = OFFTopology.from_openmm(
+                no_vsite_topology,
+                unique_molecules = self._from_openmm_unique_molecules,
+            )
+
+        else:
+
+            openff_topology = OFFTopology.from_openmm(
+                openmm_topology,
+                unique_molecules = self._from_openmm_unique_molecules,
+            )
+
+        return self.create_openmm_system(openff_topology)
 
 
 def build_initial_coordinates(
@@ -189,9 +242,9 @@ def build_initial_coordinates(
     cterm_pka = 3.2
     nterm_pka = 8.0
 
-    if ph < cterm_pka and cterm_cap is not None:
+    if ph < cterm_pka and cterm_cap is None:
         pdb2pqr_ff = 'PARSE --neutralc'
-    elif ph > nterm_pka and nterm_cap is not None:
+    elif ph > nterm_pka and nterm_cap is None:
         pdb2pqr_ff = 'PARSE --neutraln'
     else:
         pdb2pqr_ff = 'PARSE'
@@ -206,7 +259,7 @@ def build_initial_coordinates(
     pdb2pqr_main_driver(pdb2pqr_parser.parse_args(pdb2pqr_args.split()))
 
     # Special handling for protonated C terminus
-    if ph < cterm_pka and cterm_cap is not None:
+    if ph < cterm_pka and cterm_cap is None:
 
         protonated_model = pmx.Model(protonated_pdb)
         c_term_residue = protonated_model.residues[-1]
@@ -301,6 +354,11 @@ def solvate(
     if not vdw_switch_width.unit.is_compatible(unit.nanometer):
         raise ValueError('vdw_switch_width does not have units of Length')
 
+    if water_model == 'tip3p':
+        modeller_water_model = 'tip3p'
+    elif water_model == 'opc':
+        modeller_water_model = 'tip4pew'
+
     print(
         f'Solvating system with water model {water_model} and'
         '\n    solvent_padding '
@@ -331,8 +389,27 @@ def solvate(
         ]
 
         # Use the dummy class _OFFForceField so we can pass this to Modeller
-        force_field = _OFFForceField(unique_molecules, force_field_file)
-        print(f'Force field read from\n    {force_field_file}')
+        if water_model_file is None:
+
+            force_field = _OFFForceField(
+                unique_molecules,
+                force_field_file,
+                remove_water_virtual_sites = water_model != 'tip3p',
+            )
+            print(f'Force field read from\n    {force_field_file}')
+
+        else:
+
+            force_field = _OFFForceField(
+                unique_molecules,
+                force_field_file,
+                water_model_file,
+                remove_water_virtual_sites = water_model != 'tip3p',
+            )
+            print(
+                f'Force field read from\n    {force_field_file}'
+                f'\n    and {water_model_file}'
+            )
 
         # Set up solute topology and positions
         solute_off_topology = solute_offmol.to_topology()
@@ -367,7 +444,7 @@ def solvate(
 
     modeller.addSolvent(
         forcefield = force_field,
-        model = water_model,
+        model = modeller_water_model,
         padding = solvent_padding,
         boxShape = 'dodecahedron',
         ionicStrength = 0 * unit.molar,

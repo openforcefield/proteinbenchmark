@@ -3,9 +3,9 @@
     <Author>The Open Force Field Initiative</Author>
     <Date>2021-08-16</Date>
     <Constraints version="0.3">
+        <Constraint smirks="[#1:1]-[*:2]" id="c1"></Constraint>
         <Constraint smirks="[#1:1]-[#8X2H2+0:2]-[#1]" id="c-tip3p-H-O" distance="0.9572 * angstrom ** 1"></Constraint>
         <Constraint smirks="[#1:1]-[#8X2H2+0]-[#1:2]" id="c-tip3p-H-O-H" distance="1.5139006545247014 * angstrom ** 1"></Constraint>
-        <Constraint smirks="[#1:1]-[*:2]" id="c1"></Constraint>
     </Constraints>
     <Bonds version="0.4" potential="harmonic" fractional_bondorder_method="AM1-Wiberg" fractional_bondorder_interpolation="linear">
         <Bond smirks="[#6X4:1]-[#6X4:2]" id="b1" length="1.522226731663 * angstrom ** 1" k="531.2435298861 * angstrom ** -2 * mole ** -1 * kilocalorie ** 1"></Bond>

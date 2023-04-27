@@ -76,7 +76,7 @@ class ProteinBenchmarkSystem:
                 )
 
         self.system_name = (
-            f'{target_name}-{force_field_name}-{water_model_name}'
+            f'{target_name}-{force_field_name}'
         )
 
         # Create a directory to store results for this benchmark system
@@ -105,7 +105,7 @@ class ProteinBenchmarkSystem:
         # Build initial coordinates
         if not exists_and_not_empty(self.protonated_pdb):
 
-            print(f'Building initial coordinates for target {self.target_name}')
+            print(f'Building initial coordinates for system {self.system_name}')
 
             if 'initial_pdb' in self.target_parameters:
 
@@ -158,7 +158,7 @@ class ProteinBenchmarkSystem:
         # Solvate, add ions, and construct OpenMM system
         if not exists_and_not_empty(self.openmm_system):
 
-            print(f'Solvating target {self.target_name}')
+            print(f'Solvating system {self.system_name}')
 
             # Get parameters for solvation and constructing OpenMM system
             if 'solvent_padding' in self.target_parameters:
@@ -195,7 +195,7 @@ class ProteinBenchmarkSystem:
         # non-hydrogen solute atoms
         if not exists_and_not_empty(self.minimized_pdb):
 
-            print(f'Minimizing energy for target {self.target_name}')
+            print(f'Minimizing energy for system {self.system_name}')
 
             if 'restraint_energy_constant' in self.target_parameters:
 
@@ -213,7 +213,7 @@ class ProteinBenchmarkSystem:
                 minimized_pdb_file = self.minimized_pdb,
             )
 
-        print(f'Setup complete for target {self.target_name}')
+        print(f'Setup complete for system {self.system_name}')
 
 
     def run_simulations(self, replica: int = 1):
@@ -233,7 +233,7 @@ class ProteinBenchmarkSystem:
         # Equilibrate at constant pressure and temperature
         if not exists_and_not_empty(equilibrated_state):
 
-            print(f'Running NPT equilibration for target {self.target_name}')
+            print(f'Running NPT equilibration for system {self.system_name}')
 
             # Get parameters for equilibration simulation
             if 'equil_langevin_friction' in self.target_parameters:
@@ -299,7 +299,7 @@ class ProteinBenchmarkSystem:
             # Run equilibration
             equilibration_simulation.start_from_pdb()
 
-        print(f'Running NPT production for target {self.target_name}')
+        print(f'Running NPT production for system {self.system_name}')
 
         # Get parameters for production simulation
         if 'langevin_friction' in self.target_parameters:
@@ -405,7 +405,7 @@ class ProteinBenchmarkSystem:
         if not exists_and_not_empty(reimaged_topology):
 
             print(
-                f'Aligning production trajectory for target {self.target_name}'
+                f'Aligning production trajectory for system {self.system_name}'
             )
 
             replica_dir = Path(self.base_path, f'replica-{replica:d}')
@@ -425,7 +425,7 @@ class ProteinBenchmarkSystem:
 
         if not exists_and_not_empty(dihedrals):
 
-            print(f'Measuring dihedrals for target {self.target_name}')
+            print(f'Measuring dihedrals for system {self.system_name}')
 
             fragment_index = measure_dihedrals(
                 topology_path = reimaged_topology,
@@ -443,8 +443,8 @@ class ProteinBenchmarkSystem:
         if not exists_and_not_empty(h_bond_geometries):
 
             print(
-                'Measuring hydrogen bond geometries for target '
-                f'{self.target_name}'
+                'Measuring hydrogen bond geometries for system '
+                f'{self.system_name}'
             )
 
             fragment_index = measure_h_bond_geometries(
@@ -462,7 +462,7 @@ class ProteinBenchmarkSystem:
 
         if not exists_and_not_empty(dihedral_clusters):
 
-            print(f'Assigning dihedral clusters for target {self.target_name}')
+            print(f'Assigning dihedral clusters for system {self.system_name}')
 
             assign_dihedral_clusters(
                 dihedrals_path = dihedrals,
@@ -480,7 +480,7 @@ class ProteinBenchmarkSystem:
             and not exists_and_not_empty(scalar_couplings)
         ):
 
-            print(f'Computing scalar couplings for target {self.target_name}')
+            print(f'Computing scalar couplings for system {self.system_name}')
 
             data = target_observables['scalar_couplings']['observable_path']
 
@@ -501,8 +501,8 @@ class ProteinBenchmarkSystem:
         ):
 
             print(
-                'Computing hydrogen bond scalar couplings for target '
-                f'{self.target_name}'
+                'Computing hydrogen bond scalar couplings for system '
+                f'{self.system_name}'
             )
 
             data = (
