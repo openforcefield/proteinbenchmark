@@ -207,12 +207,12 @@ def build_initial_coordinates(
                 h.name = 'HN1'
                 ca.name = 'HN2'
 
-                n_to_h = numpy.array(n.x) - numpy.array(h.x)
-                n_to_ca = numpy.array(n.x) - numpy.array(ca.x)
+                n_to_h = numpy.array(h.x) - numpy.array(n.x)
+                n_to_ca = numpy.array(ca.x) - numpy.array(n.x)
                 n_h_dist = numpy.linalg.norm(n_to_h)
                 n_ca_dist = numpy.linalg.norm(n_to_ca)
 
-                ca.x = numpy.array(n.x) - n_to_ca * n_h_dist / n_ca_dist
+                ca.x = numpy.array(n.x) + n_to_ca * n_h_dist / n_ca_dist
 
                 cterm.set_resname('NH2')
 
@@ -299,7 +299,6 @@ def build_initial_coordinates(
 
 
 def solvate(
-    solvent_padding: unit.Quantity,
     ionic_strength: unit.Quantity,
     nonbonded_cutoff: unit.Quantity,
     vdw_switch_width: unit.Quantity,
@@ -309,14 +308,15 @@ def solvate(
     water_model: str,
     force_field_file: str,
     water_model_file: str = None,
+    solvent_padding: unit.Quantity = None,
+    n_solvent: int = None,
 ):
     """
-    Add water and salt ions and write OpenMM System to XML.
+    Add water and salt ions and write OpenMM System to XML. Exactly one of
+    solvent_padding or n_solvent must be specified.
 
     Parameters
     ----------
-    solvent_padding
-        The padding distance used to setup the solvent box.
     ionic_strength
         The bulk ionic strength of the desired thermodynamic state.
     nonbonded_cutoff
@@ -337,10 +337,24 @@ def solvate(
         The path to the force field to parametrize the system.
     water_model_file
         The path to the force field containing the water model.
+    solvent_padding
+        The padding distance used to setup the solvent box.
+    n_solvent
+        The number of solvent molecules used to setup the solvent box.
     """
 
-    # Check units of arguments
-    if not solvent_padding.unit.is_compatible(unit.nanometer):
+    # Check arguments
+    if (solvent_padding is None) == (n_solvent is None):
+
+        raise ValueError(
+            'Exactly one of solvent_padding or n_solvent must be specified.'
+        )
+
+    if (
+        solvent_padding is not None
+        and not solvent_padding.unit.is_compatible(unit.nanometer)
+    ):
+
         raise ValueError('solvent_padding does not have units of Length')
 
     if not ionic_strength.unit.is_compatible(unit.molar):
@@ -359,10 +373,19 @@ def solvate(
     elif water_model == 'opc':
         modeller_water_model = 'tip4pew'
 
+    if solvent_padding is not None:
+
+        solvent_arg_str = (
+            '\n    solvent_padding '
+            f'{solvent_padding.value_in_unit(unit.nanometer):.3f} nm'
+        )
+
+    else:
+        solvent_arg_str = '\n    n_solvent {n_solvent:d}'
+
     print(
         f'Solvating system with water model {water_model} and'
-        '\n    solvent_padding '
-        f'{solvent_padding.value_in_unit(unit.nanometer):.3f} nm'
+        f'{solvent_arg_str}'
         '\n    ionic_strength '
         f'{ionic_strength.value_in_unit(unit.molar):.3f} M'
         '\n    nonbonded_cutoff '
@@ -380,9 +403,9 @@ def solvate(
 
         # Get unique molecules (solute, water, sodium ion, chloride ion) needed
         # for openff.toolkit.topology.Topology.from_openmm()
-        solute_offmol = OFFMolecule.from_polymer_pdb(protonated_pdb_file)
+        solute_off_topology = OFFTopology.from_pdb(protonated_pdb_file)
         unique_molecules = [
-            solute_offmol,
+            *solute_off_topology.unique_molecules,
             OFFMolecule.from_smiles('O'),
             OFFMolecule.from_smiles('[Na+1]'),
             OFFMolecule.from_smiles('[Cl-1]'),
@@ -412,7 +435,6 @@ def solvate(
             )
 
         # Set up solute topology and positions
-        solute_off_topology = solute_offmol.to_topology()
         solute_interchange = force_field.create_interchange(solute_off_topology)
         solute_topology = solute_interchange.topology.to_openmm()
         solute_positions = solute_interchange.positions.to_openmm()
@@ -442,14 +464,28 @@ def solvate(
     # Add water in a rhombic dodecahedral box with no ions
     modeller = app.Modeller(solute_topology, solute_positions)
 
-    modeller.addSolvent(
-        forcefield = force_field,
-        model = modeller_water_model,
-        padding = solvent_padding,
-        boxShape = 'dodecahedron',
-        ionicStrength = 0 * unit.molar,
-        neutralize = False,
-    )
+
+    if solvent_padding is not None:
+
+        modeller.addSolvent(
+            forcefield = force_field,
+            model = modeller_water_model,
+            padding = solvent_padding,
+            boxShape = 'dodecahedron',
+            ionicStrength = 0 * unit.molar,
+            neutralize = False,
+        )
+
+    else:
+
+        modeller.addSolvent(
+            forcefield = force_field,
+            numAdded = n_solvent,
+            model = modeller_water_model,
+            boxShape = 'dodecahedron',
+            ionicStrength = 0 * unit.molar,
+            neutralize = False,
+        )
 
     # Add salt ions using the SLTCAP method
 

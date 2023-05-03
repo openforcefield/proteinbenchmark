@@ -151,7 +151,7 @@ def measure_dihedrals(
             if resid == min_resid and dihedral == 'phi':
                 continue
 
-            if resid == max_resid and dihedral in ['psi', 'omega']:
+            if resid == max_resid and dihedral in {'psi', 'omega'}:
                 continue
 
             # Get atoms in dihedral
@@ -726,8 +726,7 @@ def compute_scalar_couplings(
     # Read time series of dihedrals
     dihedral_df = pandas.read_csv(dihedrals_path, index_col = 0)
 
-    # Skip observables that depend on dihedrals that are undefined or that
-    # don't have good Karplus models
+    # Skip observables that depend on dihedrals that are undefined
     max_resid = dihedral_df['Resid'].max()
     indices_to_drop = list()
     for index, row in observable_df.iterrows():
@@ -791,6 +790,9 @@ def compute_scalar_couplings(
                 + observable_parameters['C']
             ).mean()
 
+            # Extrema of 3j_hn_ca Karplus curve from numerical optimization
+            karplus_extrema = [0.0329976 / unit.second, 1.08915 / unit.second]
+
         else:
 
             # Get relevant dihedral angle
@@ -810,12 +812,12 @@ def compute_scalar_couplings(
             ]
 
             # Get residue specific parameters for sidechains
-            if observable in ['3j_n_cg1', '3j_n_cg2', '3j_co_cg1', '3j_co_cg2']:
+            if observable in {'3j_n_cg1', '3j_n_cg2', '3j_co_cg1', '3j_co_cg2'}:
 
                 dihedral_resname = karplus_df['Resname'].iloc[0]
                 observable_parameters = observable_parameters[dihedral_resname]
 
-            elif observable in ['3j_ha_hb2', '3j_ha_hb3']:
+            elif observable in {'3j_ha_hb2', '3j_ha_hb3'}:
 
                 dihedral_resname = (
                     PEREZ_KARPLUS_RESIDUE_MAP[karplus_df['Resname'].iloc[0]]
@@ -832,11 +834,28 @@ def compute_scalar_couplings(
 
             # Compute estimate for scalar coupling
             # <J> = A <cos^2(theta)> + B <cos(theta)> + C
+            karplus_A = observable_parameters['A']
+            karplus_B = observable_parameters['B']
+            karplus_C = observable_parameters['C']
+
             computed_coupling = (
-                observable_parameters['A'] * cos_sq_angle
-                + observable_parameters['B'] * cos_angle
-                + observable_parameters['C']
+                karplus_A * cos_sq_angle + karplus_B * cos_angle + karplus_C
             ).mean()
+
+            # Get extrema of Karplus curve at
+            # J(0) = A + B + C
+            # J(pi) = A - B + C
+            # J(+/- arccos(-B / 2 A)) = -B^2 / (4A) + C
+            karplus_extrema = [
+                karplus_A + karplus_B + karplus_C,
+                karplus_A - karplus_B + karplus_C,
+            ]
+
+            if numpy.abs(karplus_B / karplus_A) <= 2:
+
+                karplus_extrema.append(
+                    -karplus_B * karplus_B / karplus_A / 4 + karplus_C,
+                )
 
         # Compute contribution to chi^2
         experimental_coupling = row['Experiment'] / unit.second
@@ -845,9 +864,22 @@ def compute_scalar_couplings(
             (computed_coupling - experimental_coupling) / uncertainty
         )
 
+        # Truncate experimental coupling to Karplus extrema
+        truncated_experimental_coupling = min(
+            max(experimental_coupling, min(karplus_extrema)),
+            max(karplus_extrema),
+        )
+        truncated_chi_sq = numpy.square(
+            (computed_coupling - truncated_experimental_coupling) / uncertainty
+        )
+
         computed_observables.append({
             'Computed': computed_coupling.value_in_unit(unit.second**-1),
             'Chi^2': chi_sq,
+            'Truncated Experiment': (
+                truncated_experimental_coupling.value_in_unit(unit.second**-1)
+            ),
+            'Truncated Chi^2': truncated_chi_sq,
         })
 
     scalar_coupling_df = pandas.concat(
@@ -909,6 +941,15 @@ def compute_h_bond_scalar_couplings(
             'Observable', 'Resid N', 'Resid CO', 'Experiment', 'Uncertainty'
         ],
     )
+
+    # Skip observables that don't have a good Karplus model
+    indices_to_drop = list()
+    for index, row in observable_df.iterrows():
+        if row['Observable'] in {'3j_n_cg', '3j_n_cd'}:
+            indices_to_drop.append(index)
+
+    observable_df.drop(indices_to_drop, inplace = True)
+    observable_df.reset_index(drop = True, inplace = True)
 
     # Read time series of hydrogen bond geometries
     h_bond_df = pandas.read_csv(h_bond_geometries_path, index_col = 0)

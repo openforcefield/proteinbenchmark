@@ -179,7 +179,6 @@ class ProteinBenchmarkSystem:
                 vdw_switch_width = VDW_SWITCH_WIDTH
 
             solvate(
-                solvent_padding = solvent_padding,
                 ionic_strength = self.target_parameters['ionic_strength'],
                 nonbonded_cutoff = nonbonded_cutoff,
                 vdw_switch_width = vdw_switch_width,
@@ -189,6 +188,7 @@ class ProteinBenchmarkSystem:
                 water_model = self.water_model,
                 force_field_file = self.force_field_file,
                 water_model_file = self.water_model_file,
+                solvent_padding = solvent_padding,
             )
 
         # Minimize energy of solvated system with Cartesian restraints on
