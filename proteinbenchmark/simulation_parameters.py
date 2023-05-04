@@ -1,7 +1,6 @@
 """Default parameter values for MD simulations."""
 from openmm import unit
 
-
 # Default system setup parameters
 SOLVENT_PADDING = 1.2 * unit.nanometer
 NONBONDED_CUTOFF = 0.9 * unit.nanometer
@@ -25,12 +24,11 @@ LANGEVIN_FRICTION = 1.0 / unit.picosecond
 BAROSTAT_FREQUENCY = 25
 TIMESTEP = 2.0 * unit.femtosecond
 FRAME_LENGTH = 100.0 * unit.picosecond
-CHECKPOINT_LENGTH = FRAME_LENGTH * 10
-SAVE_STATE_LENGTH = CHECKPOINT_LENGTH * 100
+CHECKPOINT_LENGTH = FRAME_LENGTH * 100
+SAVE_STATE_LENGTH = CHECKPOINT_LENGTH * 10
 
 # Production trajectory length for peptides, folded proteins, and disordered
 # proteins
 PEPTIDE_TRAJ_LENGTH = 500.0 * unit.nanosecond
 FOLDED_TRAJ_LENGTH = 10.0 * unit.microsecond
 DISORDERED_TRAJ_LENGTH = 30.0 * unit.microsecond
-

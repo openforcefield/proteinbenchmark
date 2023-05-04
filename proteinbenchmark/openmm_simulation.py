@@ -1,8 +1,10 @@
-import numpy
-from openmm import app, unit
-import openmm
-from openmmtools.integrators import LangevinIntegrator
 from pathlib import Path
+
+import numpy
+import openmm
+from openmm import app, unit
+from openmmtools.integrators import LangevinIntegrator
+
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml
 
 
@@ -76,26 +78,23 @@ class OpenMMSimulation:
 
         # Check units of arguments
         if not temperature.unit.is_compatible(unit.kelvin):
-            raise ValueError('temperature does not have units of Temperature')
+            raise ValueError("temperature does not have units of Temperature")
 
         if not pressure.unit.is_compatible(unit.atmosphere):
-
-            raise ValueError(
-                'pressure does not have units of Mass Length^-1 Time^-2'
-            )
+            raise ValueError("pressure does not have units of Mass Length^-1 Time^-2")
 
         if not langevin_friction.unit.is_compatible(unit.picosecond**-1):
-            raise ValueError('langevin_friction does not have units of Time^-1')
+            raise ValueError("langevin_friction does not have units of Time^-1")
         if not timestep.unit.is_compatible(unit.picosecond):
-            raise ValueError('timestep does not have units of Time')
+            raise ValueError("timestep does not have units of Time")
         if not traj_length.unit.is_compatible(unit.picosecond):
-            raise ValueError('traj_length does not have units of Time')
+            raise ValueError("traj_length does not have units of Time")
         if not frame_length.unit.is_compatible(unit.picosecond):
-            raise ValueError('frame_length does not have units of Time')
+            raise ValueError("frame_length does not have units of Time")
         if not checkpoint_length.unit.is_compatible(unit.picosecond):
-            raise ValueError('checkpoint_length does not have units of Time')
+            raise ValueError("checkpoint_length does not have units of Time")
         if not save_state_length.unit.is_compatible(unit.picosecond):
-            raise ValueError('save_state_length does not have units of Time')
+            raise ValueError("save_state_length does not have units of Time")
 
         self.temperature = temperature
         self.pressure = pressure
@@ -104,31 +103,27 @@ class OpenMMSimulation:
         self.timestep = timestep
         self.n_steps = int(numpy.round(traj_length / timestep))
         self.output_frequency = int(numpy.round(frame_length / timestep))
-        self.checkpoint_frequency = int(
-            numpy.round(checkpoint_length / timestep)
-        )
-        self.save_state_frequency = int(
-            numpy.round(save_state_length / timestep)
-        )
+        self.checkpoint_frequency = int(numpy.round(checkpoint_length / timestep))
+        self.save_state_frequency = int(numpy.round(save_state_length / timestep))
 
         print(
-            'Running simulation with\n    temperature '
-            f'{temperature.value_in_unit(unit.kelvin)} K'
-            f'\n    pressure {pressure.value_in_unit(unit.atmosphere):.3f} atm'
-            f'\n    langevin_friction '
-            f'{langevin_friction.value_in_unit(unit.picosecond**-1):.1f} ps^-1'
-            f'\n    barostat_frequency {barostat_frequency:d} steps'
-            f'\n    timestep {timestep.value_in_unit(unit.femtosecond):.1f} fs'
-            f'\n    n_steps {self.n_steps:d} steps'
-            f'\n    output_frequency {self.output_frequency:d} steps'
-            f'\n    checkpoint_frequency {self.checkpoint_frequency:d} steps'
-            f'\n    save_state_frequency {self.save_state_frequency:d} steps'
+            "Running simulation with\n    temperature "
+            f"{temperature.value_in_unit(unit.kelvin)} K"
+            f"\n    pressure {pressure.value_in_unit(unit.atmosphere):.3f} atm"
+            f"\n    langevin_friction "
+            f"{langevin_friction.value_in_unit(unit.picosecond**-1):.1f} ps^-1"
+            f"\n    barostat_frequency {barostat_frequency:d} steps"
+            f"\n    timestep {timestep.value_in_unit(unit.femtosecond):.1f} fs"
+            f"\n    n_steps {self.n_steps:d} steps"
+            f"\n    output_frequency {self.output_frequency:d} steps"
+            f"\n    checkpoint_frequency {self.checkpoint_frequency:d} steps"
+            f"\n    save_state_frequency {self.save_state_frequency:d} steps"
         )
 
     def setup_simulation(
         self,
         return_pdb: bool = False,
-):
+    ):
         """
         Set up an OpenMM simulation with a Langevin integrator and a Monte Carlo
         barostat.
@@ -145,33 +140,33 @@ class OpenMMSimulation:
 
         # Set up BAOAB Langevin integrator from openmmtools with VRORV splitting
         integrator = LangevinIntegrator(
-            temperature = self.temperature,
-            collision_rate = self.langevin_friction,
-            timestep = self.timestep,
+            temperature=self.temperature,
+            collision_rate=self.langevin_friction,
+            timestep=self.timestep,
         )
 
         # Set up Monte Carlo barostat
         if self.pressure.value_in_unit(unit.atmosphere) > 0:
-
-            openmm_system.addForce(openmm.MonteCarloBarostat(
-                self.pressure,
-                self.temperature,
-                self.barostat_frequency,
-            ))
+            openmm_system.addForce(
+                openmm.MonteCarloBarostat(
+                    self.pressure,
+                    self.temperature,
+                    self.barostat_frequency,
+                )
+            )
 
         # Create simulation
         simulation = app.Simulation(
             initial_pdb.topology,
             openmm_system,
             integrator,
-            openmm.Platform.getPlatformByName('CUDA'),
+            openmm.Platform.getPlatformByName("CUDA"),
         )
 
         if return_pdb:
             return simulation, initial_pdb
         else:
             return simulation
-
 
     def start_from_pdb(self):
         """
@@ -181,7 +176,7 @@ class OpenMMSimulation:
         """
 
         # Create an OpenMM simulation
-        simulation, initial_pdb = self.setup_simulation(return_pdb = True)
+        simulation, initial_pdb = self.setup_simulation(return_pdb=True)
 
         # Initialize positions from the topology PDB
         simulation.context.setPositions(initial_pdb.positions)
@@ -190,8 +185,7 @@ class OpenMMSimulation:
         simulation.context.setVelocitiesToTemperature(self.temperature)
 
         # Run dynamics
-        self.run_dynamics(simulation, append = False)
-
+        self.run_dynamics(simulation, append=False)
 
     def start_from_save_state(
         self,
@@ -212,10 +206,9 @@ class OpenMMSimulation:
 
         # Load the serialized state
         if not exists_and_not_empty(save_state_file):
-
             raise ValueError(
-                f'Serialized OpenMM state file {save_state_file} does not '
-                'exist or is empty.'
+                f"Serialized OpenMM state file {save_state_file} does not "
+                "exist or is empty."
             )
 
         simulation.loadState(save_state_file)
@@ -225,8 +218,7 @@ class OpenMMSimulation:
         simulation.context.setTime(0.0 * unit.picosecond)
 
         # Run dynamics
-        self.run_dynamics(simulation, append = False)
-
+        self.run_dynamics(simulation, append=False)
 
     def resume_from_checkpoint(self):
         """
@@ -244,10 +236,8 @@ class OpenMMSimulation:
 
         # Load the checkpoint
         if not exists_and_not_empty(self.checkpoint_file):
-
             raise ValueError(
-                f'Checkpoint file {self.checkpoint_file} does not exist or is '
-                'empty.'
+                f"Checkpoint file {self.checkpoint_file} does not exist or is " "empty."
             )
 
         simulation.loadCheckpoint(self.checkpoint_file)
@@ -259,39 +249,32 @@ class OpenMMSimulation:
         # Get expected number of frames based on current step from checkpoint
         # If the state data or DCD reporters have additional frames written,
         # truncate them to the expected number of frames
-        expected_frame_count = int(
-            simulation.currentStep / self.output_frequency
-        )
+        expected_frame_count = int(simulation.currentStep / self.output_frequency)
 
         # Check number of frames in state data reporter file
-        with open(self.state_reporter_file, 'r') as state_reporter:
-
+        with open(self.state_reporter_file, "r") as state_reporter:
             # Subtract one for header line
             state_reporter_frames = sum(1 for _ in state_reporter) - 1
 
         if state_reporter_frames < expected_frame_count:
-
             raise ValueError(
-                f'The state data reporter file has {state_reporter_frames:d} '
-                f'frames but {expected_number_of_frames:d} were expected.'
+                f"The state data reporter file has {state_reporter_frames:d} "
+                f"frames but {expected_number_of_frames:d} were expected."
             )
 
         elif state_reporter_frames > expected_frame_count:
-
             # Write to a temporary file so that we don't have to read the entire
             # state reporter file into memory
-            tmp_file = f'{self.state_reporter_file}.tmp'
+            tmp_file = f"{self.state_reporter_file}.tmp"
 
-            with open(self.state_reporter_file, 'r') as input_state_data:
-                with open(tmp_file, 'w') as output_state_data:
-
+            with open(self.state_reporter_file, "r") as input_state_data:
+                with open(tmp_file, "w") as output_state_data:
                     # Write header line
                     output_state_data.write(input_state_data.readline())
 
                     # Write frames up to the expected number from the checkpoint
                     frame_index = 0
                     while frame_index < expected_frame_count:
-
                         frame_index += 1
                         output_state_data.write(input_state_data.readline())
 
@@ -302,44 +285,40 @@ class OpenMMSimulation:
         # Check number of frames in DCD reporter file
         mdtraj_top = mdtraj.load_topology(self.initial_pdb_file)
         dcd_frames = 0
-        for traj in mdtraj.iterload(self.dcd_reporter_file, top = mdtraj_top):
+        for traj in mdtraj.iterload(self.dcd_reporter_file, top=mdtraj_top):
             dcd_frames += len(traj)
 
         if dcd_frames < expected_frame_count:
-
             raise ValueError(
-                f'The DCD reporter file has {dcd_frames:d} frames but '
-                f'{expected_number_of_frames:d} were expected.'
+                f"The DCD reporter file has {dcd_frames:d} frames but "
+                f"{expected_number_of_frames:d} were expected."
             )
 
         elif dcd_frames > expected_frame_count:
-
             # Write to a temporary file so that we don't have to read the entire
             # DCD file into memory
-            tmp_file = f'{self.dcd_reporter_file}.tmp'
+            tmp_file = f"{self.dcd_reporter_file}.tmp"
 
-            with DCDTrajectoryFile(self.dcd_reporter_file, 'r') as input_dcd:
-                with DCDTrajectoryFile(tmp_file, 'w') as output_dcd:
-
+            with DCDTrajectoryFile(self.dcd_reporter_file, "r") as input_dcd:
+                with DCDTrajectoryFile(tmp_file, "w") as output_dcd:
                     # Write frames up to the expected number from the checkpoint
                     frame_index = 0
                     while frame_index < expected_frame_count:
-
                         frame_index += 1
-                        frame = input_dcd.read_as_traj(mdtraj_top, n_frames = 1)
+                        frame = input_dcd.read_as_traj(mdtraj_top, n_frames=1)
 
                         output_dcd.write(
-                            xyz = in_units_of(
+                            xyz=in_units_of(
                                 frame.xyz,
                                 frame._distance_unit,
                                 output_dcd.distance_unit,
                             ),
-                            cell_lengths = in_units_of( 
+                            cell_lengths=in_units_of(
                                 frame.unitcell_lengths,
                                 frame._distance_unit,
                                 output_dcd.distance_unit,
                             ),
-                            cell_angles = frame.unitcell_angles[0],
+                            cell_angles=frame.unitcell_angles[0],
                         )
 
             # Overwrite the state reporter file with the truncated temporary
@@ -347,8 +326,7 @@ class OpenMMSimulation:
             Path(tmp_file).rename(self.dcd_reporter_file)
 
         # Resume dynamics with the checkpointed simulation
-        self.run_dynamics(simulation, append = True)
-
+        self.run_dynamics(simulation, append=True)
 
     def run_dynamics(
         self,
@@ -369,48 +347,41 @@ class OpenMMSimulation:
         # Set up reporters for DCD trajectory coordinates, state data, and
         # binary checkpoints
         dcd_reporter = app.DCDReporter(
-            self.dcd_reporter_file,
-            self.output_frequency,
-            append = append
+            self.dcd_reporter_file, self.output_frequency, append=append
         )
         state_reporter = app.StateDataReporter(
             self.state_reporter_file,
             self.output_frequency,
-            step = True,
-            time = True,
-            potentialEnergy = True,
-            kineticEnergy = True,
-            totalEnergy = True,
-            temperature = True,
-            volume = True,
-            speed = True,
-            separator = ' ',
-            append = append,
+            step=True,
+            time=True,
+            potentialEnergy=True,
+            kineticEnergy=True,
+            totalEnergy=True,
+            temperature=True,
+            volume=True,
+            speed=True,
+            separator=" ",
+            append=append,
         )
         checkpoint_reporter = app.CheckpointReporter(
             self.checkpoint_file, self.checkpoint_frequency
         )
 
-        simulation.reporters.extend(
-            [dcd_reporter, state_reporter, checkpoint_reporter]
-        )
+        simulation.reporters.extend([dcd_reporter, state_reporter, checkpoint_reporter])
 
         # Get current index of serialized simulation state files
         save_state_index = 0
         if append:
-
             save_state_dir = Path(self.save_state_prefix).parent
             glob_prefix = Path(self.save_state_prefix).name
 
-            for save_state_file in save_state_dir.glob(f'{glob_prefix}-*.xml'):
-
-                file_index = int(save_state_file.stem.split('-')[-1])
+            for save_state_file in save_state_dir.glob(f"{glob_prefix}-*.xml"):
+                file_index = int(save_state_file.stem.split("-")[-1])
                 if file_index > save_state_index:
                     save_state_index = file_index
 
         # Run dynamics until the desired number of steps is reached
         while simulation.currentStep < self.n_steps:
-
             steps_remaining = self.n_steps - simulation.currentStep
             steps_to_take = min(self.save_state_frequency, steps_remaining)
 
@@ -419,6 +390,5 @@ class OpenMMSimulation:
 
             # Write serialized simulation state
             save_state_index += 1
-            save_state_file = f'{self.save_state_prefix}-{save_state_index}.xml'
+            save_state_file = f"{self.save_state_prefix}-{save_state_index}.xml"
             simulation.saveState(save_state_file)
-
