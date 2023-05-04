@@ -1,18 +1,15 @@
-import numpy
-from openff.toolkit import (
-    ForceField as OFFForceField,
-    Molecule as OFFMolecule,
-    Topology as OFFTopology,
-)
-from openmm import app, unit
-import openmm
 from pathlib import Path
-from proteinbenchmark.utilities import (
-    read_xml,
-    remove_model_lines,
-    write_pdb,
-    write_xml
-)
+
+import numpy
+import openmm
+from openff.toolkit import ForceField as OFFForceField
+from openff.toolkit import Molecule as OFFMolecule
+from openff.toolkit import Topology as OFFTopology
+from openmm import app, unit
+
+from proteinbenchmark.force_fields import water_model_files
+from proteinbenchmark.utilities import (read_xml, remove_model_lines,
+                                        write_pdb, write_xml)
 
 
 class _OFFForceField(OFFForceField):
@@ -22,20 +19,58 @@ class _OFFForceField(OFFForceField):
     `openmm.app.Modeller`.
     """
 
-    def __init__(self, unique_molecules, *args, **kwargs):
-
+    def __init__(
+        self, unique_molecules, *args, remove_water_virtual_sites=False, **kwargs
+    ):
         self._from_openmm_unique_molecules = unique_molecules
+        self._remove_water_virtual_sites = remove_water_virtual_sites
         super().__init__(*args, **kwargs)
 
-    def createSystem(self, openmm_topology: app.topology.Topology):
+    def createSystem(self, openmm_topology: app.Topology):
         """Return an OpenMM system from an OpenMM topology."""
 
-        off_topology = OFFTopology.from_openmm(
-            openmm_topology,
-            unique_molecules = self._from_openmm_unique_molecules,
-        )
+        if self._remove_water_virtual_sites:
+            # Create a new OpenMM topology without water virtual sites
+            no_vsite_topology = app.Topology()
+            no_vsite_topology.setPeriodicBoxVectors(
+                openmm_topology.getPeriodicBoxVectors()
+            )
+            no_vsite_atoms = dict()
 
-        return self.create_openmm_system(off_topology)
+            for chain in openmm_topology.chains():
+                no_vsite_chain = no_vsite_topology.addChain(chain.id)
+
+                for residue in chain.residues():
+                    no_vsite_residue = no_vsite_topology.addResidue(
+                        residue.name, no_vsite_chain, residue.id, residue.insertionCode
+                    )
+
+                    for atom in residue.atoms():
+                        if residue.name != "HOH" or atom.name in {"O", "H1", "H2"}:
+                            no_vsite_atom = no_vsite_topology.addAtom(
+                                atom.name, atom.element, no_vsite_residue
+                            )
+                            no_vsite_atoms[atom] = no_vsite_atom
+
+            # Include bonds only between non-virtual site atoms
+            for bond in openmm_topology.bonds():
+                if bond[0] in no_vsite_atoms and bond[1] in no_vsite_atoms:
+                    no_vsite_topology.addBond(
+                        no_vsite_atoms[bond[0]], no_vsite_atoms[bond[1]]
+                    )
+
+            openff_topology = OFFTopology.from_openmm(
+                no_vsite_topology,
+                unique_molecules=self._from_openmm_unique_molecules,
+            )
+
+        else:
+            openff_topology = OFFTopology.from_openmm(
+                openmm_topology,
+                unique_molecules=self._from_openmm_unique_molecules,
+            )
+
+        return self.create_openmm_system(openff_topology)
 
 
 def build_initial_coordinates(
@@ -44,6 +79,8 @@ def build_initial_coordinates(
     initial_pdb: str,
     protonated_pdb: str,
     aa_sequence: str = None,
+    nterm_cap: str = None,
+    cterm_cap: str = None,
 ):
     """
     Build initial coordinates and set protonation state.
@@ -64,41 +101,97 @@ def build_initial_coordinates(
         The path to write the protonated PDB with initial coordinates.
     aa_sequence
         The primary amino acid sequence for the "extended" build method.
+    nterm_cap
+        The capping group to add on the N terminus. Must be "ace" or None.
+    cterm_cap
+        The capping group to add on the C terminus. Must be "nh2", "nme", or
+        None.
     """
 
+    import pmx
     from pdb2pqr.main import build_main_parser as pdb2pqr_build_main_parser
     from pdb2pqr.main import main_driver as pdb2pqr_main_driver
-    import pmx
 
     # Get initial PDB from file or from pmx
-    if build_method == 'pdb':
-
+    if build_method == "pdb":
         print(
-            f'Building initial coordinates at pH {ph:.2f} using build_method '
+            f"Building initial coordinates at pH {ph:.2f} using build_method "
             f'"pdb" with initial_pdb\n    {initial_pdb}'
         )
 
-    elif build_method == 'extended':
-
+    elif build_method in {"extended", "helical"}:
         if aa_sequence is None:
-
             raise ValueError(
-                'aa_sequence must be set to use build_method "extended"'
+                'aa_sequence must be set to use build_method "extended" or ' "helical"
             )
 
         print(
-            f'Building initial coordinates at pH {ph:.3f} using build_method '
-            f'"extended" with aa_sequence\n    {aa_sequence}'
+            f"Building initial coordinates at pH {ph:.3f} using build_method "
+            f'"{build_method}" with aa_sequence\n    {aa_sequence}'
         )
 
         # Build sequence in pmx
         chain = pmx.Chain().create(aa_sequence)
 
-        # Set backbone dihedrals to -180 deg
-        for residue in chain.residues:
+        # Set backbone dihedrals
+        if build_method == "helical":
+            # Alpha helix values from
+            # Hollingsworth SA, Karplus PA. (2010). BioMol Concepts 1, 271-283.
+            build_phi = -63
+            build_psi = -43
 
-            residue.set_phi(-180, propagate = True)
-            residue.set_psi(-180, propagate = True)
+        else:
+            # Extended conformation with all backbone dihedrals at -180 deg
+            build_phi = -180
+            build_psi = -180
+
+        for residue in chain.residues:
+            residue.set_phi(build_phi, propagate=True)
+            residue.set_psi(build_psi, propagate=True)
+
+        # Add N terminal cap
+        if nterm_cap is not None:
+            nterm_cap = nterm_cap.lower()
+
+            if nterm_cap == "ace":
+                chain.add_nterm_cap()
+
+            else:
+                raise ValueError("Argument `nterm_cap` must be one of\n    ace")
+
+        # Add C terminal cap
+        if cterm_cap is not None:
+            cterm_cap = cterm_cap.lower()
+
+            if cterm_cap == "nme":
+                chain.add_cterm_cap()
+
+            elif cterm_cap == "nh2":
+                # pmx only supports Nme caps, so add the Nhe cap manually in a
+                # similar way to pmx.Chain.add_cterm_cap()
+                chain.cbuild("GLY")
+                cterm = chain.cterminus()
+
+                for atom in ["O", "C", "HA1", "HA2"]:
+                    del cterm[atom]
+
+                n, h, ca = cterm.fetchm(["N", "H", "CA"])
+                h.name = "HN1"
+                ca.name = "HN2"
+
+                n_to_h = numpy.array(h.x) - numpy.array(n.x)
+                n_to_ca = numpy.array(ca.x) - numpy.array(n.x)
+                n_h_dist = numpy.linalg.norm(n_to_h)
+                n_ca_dist = numpy.linalg.norm(n_to_ca)
+
+                ca.x = numpy.array(n.x) + n_to_ca * n_h_dist / n_ca_dist
+
+                cterm.set_resname("NH2")
+
+            else:
+                raise ValueError(
+                    "Argument `cterm_cap` must be one of\n    nh2\n    nme"
+                )
 
         # Write pmx system to PDB file
         chain.write(initial_pdb)
@@ -107,7 +200,10 @@ def build_initial_coordinates(
         remove_model_lines(initial_pdb)
 
     else:
-        raise ValueError('build_method must be one of "extended or "pdb"')
+        raise ValueError(
+            'Argument `build_method` must be one of\n    "extended"'
+            '\n    "helical"\n    "pdb"'
+        )
 
     # Clean up initial structure and assign protonation states using pdb2pqr
 
@@ -116,25 +212,24 @@ def build_initial_coordinates(
     cterm_pka = 3.2
     nterm_pka = 8.0
 
-    if ph < cterm_pka:
-        pdb2pqr_ff = 'PARSE --neutralc'
-    elif ph > nterm_pka:
-        pdb2pqr_ff = 'PARSE --neutraln'
+    if ph < cterm_pka and cterm_cap is None:
+        pdb2pqr_ff = "PARSE --neutralc"
+    elif ph > nterm_pka and nterm_cap is None:
+        pdb2pqr_ff = "PARSE --neutraln"
     else:
-        pdb2pqr_ff = 'PARSE'
+        pdb2pqr_ff = "PARSE"
 
-    protonated_pqr = f'{protonated_pdb[:-4]}.pqr'
+    protonated_pqr = f"{protonated_pdb[:-4]}.pqr"
     pdb2pqr_args = (
-        f'--ff {pdb2pqr_ff} --nodebump --titration-state-method propka '
-        f'--with-ph {ph:.1f} -o {ph:.1f} --pdb-output {protonated_pdb} '
-        f'{initial_pdb} {protonated_pqr}'
+        f"--ff {pdb2pqr_ff} --nodebump --titration-state-method propka "
+        f"--with-ph {ph:.1f} -o {ph:.1f} --pdb-output {protonated_pdb} "
+        f"{initial_pdb} {protonated_pqr}"
     )
     pdb2pqr_parser = pdb2pqr_build_main_parser()
     pdb2pqr_main_driver(pdb2pqr_parser.parse_args(pdb2pqr_args.split()))
 
     # Special handling for protonated C terminus
-    if ph < cterm_pka:
-
+    if ph < cterm_pka and cterm_cap is None:
         protonated_model = pmx.Model(protonated_pdb)
         c_term_residue = protonated_model.residues[-1]
 
@@ -142,15 +237,14 @@ def build_initial_coordinates(
         # farther from the carbon. The OpenMM residue template expects the
         # carboxyl hydrogen to be bonded to the "OXT" oxygen. If "O" is
         # farther from "C" than "OXT", swap "O" and "OXT" coordinates
-        c = c_term_residue['C']
-        o = c_term_residue['O']
-        oxt = c_term_residue['OXT']
+        c = c_term_residue["C"]
+        o = c_term_residue["O"]
+        oxt = c_term_residue["OXT"]
 
         if o - c > oxt - c:
-
             print(
                 'Swapping coordinates of "O" and "OXT" in residue '
-                f'{o.resname} {o.resnr:d}'
+                f"{o.resname} {o.resnr:d}"
             )
 
             oxt_to_o = numpy.array(o.x) - numpy.array(oxt.x)
@@ -161,19 +255,17 @@ def build_initial_coordinates(
 
             # Remove MODEL lines written by PMX that cannot be read by OpenMM
             # Also remove END so that we can write CONECT records
-            remove_model_lines(protonated_pdb, remove_end = True)
+            remove_model_lines(protonated_pdb, remove_end=True)
 
         # Add CONECT record to enforce bond between "HO" and "OXT"
-        ho = c_term_residue['HO']
-        with open(protonated_pdb, 'a') as pdb_file:
-
-            pdb_file.write(f'CONECT{oxt.id:5d}{ho.id:5d}\n')
-            pdb_file.write(f'CONECT{ho.id:5d}{oxt.id:5d}\n')
-            pdb_file.write('END')
+        ho = c_term_residue["HO"]
+        with open(protonated_pdb, "a") as pdb_file:
+            pdb_file.write(f"CONECT{oxt.id:5d}{ho.id:5d}\n")
+            pdb_file.write(f"CONECT{ho.id:5d}{oxt.id:5d}\n")
+            pdb_file.write("END")
 
 
 def solvate(
-    solvent_padding: unit.Quantity,
     ionic_strength: unit.Quantity,
     nonbonded_cutoff: unit.Quantity,
     vdw_switch_width: unit.Quantity,
@@ -183,14 +275,15 @@ def solvate(
     water_model: str,
     force_field_file: str,
     water_model_file: str = None,
+    solvent_padding: unit.Quantity = None,
+    n_solvent: int = None,
 ):
     """
-    Add water and salt ions and write OpenMM System to XML.
+    Add water and salt ions and write OpenMM System to XML. Exactly one of
+    solvent_padding or n_solvent must be specified.
 
     Parameters
     ----------
-    solvent_padding
-        The padding distance used to setup the solvent box.
     ionic_strength
         The bulk ionic strength of the desired thermodynamic state.
     nonbonded_cutoff
@@ -211,77 +304,110 @@ def solvate(
         The path to the force field to parametrize the system.
     water_model_file
         The path to the force field containing the water model.
+    solvent_padding
+        The padding distance used to setup the solvent box.
+    n_solvent
+        The number of solvent molecules used to setup the solvent box.
     """
 
-    # Check units of arguments
-    if not solvent_padding.unit.is_compatible(unit.nanometer):
-        raise ValueError('solvent_padding does not have units of Length')
-
-    if not ionic_strength.unit.is_compatible(unit.molar):
-
+    # Check arguments
+    if (solvent_padding is None) == (n_solvent is None):
         raise ValueError(
-            'ionic_strength does not have units of Amount Length^-3'
+            "Exactly one of solvent_padding or n_solvent must be specified."
         )
 
+    if solvent_padding is not None and not solvent_padding.unit.is_compatible(
+        unit.nanometer
+    ):
+        raise ValueError("solvent_padding does not have units of Length")
+
+    if not ionic_strength.unit.is_compatible(unit.molar):
+        raise ValueError("ionic_strength does not have units of Amount Length^-3")
+
     if not nonbonded_cutoff.unit.is_compatible(unit.nanometer):
-        raise ValueError('nonbonded_cutoff does not have units of Length')
+        raise ValueError("nonbonded_cutoff does not have units of Length")
     if not vdw_switch_width.unit.is_compatible(unit.nanometer):
-        raise ValueError('vdw_switch_width does not have units of Length')
+        raise ValueError("vdw_switch_width does not have units of Length")
+
+    if water_model == "tip3p":
+        modeller_water_model = "tip3p"
+    elif water_model == "opc":
+        modeller_water_model = "tip4pew"
+
+    if solvent_padding is not None:
+        solvent_arg_str = (
+            "\n    solvent_padding "
+            f"{solvent_padding.value_in_unit(unit.nanometer):.3f} nm"
+        )
+
+    else:
+        solvent_arg_str = "\n    n_solvent {n_solvent:d}"
 
     print(
-        f'Solvating system with water model {water_model} and'
-        '\n    solvent_padding '
-        f'{solvent_padding.value_in_unit(unit.nanometer):.3f} nm'
-        '\n    ionic_strength '
-        f'{ionic_strength.value_in_unit(unit.molar):.3f} M'
-        '\n    nonbonded_cutoff '
-        f'{nonbonded_cutoff.value_in_unit(unit.nanometer):.3f} nm'
-        '\n    vdw_switch_width '
-        f'{vdw_switch_width.value_in_unit(unit.nanometer):.3f} nm'
+        f"Solvating system with water model {water_model} and"
+        f"{solvent_arg_str}"
+        "\n    ionic_strength "
+        f"{ionic_strength.value_in_unit(unit.molar):.3f} M"
+        "\n    nonbonded_cutoff "
+        f"{nonbonded_cutoff.value_in_unit(unit.nanometer):.3f} nm"
+        "\n    vdw_switch_width "
+        f"{vdw_switch_width.value_in_unit(unit.nanometer):.3f} nm"
     )
 
     # Set up force field
-    smirnoff = Path(force_field_file).suffix == '.offxml'
+    smirnoff = Path(force_field_file).suffix == ".offxml"
 
     if smirnoff:
-
         # SMIRNOFF force field
 
         # Get unique molecules (solute, water, sodium ion, chloride ion) needed
         # for openff.toolkit.topology.Topology.from_openmm()
-        solute_offmol = OFFMolecule.from_polymer_pdb(protonated_pdb_file)
+        solute_off_topology = OFFTopology.from_pdb(protonated_pdb_file)
         unique_molecules = [
-            solute_offmol,
-            OFFMolecule.from_smiles('O'),
-            OFFMolecule.from_smiles('[Na+1]'),
-            OFFMolecule.from_smiles('[Cl-1]'),
+            *solute_off_topology.unique_molecules,
+            OFFMolecule.from_smiles("O"),
+            OFFMolecule.from_smiles("[Na+1]"),
+            OFFMolecule.from_smiles("[Cl-1]"),
         ]
 
         # Use the dummy class _OFFForceField so we can pass this to Modeller
-        force_field = _OFFForceField(unique_molecules, force_field_file)
-        print(f'Force field read from\n    {force_field_file}')
+        if water_model_file is None:
+            force_field = _OFFForceField(
+                unique_molecules,
+                force_field_file,
+                remove_water_virtual_sites=water_model != "tip3p",
+            )
+            print(f"Force field read from\n    {force_field_file}")
+
+        else:
+            force_field = _OFFForceField(
+                unique_molecules,
+                force_field_file,
+                water_model_file,
+                remove_water_virtual_sites=water_model != "tip3p",
+            )
+            print(
+                f"Force field read from\n    {force_field_file}"
+                f"\n    and {water_model_file}"
+            )
 
         # Set up solute topology and positions
-        solute_off_topology = solute_offmol.to_topology()
         solute_interchange = force_field.create_interchange(solute_off_topology)
         solute_topology = solute_interchange.topology.to_openmm()
         solute_positions = solute_interchange.positions.to_openmm()
 
     else:
-
         if water_model_file is None:
-
             # OpenMM force field with no separate water model
             force_field = app.ForceField(force_field_file)
-            print(f'Force field read from\n    {force_field_file}')
+            print(f"Force field read from\n    {force_field_file}")
 
         else:
-
             # OpenMM force field with separate water model
             force_field = app.ForceField(force_field_file, water_model_file)
             print(
-                f'Force field read from\n    {force_field_file}'
-                f'\n    and {water_model_file}'
+                f"Force field read from\n    {force_field_file}"
+                f"\n    and {water_model_file}"
             )
 
         # Set up solute topology and positions
@@ -292,14 +418,25 @@ def solvate(
     # Add water in a rhombic dodecahedral box with no ions
     modeller = app.Modeller(solute_topology, solute_positions)
 
-    modeller.addSolvent(
-        forcefield = force_field,
-        model = water_model,
-        padding = solvent_padding,
-        boxShape = 'dodecahedron',
-        ionicStrength = 0 * unit.molar,
-        neutralize = False,
-    )
+    if solvent_padding is not None:
+        modeller.addSolvent(
+            forcefield=force_field,
+            model=modeller_water_model,
+            padding=solvent_padding,
+            boxShape="dodecahedron",
+            ionicStrength=0 * unit.molar,
+            neutralize=False,
+        )
+
+    else:
+        modeller.addSolvent(
+            forcefield=force_field,
+            numAdded=n_solvent,
+            model=modeller_water_model,
+            boxShape="dodecahedron",
+            ionicStrength=0 * unit.molar,
+            neutralize=False,
+        )
 
     # Add salt ions using the SLTCAP method
 
@@ -308,39 +445,34 @@ def solvate(
 
     for i in range(system.getNumForces()):
         if isinstance(system.getForce(i), openmm.NonbondedForce):
-
             nonbonded_force = system.getForce(i)
             break
 
     else:
-        raise ValueError('The ForceField does not specify a NonbondedForce')
+        raise ValueError("The ForceField does not specify a NonbondedForce")
 
     total_charge = unit.Quantity(0, unit.elementary_charge)
     for i in range(nonbonded_force.getNumParticles()):
         total_charge += nonbonded_force.getParticleParameters(i)[0]
 
     # Round to nearest integer
-    total_charge = int(
-        numpy.round(total_charge.value_in_unit(unit.elementary_charge))
-    )
+    total_charge = int(numpy.round(total_charge.value_in_unit(unit.elementary_charge)))
 
-    print(f'Total charge is {total_charge} e')
+    print(f"Total charge is {total_charge} e")
 
     # Get the number of water molecules and their positions
     water_positions = {}
     _oxygen = app.element.oxygen
     for chain in modeller.topology.chains():
         for residue in chain.residues():
-            if residue.name == 'HOH':
+            if residue.name == "HOH":
                 for atom in residue.atoms():
                     if atom.element == _oxygen:
-                        water_positions[residue] = (
-                            modeller.positions[atom.index]
-                        )
+                        water_positions[residue] = modeller.positions[atom.index]
 
     n_water = len(water_positions)
 
-    print(f'Added {n_water} waters')
+    print(f"Added {n_water} waters")
 
     # Calculate effective ionic strength from desired bulk ionic strength
     # using SLTCAP
@@ -353,64 +485,69 @@ def solvate(
 
     # If ionic strength is zero, then Q / (2 V_w C_0) is undefined
     if ionic_strength.value_in_unit(unit.molar) > 0:
-
         bulk_water_concentration = 55.4 * unit.molar
 
         charge_magnitude = numpy.abs(total_charge)
         solvent_volume = (n_water - charge_magnitude) / bulk_water_concentration
-        solute_ion_ratio = charge_magnitude / (
-            2 * solvent_volume * ionic_strength
-        )
+        solute_ion_ratio = charge_magnitude / (2 * solvent_volume * ionic_strength)
         sltcap_effective_ionic_strength = ionic_strength * (
-            numpy.sqrt(1 + solute_ion_ratio * solute_ion_ratio)
-            - solute_ion_ratio
+            numpy.sqrt(1 + solute_ion_ratio * solute_ion_ratio) - solute_ion_ratio
         )
 
         # Compute number of ions expected for neutral solute and for SLTCAP
-        n_cation_expected_neutral = int(numpy.round(
-            solvent_volume * ionic_strength - total_charge / 2
-        ))
-        n_anion_expected_neutral = int(numpy.round(
-            solvent_volume * ionic_strength + total_charge / 2
-        ))
-        n_cation_expected_sltcap = int(numpy.round(
-            solvent_volume * ionic_strength
-            * numpy.sqrt(1 + solute_ion_ratio * solute_ion_ratio)
-            - total_charge / 2
-        ))
-        n_anion_expected_sltcap = int(numpy.round(
-            solvent_volume * ionic_strength
-            * numpy.sqrt(1 + solute_ion_ratio * solute_ion_ratio)
-            + total_charge / 2
-        ))
+        n_cation_expected_neutral = int(
+            numpy.round(solvent_volume * ionic_strength - total_charge / 2)
+        )
+        n_anion_expected_neutral = int(
+            numpy.round(solvent_volume * ionic_strength + total_charge / 2)
+        )
+        n_cation_expected_sltcap = int(
+            numpy.round(
+                solvent_volume
+                * ionic_strength
+                * numpy.sqrt(1 + solute_ion_ratio * solute_ion_ratio)
+                - total_charge / 2
+            )
+        )
+        n_anion_expected_sltcap = int(
+            numpy.round(
+                solvent_volume
+                * ionic_strength
+                * numpy.sqrt(1 + solute_ion_ratio * solute_ion_ratio)
+                + total_charge / 2
+            )
+        )
 
         print(
-            f'Solute-to-ion ratio |Q| / (2 e V_w C_0): {solute_ion_ratio:f}'
-            '\nEffective ionic strength: '
-            f'{sltcap_effective_ionic_strength.value_in_unit(unit.molar):f} M'
-            '\nExpected number of ions for neutral solute: '
-            f'{int(numpy.round(n_cation_expected_neutral)):d} Na+ '
-            f'{int(numpy.round(n_anion_expected_neutral)):d} Cl-'
-            '\nExpected number of ions for SLTCAP: '
-            f'{int(numpy.round(n_cation_expected_sltcap)):d} Na+ '
-            f'{int(numpy.round(n_anion_expected_sltcap)):d} Cl-'
+            f"Solute-to-ion ratio |Q| / (2 e V_w C_0): {solute_ion_ratio:f}"
+            "\nEffective ionic strength: "
+            f"{sltcap_effective_ionic_strength.value_in_unit(unit.molar):f} M"
+            "\nExpected number of ions for neutral solute: "
+            f"{int(numpy.round(n_cation_expected_neutral)):d} Na+ "
+            f"{int(numpy.round(n_anion_expected_neutral)):d} Cl-"
+            "\nExpected number of ions for SLTCAP: "
+            f"{int(numpy.round(n_cation_expected_sltcap)):d} Na+ "
+            f"{int(numpy.round(n_anion_expected_sltcap)):d} Cl-"
         )
 
         # Add ions using modeller with effective ionic strength to achieve
         # expected number of ion pairs from SLTCAP
         modeller._addIons(
-            force_field, n_water, water_positions,
-            ionicStrength = sltcap_effective_ionic_strength,
-            neutralize = True,
+            force_field,
+            n_water,
+            water_positions,
+            ionicStrength=sltcap_effective_ionic_strength,
+            neutralize=True,
         )
 
     elif total_charge != 0:
-
         # Neutralize if there are no bulk ions
         modeller._addIons(
-            force_field, n_water, water_positions,
-            ionicStrength = ionic_strength,
-            neutralize = True,
+            force_field,
+            n_water,
+            water_positions,
+            ionicStrength=ionic_strength,
+            neutralize=True,
         )
 
     # Report the number of ions added
@@ -424,36 +561,33 @@ def solvate(
             elif residue.name == _chlorine_residue:
                 n_anion += 1
 
-    print(f'Actual number of ions added: {n_cation} Na+ {n_anion} Cl-')
+    print(f"Actual number of ions added: {n_cation} Na+ {n_anion} Cl-")
 
     # Write solvated system to PDB file
     write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
 
     # Create an OpenMM System from the solvated system
     if smirnoff:
-
         openmm_system = force_field.createSystem(modeller.topology)
 
     else:
-
         switch_distance = nonbonded_cutoff - vdw_switch_width
         openmm_system = force_field.createSystem(
             modeller.topology,
-            nonbondedMethod = app.PME,
-            nonbondedCutoff = nonbonded_cutoff,
-            switchDistance = switch_distance,
-            constraints = app.HBonds,
+            nonbondedMethod=app.PME,
+            nonbondedCutoff=nonbonded_cutoff,
+            switchDistance=switch_distance,
+            constraints=app.HBonds,
         )
 
     # Validate total charge of solvated system
     for i in range(openmm_system.getNumForces()):
         if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
-
             nonbonded_force = openmm_system.getForce(i)
             break
 
     else:
-        raise ValueError('The ForceField does not specify a NonbondedForce')
+        raise ValueError("The ForceField does not specify a NonbondedForce")
 
     solvated_total_charge = unit.Quantity(0, unit.elementary_charge)
     for i in range(nonbonded_force.getNumParticles()):
@@ -464,9 +598,8 @@ def solvate(
     )
 
     if solvated_total_charge != 0:
-
         raise ValueError(
-            f'Total charge of solvated system is {solvated_total_charge:d}'
+            f"Total charge of solvated system is {solvated_total_charge:d}"
         )
 
     # Write OpenMM system to XML file
@@ -499,9 +632,8 @@ def minimize(
     if not restraint_energy_constant.unit.is_compatible(
         unit.kilojoules_per_mole / unit.nanometer**2
     ):
-
         raise ValueError(
-            'restraint_energy_constant does not have units of Energy Length^-2'
+            "restraint_energy_constant does not have units of Energy Length^-2"
         )
 
     k = restraint_energy_constant.value_in_unit(
@@ -509,8 +641,8 @@ def minimize(
     )
 
     print(
-        f'Minimizing energy with Cartesian restraint energy constant {k:.4f} '
-        'kcal mol^-1 angstrom^-2'
+        f"Minimizing energy with Cartesian restraint energy constant {k:.4f} "
+        "kcal mol^-1 angstrom^-2"
     )
 
     # Load OpenMM system and solvated PDB
@@ -519,18 +651,18 @@ def minimize(
 
     # Create Cartesian restraints on non-hydrogen solute atoms
     cartesian_restraint = openmm.CustomExternalForce(
-        'k * periodicdistance(x, y, z, x0, y0, z0)^2'
+        "k * periodicdistance(x, y, z, x0, y0, z0)^2"
     )
     openmm_system.addForce(cartesian_restraint)
-    cartesian_restraint.addGlobalParameter('k', restraint_energy_constant)
-    cartesian_restraint.addPerParticleParameter('x0')
-    cartesian_restraint.addPerParticleParameter('y0')
-    cartesian_restraint.addPerParticleParameter('z0')
+    cartesian_restraint.addGlobalParameter("k", restraint_energy_constant)
+    cartesian_restraint.addPerParticleParameter("x0")
+    cartesian_restraint.addPerParticleParameter("y0")
+    cartesian_restraint.addPerParticleParameter("z0")
 
     _hydrogen = openmm.app.element.hydrogen
     _sodium_residue = app.element.sodium.symbol.upper()
     _chlorine_residue = app.element.chlorine.symbol.upper()
-    solvent_residue_names = ['HOH', _sodium_residue, _chlorine_residue]
+    solvent_residue_names = ["HOH", _sodium_residue, _chlorine_residue]
     for chain in solvated_pdb.topology.chains():
         for residue in chain.residues():
             if residue.name not in solvent_residue_names:
@@ -541,31 +673,27 @@ def minimize(
                         )
 
     # Set up minimization and print initial energy
-    integrator = openmm.VerletIntegrator(1.0 * unit.femtoseconds)
+    integrator = openmm.VerletIntegrator(1.0 * unit.femtosecond)
     simulation = app.Simulation(
         solvated_pdb.topology,
         openmm_system,
         integrator,
-        openmm.Platform.getPlatformByName('CUDA'),
+        openmm.Platform.getPlatformByName("CUDA"),
     )
     simulation.context.setPositions(solvated_pdb.positions)
-    initial_state = simulation.context.getState(getEnergy = True)
+    initial_state = simulation.context.getState(getEnergy=True)
     initial_energy = initial_state.getPotentialEnergy().value_in_unit(
         unit.kilocalories_per_mole
     )
-    print(
-        f'Initial energy of solvated system: {initial_energy:.4f} kcal mol^-1'
-    )
+    print(f"Initial energy of solvated system: {initial_energy:.4f} kcal mol^-1")
 
     # Run minimization with Cartesian restraints and print final energy
     simulation.minimizeEnergy()
-    final_state = simulation.context.getState(
-        getEnergy = True, getPositions = True
-    )
+    final_state = simulation.context.getState(getEnergy=True, getPositions=True)
     final_energy = final_state.getPotentialEnergy().value_in_unit(
         unit.kilocalories_per_mole
     )
-    print(f'Final energy of minimized system: {final_energy:.4f} kcal mol^-1')
+    print(f"Final energy of minimized system: {final_energy:.4f} kcal mol^-1")
 
     # Write minimized coordinates to PDB
     write_pdb(
@@ -573,4 +701,3 @@ def minimize(
         simulation.topology,
         final_state.getPositions(),
     )
-

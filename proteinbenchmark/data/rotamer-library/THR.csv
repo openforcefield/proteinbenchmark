@@ -1,0 +1,4 @@
+res_type,rotamer,n,frequency%,chi1_mean,chi1_esd,CA_CB_CG2_mean,CA_CB_CG2_esd,CA_CB_OG1_mean,CA_CB_OG1_esd,CA_C_O_mean,CA_C_O_esd,CB_CA_C_mean,CB_CA_C_esd,N_CA_C_mean,N_CA_C_esd,N_CA_CB_mean,N_CA_CB_esd,OG1_CB_CG2_mean,OG1_CB_CG2_esd
+THR,p,36195,48.14,61,7.7,111.0,1.01,109.5,0.97,120.5,0.96,108.8,1.70,111.4,2.77,111.8,1.26,109.2,1.71
+THR,m,33559,44.64,-60,6.1,111.1,0.94,108.9,0.97,120.5,0.81,110.0,1.53,110.2,2.31,110.7,1.19,108.8,1.67
+THR,t,5197,6.91,-173,7.4,111.7,1.10,109.5,0.99,120.6,0.83,111.0,1.90,110.1,2.33,111.3,1.34,109.1,1.81

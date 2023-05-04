@@ -1,0 +1,4 @@
+res_type,rotamer,n,frequency%,chi1_mean,chi1_esd,CA_CB_OG_mean,CA_CB_OG_esd,CA_C_O_mean,CA_C_O_esd,CB_CA_C_mean,CB_CA_C_esd,N_CA_C_mean,N_CA_C_esd,N_CA_CB_mean,N_CA_CB_esd
+SER,p,36901,48.44,66,8.6,111.0,1.35,120.5,0.92,109.9,1.39,111.6,2.52,110.7,1.12
+SER,m,21558,28.30,-64,7.7,110.5,1.46,120.5,0.85,109.5,1.45,111.5,2.44,110.6,1.03
+SER,t,17502,22.97,179,9.0,110.7,1.42,120.6,0.82,109.8,1.45,110.5,2.40,110.1,1.21
