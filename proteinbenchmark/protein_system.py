@@ -32,6 +32,7 @@ class ProteinBenchmarkSystem:
         water_model_name: str,
         force_field_file: str,
         water_model_file: str = None,
+        sim_platform: str = 'open_mm'
     ):
         """
         Initializes the ProteinBenchmarkSystem object with target parameters.
@@ -54,6 +55,8 @@ class ProteinBenchmarkSystem:
             The name of the file containing the force field parameters.
         water_model_file
             The name of the file containing the water model parameters.
+        sim_platform
+            Simulation platform from which to run energy minimization, equilibration, and production simulations
         """
 
         self.target_name = target_name
@@ -62,6 +65,7 @@ class ProteinBenchmarkSystem:
         self.water_model = water_model_name
         self.force_field_file = force_field_file
         self.water_model_file = water_model_file
+        self.sim_platform = sim_platform
 
         # Check thermodynamic state
         for quantity in ["pressure", "temperature", "ph", "ionic_strength"]:
@@ -177,6 +181,8 @@ class ProteinBenchmarkSystem:
                 force_field_file=self.force_field_file,
                 water_model_file=self.water_model_file,
                 solvent_padding=solvent_padding,
+                setup_prefix = self.setup_prefix,
+                sim_platform = self.sim_platform,
             )
 
         # Minimize energy of solvated system with Cartesian restraints on
@@ -197,6 +203,8 @@ class ProteinBenchmarkSystem:
                 openmm_system_xml=self.openmm_system,
                 solvated_pdb_file=solvated_pdb,
                 minimized_pdb_file=self.minimized_pdb,
+                setup_prefix = self.setup_prefix,
+                sim_platform = self.sim_platform
             )
 
         print(f"Setup complete for system {self.system_name}")
