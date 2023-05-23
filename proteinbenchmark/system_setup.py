@@ -612,8 +612,7 @@ def solvate(
     else:
         #Create interchange object
         from openff.interchange import Interchange
-        print(force_field_file)
-        interchange = Interchange.from_smirnoff(force_field = force_field_file, topology=modeller.topology) 
+        interchange = Interchange.from_openmm(topology=modeller.topology, unique_molecules=unique_molecules) 
         interchange.positions = modeller.positions
 
         #Export GROMACS file format
