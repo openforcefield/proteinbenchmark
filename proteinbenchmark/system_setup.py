@@ -612,7 +612,7 @@ def solvate(
     else:
         #Create interchange object
         from openff.interchange import Interchange
-        interchange = Interchange.from_openmm(topology=modeller.topology, unique_molecules=unique_molecules) 
+        interchange = Interchange.from_openmm(topology=modeller.topology) 
         interchange.positions = modeller.positions
 
         #Export GROMACS file format
