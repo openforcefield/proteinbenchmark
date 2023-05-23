@@ -609,10 +609,11 @@ def solvate(
 
         # Write OpenMM system to XML file
         write_xml(openmm_system_xml, openmm_system)
+    
     else:
         #Create interchange object
         from openff.interchange import Interchange
-        interchange = Interchange.from_openmm(topology=modeller.topology) 
+        interchange = Interchange.from_openmm(topology=modeller.topology, unique_molecules=unique_molecules) 
         interchange.positions = modeller.positions
 
         #Export GROMACS file format
