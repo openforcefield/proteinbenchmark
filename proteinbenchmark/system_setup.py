@@ -570,61 +570,71 @@ def solvate(
     # Write solvated system to PDB file
     write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
 
-    if sim_platform != 'gmx':
-        # Create an OpenMM System from the solvated system
-        if smirnoff:
-            openmm_system = force_field.createSystem(modeller.topology)
+    # Create an OpenMM System from the solvated system
+    if smirnoff:
+        openmm_system = force_field.createSystem(modeller.topology)
 
-        else:
-            switch_distance = nonbonded_cutoff - vdw_switch_width
-            openmm_system = force_field.createSystem(
-                modeller.topology,
-                nonbondedMethod=app.PME,
-                nonbondedCutoff=nonbonded_cutoff,
-                switchDistance=switch_distance,
-                constraints=app.HBonds,
-            )
-
-        # Validate total charge of solvated system
-        for i in range(openmm_system.getNumForces()):
-            if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
-                nonbonded_force = openmm_system.getForce(i)
-                break
-
-        else:
-            raise ValueError("The ForceField does not specify a NonbondedForce")
-
-        solvated_total_charge = unit.Quantity(0, unit.elementary_charge)
-        for i in range(nonbonded_force.getNumParticles()):
-            solvated_total_charge += nonbonded_force.getParticleParameters(i)[0]
-
-        solvated_total_charge = int(
-            numpy.round(solvated_total_charge.value_in_unit(unit.elementary_charge))
+    else:
+        switch_distance = nonbonded_cutoff - vdw_switch_width
+        openmm_system = force_field.createSystem(
+            modeller.topology,
+            nonbondedMethod=app.PME,
+            nonbondedCutoff=nonbonded_cutoff,
+            switchDistance=switch_distance,
+            constraints=app.HBonds,
         )
 
-        if solvated_total_charge != 0:
-            raise ValueError(
-                f"Total charge of solvated system is {solvated_total_charge:d}"
-            )
+    # Validate total charge of solvated system
+    for i in range(openmm_system.getNumForces()):
+        if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
+            nonbonded_force = openmm_system.getForce(i)
+            break
 
-        # Write OpenMM system to XML file
-        write_xml(openmm_system_xml, openmm_system)
-    
     else:
-        #Create interchange object
-        from openff.interchange import Interchange
-        solute_off_topology = OFFTopology.from_pdb(protonated_pdb_file)
-        unique_molecules = [
-            *solute_off_topology.unique_molecules,
-            OFFMolecule.from_smiles("O"),
-            OFFMolecule.from_smiles("[Na+1]"),
-            OFFMolecule.from_smiles("[Cl-1]"),
-        ]
-        interchange = Interchange.from_openmm(topology=modeller.topology, unique_molecules) 
-        interchange.positions = modeller.positions
+        raise ValueError("The ForceField does not specify a NonbondedForce")
 
-        #Export GROMACS file format
-        interchange.to_gromacs(prefix=setup_prefix)
+    solvated_total_charge = unit.Quantity(0, unit.elementary_charge)
+    for i in range(nonbonded_force.getNumParticles()):
+        solvated_total_charge += nonbonded_force.getParticleParameters(i)[0]
+
+    solvated_total_charge = int(
+        numpy.round(solvated_total_charge.value_in_unit(unit.elementary_charge))
+    )
+
+    if solvated_total_charge != 0:
+        raise ValueError(
+            f"Total charge of solvated system is {solvated_total_charge:d}"
+        )
+
+    # Write OpenMM system to XML file
+    write_xml(openmm_system_xml, openmm_system)
+    
+    if sim_platform == 'gmx':
+        import parmed
+        from openforcefield.tests.utils import compare_system_energies
+        
+        #Convert to GROMACS
+        parmed_structure = parmed.openmm.load_topology(modeller.topology, openmm_system, modeller.positions)
+        parmed_structure.save(setup_prefix + '.top', overwrite=True)
+        parmed_structure.save(setup_prefix + '.gro', overwrite=True)
+
+        #Compare Energies
+        gmx_structure = parmed.load_file(setup_prefix + '.top', setup_prefix + '.gro')
+        gmx_system = gmx_structure.createSystem(nonbondedMethod=PME,
+                                            nonbondedCutoff=9.0*unit.angstrom,
+                                            switchDistance=0.0*unit.angstrom,
+                                            constraints=HBonds,
+                                            removeCMMotion=False)
+        gmx_energies, omm_energies = compare_system_energies(gmx_system, openmm_system, gmx_structure.positions, gmx_structure.box_vectors, rtol=1e-3)
+        
+        print('Original OpenMM System:')
+        print('-----------------------')
+        print(omm_energies)
+
+        print('System loaded from AMBER files:')
+        print('-------------------------------')
+        print(gmx_energies)
+
 
 
 def minimize(
