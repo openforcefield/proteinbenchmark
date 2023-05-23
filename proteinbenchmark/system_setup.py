@@ -611,7 +611,7 @@ def solvate(
     
     if sim_platform == 'gmx':
         import parmed
-        from openforcefield.tests.utils import compare_system_energies
+        from openff.tests.utils import compare_system_energies
         
         #Convert to GROMACS
         parmed_structure = parmed.openmm.load_topology(modeller.topology, openmm_system, modeller.positions)
