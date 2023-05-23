@@ -613,7 +613,14 @@ def solvate(
     else:
         #Create interchange object
         from openff.interchange import Interchange
-        interchange = Interchange.from_openmm(topology=modeller.topology, unique_molecules=unique_molecules) 
+        solute_off_topology = OFFTopology.from_pdb(protonated_pdb_file)
+        unique_molecules = [
+            *solute_off_topology.unique_molecules,
+            OFFMolecule.from_smiles("O"),
+            OFFMolecule.from_smiles("[Na+1]"),
+            OFFMolecule.from_smiles("[Cl-1]"),
+        ]
+        interchange = Interchange.from_openmm(topology=modeller.topology, unique_molecules) 
         interchange.positions = modeller.positions
 
         #Export GROMACS file format
