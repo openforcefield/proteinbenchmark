@@ -1,7 +1,7 @@
-# Observable Resid Experiment Uncertainty
-1j_n_ca      2      11.24       0.59
-2j_n_ca      2       8.38       0.50
-3j_ha_co     2       2.07       0.38
-3j_hn_cb     2       1.59       0.25
-3j_hn_co     2       0.94       0.31
-3j_hn_ha     2       6.99       0.42
+Observable Resid Resname Experiment Uncertainty
+1j_n_ca        2   GLU      11.24       0.59
+2j_n_ca        2   GLU       8.38       0.50
+3j_ha_co       2   GLU       2.07       0.38
+3j_hn_cb       2   GLU       1.59       0.25
+3j_hn_co       2   GLU       0.94       0.31
+3j_hn_ha       2   GLU       6.99       0.42

@@ -205,6 +205,7 @@ HENNIG_KARPLUS_PARAMETERS = {
 }
 
 # Karplus parameters for backbone scalar couplings from
+# Vogeli B, Ying J, Grishaev A, Bax A. (2007). J. Am. Chem. Soc. 129, 9377-9385.
 VOGELI_KARPLUS_PARAMETERS = {
     "3j_co_co": {
         "dihedral": "phi",
@@ -245,6 +246,51 @@ VOGELI_KARPLUS_PARAMETERS = {
         "B": -1.26 / unit.second,
         "C": 0.63 / unit.second,
         "sigma": 0.42 / unit.second,
+    },
+}
+
+# Karplus parameters for backbone scalar couplings from
+# Schmidt JM, Blumel M, Lohr F, Ruterjans H. (1999). J. Biomol. NMR 14, 1-12.
+SCHMIDT_KARPLUS_PARAMETERS = {
+    "3j_co_co": {
+        "dihedral": "phi",
+        "delta": 0.0,
+        "A": 1.51 / unit.second,
+        "B": -1.09 / unit.second,
+        "C": 0.52 / unit.second,
+        "sigma": 0.35 / unit.second,
+    },
+    "3j_ha_co": {
+        "dihedral": "phi",
+        "delta": 120.0,
+        "A": 3.76 / unit.second,
+        "B": -1.63 / unit.second,
+        "C": 0.89 / unit.second,
+        "sigma": 0.35 / unit.second,
+    },
+    "3j_hn_cb": {
+        "dihedral": "phi",
+        "delta": 60.0,
+        "A": 2.90 / unit.second,
+        "B": -0.56 / unit.second,
+        "C": 0.18 / unit.second,
+        "sigma": 0.35 / unit.second,
+    },
+    "3j_hn_co": {
+        "dihedral": "phi",
+        "delta": 180.0,
+        "A": 4.41 / unit.second,
+        "B": -1.36 / unit.second,
+        "C": 0.24 / unit.second,
+        "sigma": 0.35 / unit.second,
+    },
+    "3j_hn_ha": {
+        "dihedral": "phi",
+        "delta": -60.0,
+        "A": 7.90 / unit.second,
+        "B": -1.05 / unit.second,
+        "C": 0.65 / unit.second,
+        "sigma": 0.35 / unit.second,
     },
 }
 
@@ -420,7 +466,7 @@ PEREZ_KARPLUS_PARAMETERS = {
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 2.40 / unit.second,
-            "sigma": 0.31 / unit.second,
+            "sigma": 0.40 / unit.second,
         },
     },
     "3j_ha_hb3": {
@@ -430,7 +476,75 @@ PEREZ_KARPLUS_PARAMETERS = {
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 2.40 / unit.second,
-            "sigma": 0.31 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+    },
+    "3j_co_cg1": {
+        "dihedral": "chi1",
+        "VAL": {
+            "delta": -120.0,
+            "A": 2.31 / unit.second,
+            "B": -0.87 / unit.second,
+            "C": 0.45 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+    },
+    "3j_co_cg2": {
+        "dihedral": "chi1",
+        "ILE": {
+            "delta": 125.0,
+            "A": 2.31 / unit.second,
+            "B": -0.87 / unit.second,
+            "C": 0.41 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "THR": {
+            "delta": 137.0,
+            "A": 2.31 / unit.second,
+            "B": -0.87 / unit.second,
+            "C": 0.21 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "VAL": {
+            "delta": 0.0,
+            "A": 2.31 / unit.second,
+            "B": -0.87 / unit.second,
+            "C": 0.45 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+    },
+    "3j_n_cg1": {
+        "dihedral": "chi1",
+        "VAL": {
+            "delta": 0.0,
+            "A": 1.29 / unit.second,
+            "B": -0.49 / unit.second,
+            "C": 0.31 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+    },
+    "3j_n_cg2": {
+        "dihedral": "chi1",
+        "ILE": {
+            "delta": -120.0,
+            "A": 1.29 / unit.second,
+            "B": -0.49 / unit.second,
+            "C": 0.29 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "THR": {
+            "delta": -120.0,
+            "A": 1.29 / unit.second,
+            "B": -0.49 / unit.second,
+            "C": 0.16 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "VAL": {
+            "delta": 120.0,
+            "A": 1.29 / unit.second,
+            "B": -0.49 / unit.second,
+            "C": 0.31 / unit.second,
+            "sigma": 0.40 / unit.second,
         },
     },
 }

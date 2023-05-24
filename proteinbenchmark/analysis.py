@@ -653,6 +653,8 @@ def compute_scalar_couplings(
 
     if karplus == "vogeli":
         karplus_parameters = VOGELI_KARPLUS_PARAMETERS
+    elif karplus == "schmidt":
+        karplus_parameters = SCHMIDT_KARPLUS_PARAMETERS
     elif karplus == "hu":
         karplus_parameters = HU_KARPLUS_PARAMETERS
     elif karplus == "case_dft1":
@@ -670,14 +672,16 @@ def compute_scalar_couplings(
     karplus_parameters.update(DING_KARPLUS_PARAMETERS)
     karplus_parameters.update(HENNIG_KARPLUS_PARAMETERS)
     karplus_parameters.update(PEREZ_KARPLUS_PARAMETERS)
-    karplus_parameters.update(CHOU_KARPLUS_PARAMETERS)
+
+    if karplus != "schmidt":
+        karplus_parameters.update(CHOU_KARPLUS_PARAMETERS)
 
     # Load data for experimental observables
+    # Take uncertainty from Karplus parameters, not from experiment
     observable_df = pandas.read_csv(
         observable_path,
         sep="\s+",
-        skiprows=1,
-        names=["Observable", "Resid", "Experiment", "Uncertainty"],
+        usecols=["Observable", "Resid", "Resname", "Experiment"],
     )
 
     # Read time series of dihedrals
@@ -766,13 +770,11 @@ def compute_scalar_couplings(
 
             # Get residue specific parameters for sidechains
             if observable in {"3j_n_cg1", "3j_n_cg2", "3j_co_cg1", "3j_co_cg2"}:
-                dihedral_resname = karplus_df["Resname"].iloc[0]
+                dihedral_resname = row["Resname"]
                 observable_parameters = observable_parameters[dihedral_resname]
 
             elif observable in {"3j_ha_hb2", "3j_ha_hb3"}:
-                dihedral_resname = PEREZ_KARPLUS_RESIDUE_MAP[
-                    karplus_df["Resname"].iloc[0]
-                ]
+                dihedral_resname = PEREZ_KARPLUS_RESIDUE_MAP[row["Resname"]]
                 observable_parameters = observable_parameters[dihedral_resname]
 
             # Compute cos(theta + delta) and cos^2(theta + delta)
@@ -823,6 +825,7 @@ def compute_scalar_couplings(
 
         computed_observables.append(
             {
+                "Uncertainty": uncertainty.value_in_unit(unit.second**-1),
                 "Computed": computed_coupling.value_in_unit(unit.second**-1),
                 "Chi^2": chi_sq,
                 "Truncated Experiment": (
@@ -886,7 +889,8 @@ def compute_h_bond_scalar_couplings(
         observable_path,
         sep="\s+",
         skiprows=1,
-        names=["Observable", "Resid N", "Resid CO", "Experiment", "Uncertainty"],
+        names=["Observable", "Resid N", "Resname N", "Resid CO", "Resname CO", "Experiment", "Uncertainty"],
+        usecols=["Observable", "Resid N", "Resname N", "Resid CO", "Resname CO", "Experiment"],
     )
 
     # Skip observables that don't have a good Karplus model
@@ -907,48 +911,44 @@ def compute_h_bond_scalar_couplings(
     for index, row in observable_df.iterrows():
         observable = row["Observable"]
 
-        if observable == "3j_n_co":
-            observable_resid_n = row["Resid N"]
-            observable_resid_co = row["Resid CO"]
+        observable_resid_n = row["Resid N"]
+        observable_resid_co = row["Resid CO"]
 
-            geometry_df = h_bond_df[
-                (h_bond_df["Donor Resid"] == observable_resid_n)
-                & (h_bond_df["Acceptor Resid"] == observable_resid_co)
-                & (h_bond_df["Donor Name"] == "N")
-                & (h_bond_df["Hydrogen Name"] == "H")
-                & (h_bond_df["Acceptor Name"] == "O")
-            ]
+        geometry_df = h_bond_df[
+            (h_bond_df["Donor Resid"] == observable_resid_n)
+            & (h_bond_df["Acceptor Resid"] == observable_resid_co)
+            & (h_bond_df["Donor Name"] == "N")
+            & (h_bond_df["Hydrogen Name"] == "H")
+            & (h_bond_df["Acceptor Name"] == "O")
+        ]
 
-            HO_distance = geometry_df["HA Distance (Angstrom)"] * unit.angstrom
-            HOC_angle = DEG_TO_RAD * geometry_df["HOC Angle (deg)"]
-            HOCN_dihedral = DEG_TO_RAD * geometry_df["HOCN Dihedral (deg)"]
+        HO_distance = geometry_df["HA Distance (Angstrom)"] * unit.angstrom
+        HOC_angle = DEG_TO_RAD * geometry_df["HOC Angle (deg)"]
+        HOCN_dihedral = DEG_TO_RAD * geometry_df["HOCN Dihedral (deg)"]
 
-            exp_HO_distance = numpy.exp(-karplus_exp * HO_distance)
-            cos_sq_HOC_angle = numpy.square(numpy.cos(HOC_angle))
-            sin_sq_HOC_angle = numpy.square(numpy.sin(HOC_angle))
-            cos_HOCN_dihedral = numpy.cos(HOCN_dihedral)
-            cos_sq_HOCN_dihedral = numpy.square(cos_HOCN_dihedral)
+        exp_HO_distance = numpy.exp(-karplus_exp * HO_distance)
+        cos_sq_HOC_angle = numpy.square(numpy.cos(HOC_angle))
+        sin_sq_HOC_angle = numpy.square(numpy.sin(HOC_angle))
+        cos_HOCN_dihedral = numpy.cos(HOCN_dihedral)
+        cos_sq_HOCN_dihedral = numpy.square(cos_HOCN_dihedral)
 
-            # 3J(R, theta, phi) = (
-            #     (exp(a R_0) A cos^2 phi + exp(a R_0) B cos phi + exp(a R_0) C)
-            #     * sin^2 theta + exp(a R_0) D cos^2 theta) * exp(-a R)
-            # Order of multiplication must be Quantity * DataFrame rather than
-            # DataFrame * Quantity
-            computed_coupling = (
+        # 3J(R, theta, phi) = (
+        #     (exp(a R_0) A cos^2 phi + exp(a R_0) B cos phi + exp(a R_0) C)
+        #     * sin^2 theta + exp(a R_0) D cos^2 theta) * exp(-a R)
+        # Order of multiplication must be Quantity * DataFrame rather than
+        # DataFrame * Quantity
+        computed_coupling = (
+            (
                 (
-                    (
-                        karplus_sin_sq_cos_sq * cos_sq_HOCN_dihedral
-                        + karplus_sin_sq_cos * cos_HOCN_dihedral
-                        + karplus_sin_sq
-                    )
-                    * sin_sq_HOC_angle
-                    + karplus_cos_sq * cos_sq_HOC_angle
+                    karplus_sin_sq_cos_sq * cos_sq_HOCN_dihedral
+                    + karplus_sin_sq_cos * cos_HOCN_dihedral
+                    + karplus_sin_sq
                 )
-                * exp_HO_distance
-            ).mean()
-
-        else:
-            continue
+                * sin_sq_HOC_angle
+                + karplus_cos_sq * cos_sq_HOC_angle
+            )
+            * exp_HO_distance
+        ).mean()
 
         # Compute contribution to chi^2
         experimental_coupling = row["Experiment"] / unit.second
@@ -957,6 +957,7 @@ def compute_h_bond_scalar_couplings(
 
         computed_observables.append(
             {
+                "Uncertainty": uncertainty.value_in_unit(unit.second**-1),
                 "Computed": computed_coupling.value_in_unit(unit.second**-1),
                 "Chi^2": chi_sq,
             }
