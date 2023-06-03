@@ -1,0 +1,4 @@
+<ForceField>
+  <Include file="tip3pfb.xml"/>
+  <Include file="amber/ions/ionslm_126_fb3.xml"/>
+</ForceField>
