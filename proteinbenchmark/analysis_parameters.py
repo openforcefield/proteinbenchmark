@@ -295,7 +295,7 @@ SCHMIDT_KARPLUS_PARAMETERS = {
 }
 
 # Karplus parameters for backbone scalar couplings from
-# Hu JS, Bax AJ (1997). J. Am. Chem. Soc. 119, 6360-6368.
+# Hu JS, Bax A (1997). J. Am. Chem. Soc. 119, 6360-6368.
 HU_KARPLUS_PARAMETERS = {
     "3j_co_co": {
         "dihedral": "phi",
@@ -457,8 +457,29 @@ PEREZ_KARPLUS_RESIDUE_MAP = {
         "TYR",
     ]
 }
+PEREZ_KARPLUS_RESIDUE_MAP["ILE"] = "ILE,VAL"
+PEREZ_KARPLUS_RESIDUE_MAP["SER"] = "SER"
+PEREZ_KARPLUS_RESIDUE_MAP["THR"] = "THR"
+PEREZ_KARPLUS_RESIDUE_MAP["VAL"] = "ILE,VAL"
 
 PEREZ_KARPLUS_PARAMETERS = {
+    "3j_ha_hb": {
+        "dihedral": "chi1",
+        "ILE,VAL": {
+            "delta": 0.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 1.79 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "THR": {
+            "delta": 0.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 0.81 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+    },
     "3j_ha_hb2": {
         "dihedral": "chi1",
         "ARG,ASN,ASP,GLN,GLU,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR": {
@@ -466,6 +487,13 @@ PEREZ_KARPLUS_PARAMETERS = {
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 2.40 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "SER": {
+            "delta": -120.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 1.42 / unit.second,
             "sigma": 0.40 / unit.second,
         },
     },
@@ -476,6 +504,13 @@ PEREZ_KARPLUS_PARAMETERS = {
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 2.40 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "SER": {
+            "delta": -120.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 1.42 / unit.second,
             "sigma": 0.40 / unit.second,
         },
     },
