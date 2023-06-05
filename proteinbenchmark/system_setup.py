@@ -69,7 +69,6 @@ class _OFFForceField(OFFForceField):
                 openmm_topology,
                 unique_molecules=self._from_openmm_unique_molecules,
             )
-
         return self.create_openmm_system(openff_topology)
 
 
@@ -566,76 +565,76 @@ def solvate(
                 n_anion += 1
 
     print(f"Actual number of ions added: {n_cation} Na+ {n_anion} Cl-")
-
-    # Write solvated system to PDB file
-    write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
-
-    # Create an OpenMM System from the solvated system
-    if smirnoff:
-        openmm_system = force_field.createSystem(modeller.topology)
-
-    else:
-        switch_distance = nonbonded_cutoff - vdw_switch_width
-        openmm_system = force_field.createSystem(
-            modeller.topology,
-            nonbondedMethod=app.PME,
-            nonbondedCutoff=nonbonded_cutoff,
-            switchDistance=switch_distance,
-            constraints=app.HBonds,
-        )
-
-    # Validate total charge of solvated system
-    for i in range(openmm_system.getNumForces()):
-        if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
-            nonbonded_force = openmm_system.getForce(i)
-            break
-
-    else:
-        raise ValueError("The ForceField does not specify a NonbondedForce")
-
-    solvated_total_charge = unit.Quantity(0, unit.elementary_charge)
-    for i in range(nonbonded_force.getNumParticles()):
-        solvated_total_charge += nonbonded_force.getParticleParameters(i)[0]
-
-    solvated_total_charge = int(
-        numpy.round(solvated_total_charge.value_in_unit(unit.elementary_charge))
-    )
-
-    if solvated_total_charge != 0:
-        raise ValueError(
-            f"Total charge of solvated system is {solvated_total_charge:d}"
-        )
-
-    # Write OpenMM system to XML file
-    write_xml(openmm_system_xml, openmm_system)
     
-    if sim_platform == 'gmx':
-        import parmed
-        from openff.tests.utils import compare_system_energies
+    if sim_platform != 'gmx':
+        # Write solvated system to PDB file
+        write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
+
+        # Create an OpenMM System from the solvated system
+        if smirnoff:
+            openmm_system = force_field.createsystem(modeller.topology)
+
+        else:
+            switch_distance = nonbonded_cutoff - vdw_switch_width
+            openmm_system = force_field.createSystem(
+                modeller.topology,
+                nonbondedMethod=app.PME,
+                nonbondedCutoff=nonbonded_cutoff,
+                switchDistance=switch_distance,
+                constraints=app.HBonds,
+            )
+
+        # Validate total charge of solvated system
+        for i in range(openmm_system.getNumForces()):
+            if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
+                nonbonded_force = openmm_system.getForce(i)
+                break
+
+        else:
+            raise ValueError("The ForceField does not specify a NonbondedForce")
+
+        solvated_total_charge = unit.Quantity(0, unit.elementary_charge)
+        for i in range(nonbonded_force.getNumParticles()):
+            solvated_total_charge += nonbonded_force.getParticleParameters(i)[0]
+
+        solvated_total_charge = int(
+            numpy.round(solvated_total_charge.value_in_unit(unit.elementary_charge))
+        )
+
+        if solvated_total_charge != 0:
+            raise ValueError(
+                f"Total charge of solvated system is {solvated_total_charge:d}"
+            )
+
+        # Write OpenMM system to XML file
+        write_xml(openmm_system_xml, openmm_system)
+
+    else:
+        from openff.interchange.components.interchange import Interchange        
+        from openff.interchange.drivers import get_openmm_energies, get_gromacs_energies
+
+        solute_off_topology = OFFTopology.from_pdb(protonated_pdb_file)
+
+        unique_molecules = [
+            *solute_off_topology.unique_molecules,
+            OFFMolecule.from_smiles("O"),
+            OFFMolecule.from_smiles("[Na+1]"),
+            OFFMolecule.from_smiles("[Cl-1]"),
+        ]
+
+        off_top = OFFTopology.from_openmm(modeller.topology, unique_molecules)
         
-        #Convert to GROMACS
-        parmed_structure = parmed.openmm.load_topology(modeller.topology, openmm_system, modeller.positions)
-        parmed_structure.save(setup_prefix + '.top', overwrite=True)
-        parmed_structure.save(setup_prefix + '.gro', overwrite=True)
-
-        #Compare Energies
-        gmx_structure = parmed.load_file(setup_prefix + '.top', setup_prefix + '.gro')
-        gmx_system = gmx_structure.createSystem(nonbondedMethod=PME,
-                                            nonbondedCutoff=9.0*unit.angstrom,
-                                            switchDistance=0.0*unit.angstrom,
-                                            constraints=HBonds,
-                                            removeCMMotion=False)
-        gmx_energies, omm_energies = compare_system_energies(gmx_system, openmm_system, gmx_structure.positions, gmx_structure.box_vectors, rtol=1e-3)
+        #Create interchange object from OpenFF topology
+        if smirnoff:
+            interchange = force_field.create_interchange(topology=off_top)
+            interchange.positions = modeller.positions
+        else:
+            interchange = Interchange.from_smirnoff(force_field=force_field, topology=off_top) #Does not work!!
+            interchange.positions = modeller.positions
         
-        print('Original OpenMM System:')
-        print('-----------------------')
-        print(omm_energies)
-
-        print('System loaded from AMBER files:')
-        print('-------------------------------')
-        print(gmx_energies)
-
-
+        #Export gromacs top and gro
+        interchange.to_gromacs(str(setup_prefix))
+        print('GROMACS Files Printed')
 
 def minimize(
     restraint_energy_constant: unit.Quantity,
@@ -681,7 +680,7 @@ def minimize(
     )
 
     #If running in OpenMM 
-    if sim_platform == 'open_mm':
+    if sim_platform != 'gmx':
         # Load OpenMM system and solvated PDB
         openmm_system = read_xml(openmm_system_xml)
         solvated_pdb = app.PDBFile(solvated_pdb_file)
@@ -739,11 +738,17 @@ def minimize(
             final_state.getPositions(),
         )
     
-    elif sim_platform == 'gmx':
+    else:
         import gmxapi as gmx
+        import os
         
+        #Change working directory
+        setup_dir = str(setup_prefix).rsplit('/', 1)
+        os.chdir(setup_dir[0])
+        print('Working Directory for Energy Minimization: ' + str(os.getcwd()))
+
         #Create MDP file
-        mdpfile = setup_prefix + '-min.mdp'
+        mdpfile = setup_dir[1] + '-min.mdp'
         mdpfile_w = open(mdpfile, 'w')
         mdpfile_w.write('integrator = steep\n' + 'emtol = 100\n' + 'emstep = 0.01\n' + 'nsteps=50000\n' + 'nstlist = 1\n' + 
                       'cutoff-scheme = Verlet\n' + 'ns_type = grid\n' + 'rlist = 1.0\n' + 'coulombtype = PME\n' +
@@ -751,28 +756,33 @@ def minimize(
         mdpfile_w.close()
 
         #Create position restrints file
-        gmx.commandline_operation('gmx', 'genrestr',
+        posre = gmx.commandline_operation('gmx', 'genrestr',
                                   input_files={
-                                      '-f': setup_prefix + '.gro',
+                                      '-f': '../' + setup_dir[1] + '.gro',
                                   },
                                   output_files={
-                                      '-o': setup_prefix + 'posre.itp',
+                                      '-o': '../' + setup_dir[1] + '_posre.itp',
                                   },
                                   stdin='4')
-        #Generate TPR
-        out_tprfile = setup_prefix + '-min.tpr'
+        
+        #Check for errors on Position Restraint File Generation
+        if posre.output.returncode.result() != 0:
+            raise Exception(posre.output.stderr.result())
+       
+        #Generate TPR for Energy Minimization
+        out_tprfile = '../' + setup_dir[1] + '-min.tpr'
         min_grompp = gmx.commandline_operation('gmx', 'grompp',
                                    input_files={
-                                       '-f': mdpfile,
-                                       '-p': setup_prefix + '.top',
-                                       '-c': setup_prefix + '.gro',
+                                       '-f': '../' + mdpfile,
+                                       '-p': '../' + setup_dir[1] + '.top',
+                                       '-c': '../' + setup_dir[1] + '.gro',
                                    },
                                    output_files={'-o': out_tprfile})
-        
+
         #Check for errors on TPR File Generation
         if min_grompp.output.returncode.result() != 0:
             raise Exception(min_grompp.output.stderr.result())
         
         #Run Energy Minimization
-        min_sim = gmx.mdrun(input=min_grompp)
+        min_sim = gmx.mdrun(input=min_grompp.output.file['-o'])
         min_sim.run()
