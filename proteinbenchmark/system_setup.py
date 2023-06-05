@@ -332,9 +332,11 @@ def solvate(
     if not vdw_switch_width.unit.is_compatible(unit.nanometer):
         raise ValueError("vdw_switch_width does not have units of Length")
 
-    if water_model == "tip3p":
+    if water_model in ["opc3", "tip3p", "tip3p-fb"]:
+        water_has_virtual_sites = False
         modeller_water_model = "tip3p"
-    elif water_model == "opc":
+    elif water_model in ["opc", "tip4p-fb"]:
+        water_has_virtual_sites = True
         modeller_water_model = "tip4pew"
 
     if solvent_padding is not None:
@@ -344,7 +346,7 @@ def solvate(
         )
 
     else:
-        solvent_arg_str = "\n    n_solvent {n_solvent:d}"
+        solvent_arg_str = f"\n    n_solvent {n_solvent:d}"
 
     print(
         f"Solvating system with water model {water_model} and"
@@ -378,7 +380,7 @@ def solvate(
             force_field = _OFFForceField(
                 unique_molecules,
                 force_field_file,
-                remove_water_virtual_sites=water_model != "tip3p",
+                remove_water_virtual_sites=water_has_virtual_sites,
             )
             print(f"Force field read from\n    {force_field_file}")
 
@@ -387,7 +389,7 @@ def solvate(
                 unique_molecules,
                 force_field_file,
                 water_model_file,
-                remove_water_virtual_sites=water_model != "tip3p",
+                remove_water_virtual_sites=water_has_virtual_sites,
             )
             print(
                 f"Force field read from\n    {force_field_file}"
@@ -440,6 +442,18 @@ def solvate(
             ionicStrength=0 * unit.molar,
             neutralize=False,
         )
+
+        # Set dodecahedron box vectors correctly
+        from openmm.vec3 import Vec3
+        box_width = modeller.topology.getPeriodicBoxVectors()[0][0].value_in_unit(
+            unit.nanometer
+        )
+        box_vectors = (
+            Vec3(box_width, 0, 0),
+            Vec3(1/3, 2 * numpy.sqrt(2)/3, 0) * box_width,
+            Vec3(-1/3, numpy.sqrt(2)/3, numpy.sqrt(6)/3) * box_width
+        )
+        modeller.topology.setPeriodicBoxVectors(box_vectors * unit.nanometer)
 
     # Add salt ions using the SLTCAP method
 
