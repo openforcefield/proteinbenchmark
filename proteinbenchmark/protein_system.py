@@ -260,31 +260,68 @@ class ProteinBenchmarkSystem:
             else:
                 equil_frame_length = EQUIL_FRAME_LENGTH
 
-            # Initialize the equilibration simulation
-            equilibration_dcd = f"{equil_prefix}.dcd"
-            equilibration_state_data = f"{equil_prefix}.out"
-            equilibration_checkpoint = f"{equil_prefix}.chk"
+            if self.sim_platform != 'gmx':
+                # Initialize the equilibration simulation
+                equilibration_dcd = f"{equil_prefix}.dcd"
+                equilibration_state_data = f"{equil_prefix}.out"
+                equilibration_checkpoint = f"{equil_prefix}.chk"
 
-            equilibration_simulation = OpenMMSimulation(
-                openmm_system_file=self.openmm_system,
-                initial_pdb_file=self.minimized_pdb,
-                dcd_reporter_file=equilibration_dcd,
-                state_reporter_file=equilibration_state_data,
-                checkpoint_file=equilibration_checkpoint,
-                save_state_prefix=equil_prefix,
-                temperature=self.target_parameters["temperature"],
-                pressure=self.target_parameters["pressure"],
-                langevin_friction=equil_langevin_friction,
-                barostat_frequency=equil_barostat_frequency,
-                timestep=equil_timestep,
-                traj_length=equil_traj_length,
-                frame_length=equil_frame_length,
-                checkpoint_length=equil_traj_length,
-                save_state_length=equil_traj_length,
-            )
+                equilibration_simulation = OpenMMSimulation(
+                    openmm_system_file=self.openmm_system,
+                    initial_pdb_file=self.minimized_pdb,
+                    dcd_reporter_file=equilibration_dcd,
+                    state_reporter_file=equilibration_state_data,
+                    checkpoint_file=equilibration_checkpoint,
+                    save_state_prefix=equil_prefix,
+                    temperature=self.target_parameters["temperature"],
+                    pressure=self.target_parameters["pressure"],
+                    langevin_friction=equil_langevin_friction,
+                    barostat_frequency=equil_barostat_frequency,
+                    timestep=equil_timestep,
+                    traj_length=equil_traj_length,
+                    frame_length=equil_frame_length,
+                    checkpoint_length=equil_traj_length,
+                    save_state_length=equil_traj_length,
+                )
 
-            # Run equilibration
-            equilibration_simulation.start_from_pdb()
+                # Run equilibration
+                equilibration_simulation.start_from_pdb()
+            else:
+                NVT_simulation = GMXSimulation(
+                    initial_pdb_file=self.minimized_pdb,
+                    save_state_prefix=equil_prefix,
+                    temperature=self.target_parameters["temperature"],
+                    pressure=self.target_parameters["pressure"],
+                    langevin_friction=equil_langevin_friction,
+                    barostat_frequency=equil_barostat_frequency,
+                    timestep=equil_timestep,
+                    traj_length=equil_traj_length,
+                    frame_length=equil_frame_length,
+                    checkpoint_length=equil_traj_length,
+                    save_state_length=equil_traj_length,
+                    restraints_present = 'NVT',
+                )
+
+                NVT_simulation.run()
+                
+                NPT_simulation = GMXSimulation(
+                    initial_pdb_file=self.minimized_pdb,
+                    save_state_prefix=equil_prefix,
+                    temperature=self.target_parameters["temperature"],
+                    pressure=self.target_parameters["pressure"],
+                    langevin_friction=equil_langevin_friction,
+                    barostat_frequency=equil_barostat_frequency,
+                    timestep=equil_timestep,
+                    traj_length=equil_traj_length,
+                    frame_length=equil_frame_length,
+                    checkpoint_length=equil_traj_length,
+                    save_state_length=equil_traj_length,
+                    restraints_present = 'NPT',
+                )
+
+                NPT_simulation.run()
+            
+
 
         print(f"Running NPT production for system {self.system_name}")
 
@@ -335,38 +372,59 @@ class ProteinBenchmarkSystem:
         else:
             save_state_length = SAVE_STATE_LENGTH
 
-        # Initialize the production simulation
-        production_dcd = f"{prod_prefix}.dcd"
-        production_state_data = f"{prod_prefix}.out"
-        production_checkpoint = f"{prod_prefix}.chk"
+        if self.sim_platform != 'gmx':
+            # Initialize the production simulation
+            production_dcd = f"{prod_prefix}.dcd"
+            production_state_data = f"{prod_prefix}.out"
+            production_checkpoint = f"{prod_prefix}.chk"
 
-        production_simulation = OpenMMSimulation(
-            openmm_system_file=self.openmm_system,
-            initial_pdb_file=self.minimized_pdb,
-            dcd_reporter_file=production_dcd,
-            state_reporter_file=production_state_data,
-            checkpoint_file=production_checkpoint,
-            save_state_prefix=prod_prefix,
-            temperature=self.target_parameters["temperature"],
-            pressure=self.target_parameters["pressure"],
-            langevin_friction=langevin_friction,
-            barostat_frequency=barostat_frequency,
-            timestep=timestep,
-            traj_length=traj_length,
-            frame_length=frame_length,
-            checkpoint_length=checkpoint_length,
-            save_state_length=save_state_length,
-        )
+            production_simulation = OpenMMSimulation(
+                openmm_system_file=self.openmm_system,
+                initial_pdb_file=self.minimized_pdb,
+                dcd_reporter_file=production_dcd,
+                state_reporter_file=production_state_data,
+                checkpoint_file=production_checkpoint,
+                save_state_prefix=prod_prefix,
+                temperature=self.target_parameters["temperature"],
+                pressure=self.target_parameters["pressure"],
+                langevin_friction=langevin_friction,
+                barostat_frequency=barostat_frequency,
+                timestep=timestep,
+                traj_length=traj_length,
+                frame_length=frame_length,
+                checkpoint_length=checkpoint_length,
+                save_state_length=save_state_length,
+            )
+            
+            # Run production
+            if not exists_and_not_empty(production_checkpoint):
+                # Start production simulation, initializing positions and velocities
+                # to the final state from the equilibration simulation
+                production_simulation.start_from_save_state(equilibrated_state)
 
-        # Run production
-        if not exists_and_not_empty(production_checkpoint):
-            # Start production simulation, initializing positions and velocities
-            # to the final state from the equilibration simulation
-            production_simulation.start_from_save_state(equilibrated_state)
-
+            else:
+                # Resume from a previous production checkpoint
+                production_simulation.resume_from_checkpoint()
+        
         else:
-            # Resume from a previous production checkpoint
-            production_simulation.resume_from_checkpoint()
+            production_simulation = GMXSimulation(
+                    initial_pdb_file=self.minimized_pdb,
+                    save_state_prefix=equil_prefix,
+                    temperature=self.target_parameters["temperature"],
+                    pressure=self.target_parameters["pressure"],
+                    langevin_friction=equil_langevin_friction,
+                    barostat_frequency=equil_barostat_frequency,
+                    timestep=equil_timestep,
+                    traj_length=equil_traj_length,
+                    frame_length=equil_frame_length,
+                    checkpoint_length=equil_traj_length,
+                    save_state_length=equil_traj_length,
+                    restraints_present = False,
+                )
+            #Run Production
+            production_simulation.run()
+            
+        
 
     def analyze_observables(self, replica: int = 1):
         """Process trajectories and estimate observables."""

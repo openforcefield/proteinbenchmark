@@ -110,7 +110,7 @@ class GMXSimulation:
         return_pdb
             Return PDBFile as well as print TPR
         """
-        
+
         #Create MDP File
         mdpfile = self.save_state_prefix + '-min.mdp'
         mdpfile_w = open(mdpfile, 'w')
@@ -138,6 +138,7 @@ class GMXSimulation:
                                        '-maxwarn': '2',
                                    },
                                    output_files={'-o': out_tprfile})
+        
         elif self.restraints_present == 'NPT':
             out_tprfile = str(self.save_state_prefix) + '-npt.tpr'
             grompp = gmx.commandline_operation('gmx', 'grompp',
@@ -150,6 +151,7 @@ class GMXSimulation:
                                        '-maxwarn': '2',
                                    },
                                    output_files={'-o': out_tprfile})
+        
         else:
             out_tprfile = str(self.save_state_prefix) + '-npt.tpr'
             grompp = gmx.commandline_operation('gmx', 'grompp',
@@ -170,7 +172,7 @@ class GMXSimulation:
         
         return grompp
 
-    def start_from_pdb(self):
+    def start_run(self):
         """
         Start a new simulation initializing positions from a PDB and velocities
         to random samples from a Boltzmann distribution at the simulation
