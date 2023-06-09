@@ -6,6 +6,7 @@ from openmm import app, unit
 
 from proteinbenchmark.analysis import (align_trajectory,
                                        assign_dihedral_clusters,
+                                       compute_fraction_helix,
                                        compute_h_bond_scalar_couplings,
                                        compute_scalar_couplings,
                                        measure_dihedrals,
@@ -456,7 +457,7 @@ class ProteinBenchmarkSystem:
                 output_path=scalar_couplings,
             )
 
-        # Scalar couplings
+        # Hydrogen bond interresidue scalar couplings
         h_bond_scalar_couplings = f"{analysis_prefix}-h-bond-scalar-couplings.dat"
 
         if (
@@ -474,4 +475,22 @@ class ProteinBenchmarkSystem:
                 observable_path=data,
                 h_bond_geometries_path=h_bond_geometries,
                 output_path=h_bond_scalar_couplings,
+            )
+
+        # Fraction helix
+        fraction_helix = f"{analysis_prefix}-fraction-helix.dat"
+
+        if (
+            "fraction_helix" in target_observables
+            and not exists_and_not_empty(fraction_helix)
+        ):
+            print(f"Computing fraction helix for system {self.system_name}")
+
+            data = target_observables["fraction_helix"]["observable_path"]
+
+            compute_fraction_helix(
+                observable_path=data,
+                dihedral_clusters_path=dihedral_clusters,
+                h_bond_geometries_path=h_bond_geometries,
+                output_path=fraction_helix,
             )
