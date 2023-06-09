@@ -100,6 +100,7 @@ def align_trajectory(
         if first_frame:
             first_frame = False
             pdb = loos.PDB.fromAtomicGroup(output_atoms)
+            pdb.clearBonds()
 
             with open(f"{output_prefix}.pdb", "w") as pdb_file:
                 pdb_file.write(str(pdb))
@@ -133,6 +134,7 @@ def measure_dihedrals(
     topology = loos.createSystem(topology_path)
     min_resid = topology.minResid()
     max_resid = topology.maxResid()
+    cterm_resname = topology[len(topology) - 1].resname()
 
     # Select atoms for dihedrals
     dihedrals_by_residue = list()
@@ -142,6 +144,9 @@ def measure_dihedrals(
         resid = residue[0].resid()
         resname = residue[0].resname()
 
+        if resname in {"NME", "NH2"}:
+            continue
+
         residue_dihedrals = dict()
 
         for dihedral, dihedral_atom_dict in DIHEDRAL_ATOMS[resname].items():
@@ -149,6 +154,9 @@ def measure_dihedrals(
                 continue
 
             if resid == max_resid and dihedral in {"psi", "omega"}:
+                continue
+
+            if cterm_resname == "NH2" and resid == (max_resid - 1) and dihedral == "omega":
                 continue
 
             # Get atoms in dihedral
@@ -270,8 +278,8 @@ def measure_h_bond_geometries(
     output_path
         The path to write the hydrogen bond geometries.
     h_bond_distance_cutoff
-        Distance between non-hydrogen donor and acceptor below which a hydrogen
-        bond is considered to be occupied.
+        Distance between hydrogen donor and acceptor below which a hydrogen bond
+        is considered to be occupied.
     h_bond_angle_cutoff
         Deviation in donor-hydrogen-acceptor angle from linear in degrees below
         which a hydrogen bond is considered to be occupied.
@@ -968,3 +976,110 @@ def compute_h_bond_scalar_couplings(
     )
 
     scalar_coupling_df.to_csv(output_path)
+
+def compute_fraction_helix(
+    observable_path: str,
+    dihedral_clusters_path: str,
+    h_bond_geometries_path: str,
+    output_path: str,
+    h_bond_distance_cutoff: unit.Quantity = 3.5 * unit.angstrom,
+    h_bond_angle_cutoff: float = 30,
+):
+    """
+    Compute fraction of helix by residue based on hydrogen bond occupancy.
+
+    Parameters
+    ---------
+    observable_path
+        The path to the data for experimental observables.
+    dihedral_clusters_path
+        The path to the time series of dihedral cluster assignments.
+    h_bond_geometries_path
+        The path to the time series of hydrogen bond geometries.
+    output_path
+        The path to write the computed helical fractions.
+    h_bond_distance_cutoff
+        Distance between non-hydrogen donor and acceptor below which a hydrogen
+        bond is considered to be occupied.
+    h_bond_angle_cutoff
+        Deviation in donor-hydrogen-acceptor angle from linear in degrees below
+        which a hydrogen bond is considered to be occupied.
+    """
+
+    h_bond_distance_threshold = h_bond_distance_cutoff.value_in_unit(unit.angstrom)
+    h_bond_angle_threshold = 180 - h_bond_angle_cutoff
+
+    # Load data for experimental observables
+    observable_df = pandas.read_csv(
+        observable_path,
+        sep="\s+",
+        skiprows=1,
+        names=["Resid", "Resname", "Experiment"],
+    )
+
+    # Read time series of dihedral cluster assignments
+    dihedral_df = pandas.read_csv(dihedral_clusters_path, index_col=0)
+
+    # Read time series of hydrogen bond geometries
+    h_bond_df = pandas.read_csv(h_bond_geometries_path, index_col=0)
+
+    # Compute observables
+    computed_observables = list()
+
+    for index, row in observable_df.iterrows():
+
+        observable_resid = row["Resid"]
+
+        # Dihedral clusters resid is offset by 1 due to aaqaa3 initial structure
+        dihedral_resid = observable_resid + 1
+        residue_dihedral_df = dihedral_df[dihedral_df['Resid'] == dihedral_resid]
+
+        # Get frames where (phi, psi) is closer than 30 deg to ideal alpha helix
+        # at (-63, -43)
+        helical_dihedrals = (
+            (residue_dihedral_df['phi (deg)'] + 63)**2
+            + (residue_dihedral_df['psi (deg)'] + 43)**2
+        ) < 900
+
+        computed_dihedral_fraction_helix = helical_dihedrals.mean()
+        helical_dihedral_frames = residue_dihedral_df[helical_dihedrals]['Frame']
+
+        # Get hydrogen bonds to i-4 and i+4 residues
+        residue_h_bond_df = h_bond_df[
+            (
+                (
+                    (h_bond_df["Donor Resid"] == observable_resid)
+                    & (h_bond_df["Acceptor Resid"] == observable_resid - 4)
+                )
+                | (
+                    (h_bond_df["Donor Resid"] == observable_resid + 4)
+                    & (h_bond_df["Acceptor Resid"] == observable_resid)
+                )
+            )
+            & (h_bond_df["Donor Name"] == "N")
+            & (h_bond_df["Hydrogen Name"] == "H")
+            & (h_bond_df["Acceptor Name"] == "O")
+        ]
+
+        if len(residue_h_bond_df) > 0:
+
+            computed_h_bond_fraction_helix = (
+                (residue_h_bond_df['DA Distance (Angstrom)'] < h_bond_distance_threshold)
+                & (residue_h_bond_df['DHA Angle (deg)'] > h_bond_angle_threshold)
+                & (residue_h_bond_df['Frame'].isin(helical_dihedral_frames))
+            ).mean()
+
+        else:
+            computed_h_bond_fraction_helix = 0.0
+
+        computed_observables.append({
+            'Computed Dihedrals': computed_dihedral_fraction_helix,
+            'Computed H Bonds': computed_h_bond_fraction_helix,
+        })
+
+    helix_fraction_df = pandas.concat(
+        [observable_df, pandas.DataFrame(computed_observables)], axis=1
+    )
+
+    helix_fraction_df.to_csv(output_path)
+

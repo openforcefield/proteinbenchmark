@@ -161,6 +161,7 @@ class OpenMMSimulation:
             openmm_system,
             integrator,
             openmm.Platform.getPlatformByName("CUDA"),
+            {"Precision": "mixed"},
         )
 
         if return_pdb:

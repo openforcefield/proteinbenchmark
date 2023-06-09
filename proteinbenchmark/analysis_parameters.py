@@ -99,6 +99,13 @@ DIHEDRAL_ATOMS["HID"] = DIHEDRAL_ATOMS["HIE"]
 DIHEDRAL_ATOMS["HIP"] = DIHEDRAL_ATOMS["HIE"]
 DIHEDRAL_ATOMS["LYN"] = DIHEDRAL_ATOMS["LYS"]
 
+DIHEDRAL_ATOMS["ACE"] = {
+    "omega": {
+        "atom_names": ["CH3", "C", "N", "CA"],
+        "resid_offsets": [0, 0, 1, 1],
+    },
+}
+
 # Clusters on Ramachandran map from
 # Hollingsworth SA, Karplus PA. (2010). BioMol Concepts 1, 271-283.
 # The alpha cluster is a subset of the delta cluster. Alpha must go after delta.
