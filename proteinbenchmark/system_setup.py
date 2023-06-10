@@ -275,6 +275,7 @@ def solvate(
     water_model: str,
     force_field_file: str,
     water_model_file: str = None,
+    hydrogen_mass: unit.Quantity = 3.0 * unit.dalton,
     solvent_padding: unit.Quantity = None,
     n_solvent: int = None,
 ):
@@ -304,6 +305,8 @@ def solvate(
         The path to the force field to parametrize the system.
     water_model_file
         The path to the force field containing the water model.
+    hydrogen_mass
+        The mass of solute hydrogen atoms for hydrogen mass repartitioning.
     solvent_padding
         The padding distance used to setup the solvent box.
     n_solvent
@@ -323,11 +326,12 @@ def solvate(
 
     if not ionic_strength.unit.is_compatible(unit.molar):
         raise ValueError("ionic_strength does not have units of Amount Length^-3")
-
     if not nonbonded_cutoff.unit.is_compatible(unit.nanometer):
         raise ValueError("nonbonded_cutoff does not have units of Length")
     if not vdw_switch_width.unit.is_compatible(unit.nanometer):
         raise ValueError("vdw_switch_width does not have units of Length")
+    if not hydrogen_mass.unit.is_compatible(unit.dalton):
+        raise ValueError("hydrogen_mass does not have units of Mass")
 
     if water_model in ["opc3", "tip3p", "tip3p-fb"]:
         water_has_virtual_sites = False
@@ -584,14 +588,32 @@ def solvate(
     if smirnoff:
         openmm_system = force_field.createSystem(modeller.topology)
 
+        # Manually change hydrogen masses in OpenMM system. Taken from
+        # https://github.com/openmm/openmm/blob/f30d716ace8331003c5115bdfa9e03341a757878/wrappers/python/openmm/app/forcefield.py#L1249
+        _hydrogen = app.element.hydrogen
+        for atom1, atom2 in modeller.topology.bonds():
+            if atom1.element == _hydrogen:
+                (atom1, atom2) = (atom2, atom1)
+            if (
+                atom2.element == _hydrogen
+                and atom1.element not in {_hydrogen, None}
+                and atom2.residue.name != "HOH"
+            ):
+                transfer_mass = hydrogen_mass - openmm_system.getParticleMass(atom2.index)
+                heavy_mass = openmm_system.getParticleMass(atom1.index) - transfer_mass
+                openmm_system.setParticleMass(atom2.index, hydrogen_mass)
+                openmm_system.setParticleMass(atom1.index, heavy_mass)
+
     else:
         switch_distance = nonbonded_cutoff - vdw_switch_width
         openmm_system = force_field.createSystem(
             modeller.topology,
             nonbondedMethod=app.PME,
             nonbondedCutoff=nonbonded_cutoff,
-            switchDistance=switch_distance,
             constraints=app.HBonds,
+            rigidWater=True,
+            hydrogenMass=hydrogen_mass,
+            switchDistance=switch_distance,
         )
 
     # Validate total charge of solvated system

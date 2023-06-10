@@ -22,7 +22,7 @@ EQUIL_FRAME_LENGTH = 10.0 * unit.picosecond
 # Default production simulation parameters
 LANGEVIN_FRICTION = 1.0 / unit.picosecond
 BAROSTAT_FREQUENCY = 25
-TIMESTEP = 2.0 * unit.femtosecond
+TIMESTEP = 4.0 * unit.femtosecond
 FRAME_LENGTH = 100.0 * unit.picosecond
 CHECKPOINT_LENGTH = FRAME_LENGTH * 100
 SAVE_STATE_LENGTH = CHECKPOINT_LENGTH * 10
