@@ -38,7 +38,9 @@ benchmark_targets = {
             "fraction_helix": {
                 "experimental_datasets": ["shalongo_jacs_1994"],
                 "observable_path": Path(
-                    observable_directory, "aaqaa3", "aaqaa3-fraction-helix-by-residue.dat"
+                    observable_directory,
+                    "aaqaa3",
+                    "aaqaa3-fraction-helix-by-residue.dat",
                 ),
             },
         },
@@ -57,7 +59,9 @@ benchmark_targets = {
             "fraction_helix": {
                 "experimental_datasets": ["shalongo_jacs_1994"],
                 "observable_path": Path(
-                    observable_directory, "aaqaa3", "aaqaa3-fraction-helix-by-residue.dat"
+                    observable_directory,
+                    "aaqaa3",
+                    "aaqaa3-fraction-helix-by-residue.dat",
                 ),
             },
         },

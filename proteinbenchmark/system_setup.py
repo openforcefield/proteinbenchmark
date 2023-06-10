@@ -446,13 +446,14 @@ def solvate(
 
         # Set dodecahedron box vectors correctly
         from openmm.vec3 import Vec3
+
         box_width = modeller.topology.getPeriodicBoxVectors()[0][0].value_in_unit(
             unit.nanometer
         )
         box_vectors = (
             Vec3(box_width, 0, 0),
-            Vec3(1/3, 2 * numpy.sqrt(2)/3, 0) * box_width,
-            Vec3(-1/3, numpy.sqrt(2)/3, numpy.sqrt(6)/3) * box_width
+            Vec3(1 / 3, 2 * numpy.sqrt(2) / 3, 0) * box_width,
+            Vec3(-1 / 3, numpy.sqrt(2) / 3, numpy.sqrt(6) / 3) * box_width,
         )
         modeller.topology.setPeriodicBoxVectors(box_vectors * unit.nanometer)
 
@@ -599,7 +600,9 @@ def solvate(
                 and atom1.element not in {_hydrogen, None}
                 and atom2.residue.name != "HOH"
             ):
-                transfer_mass = hydrogen_mass - openmm_system.getParticleMass(atom2.index)
+                transfer_mass = hydrogen_mass - openmm_system.getParticleMass(
+                    atom2.index
+                )
                 heavy_mass = openmm_system.getParticleMass(atom1.index) - transfer_mass
                 openmm_system.setParticleMass(atom2.index, hydrogen_mass)
                 openmm_system.setParticleMass(atom1.index, heavy_mass)
