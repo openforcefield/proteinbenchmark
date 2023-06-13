@@ -156,7 +156,11 @@ def measure_dihedrals(
             if resid == max_resid and dihedral in {"psi", "omega"}:
                 continue
 
-            if cterm_resname == "NH2" and resid == (max_resid - 1) and dihedral == "omega":
+            if (
+                cterm_resname == "NH2"
+                and resid == (max_resid - 1)
+                and dihedral == "omega"
+            ):
                 continue
 
             # Get atoms in dihedral
@@ -897,8 +901,23 @@ def compute_h_bond_scalar_couplings(
         observable_path,
         sep="\s+",
         skiprows=1,
-        names=["Observable", "Resid N", "Resname N", "Resid CO", "Resname CO", "Experiment", "Uncertainty"],
-        usecols=["Observable", "Resid N", "Resname N", "Resid CO", "Resname CO", "Experiment"],
+        names=[
+            "Observable",
+            "Resid N",
+            "Resname N",
+            "Resid CO",
+            "Resname CO",
+            "Experiment",
+            "Uncertainty",
+        ],
+        usecols=[
+            "Observable",
+            "Resid N",
+            "Resname N",
+            "Resid CO",
+            "Resname CO",
+            "Experiment",
+        ],
     )
 
     # Skip observables that don't have a good Karplus model
@@ -977,6 +996,7 @@ def compute_h_bond_scalar_couplings(
 
     scalar_coupling_df.to_csv(output_path)
 
+
 def compute_fraction_helix(
     observable_path: str,
     dihedral_clusters_path: str,
@@ -1027,22 +1047,21 @@ def compute_fraction_helix(
     computed_observables = list()
 
     for index, row in observable_df.iterrows():
-
         observable_resid = row["Resid"]
 
         # Dihedral clusters resid is offset by 1 due to aaqaa3 initial structure
         dihedral_resid = observable_resid + 1
-        residue_dihedral_df = dihedral_df[dihedral_df['Resid'] == dihedral_resid]
+        residue_dihedral_df = dihedral_df[dihedral_df["Resid"] == dihedral_resid]
 
         # Get frames where (phi, psi) is closer than 30 deg to ideal alpha helix
         # at (-63, -43)
         helical_dihedrals = (
-            (residue_dihedral_df['phi (deg)'] + 63)**2
-            + (residue_dihedral_df['psi (deg)'] + 43)**2
+            (residue_dihedral_df["phi (deg)"] + 63) ** 2
+            + (residue_dihedral_df["psi (deg)"] + 43) ** 2
         ) < 900
 
         computed_dihedral_fraction_helix = helical_dihedrals.mean()
-        helical_dihedral_frames = residue_dihedral_df[helical_dihedrals]['Frame']
+        helical_dihedral_frames = residue_dihedral_df[helical_dihedrals]["Frame"]
 
         # Get hydrogen bonds to i-4 and i+4 residues
         residue_h_bond_df = h_bond_df[
@@ -1062,24 +1081,27 @@ def compute_fraction_helix(
         ]
 
         if len(residue_h_bond_df) > 0:
-
             computed_h_bond_fraction_helix = (
-                (residue_h_bond_df['DA Distance (Angstrom)'] < h_bond_distance_threshold)
-                & (residue_h_bond_df['DHA Angle (deg)'] > h_bond_angle_threshold)
-                & (residue_h_bond_df['Frame'].isin(helical_dihedral_frames))
+                (
+                    residue_h_bond_df["DA Distance (Angstrom)"]
+                    < h_bond_distance_threshold
+                )
+                & (residue_h_bond_df["DHA Angle (deg)"] > h_bond_angle_threshold)
+                & (residue_h_bond_df["Frame"].isin(helical_dihedral_frames))
             ).mean()
 
         else:
             computed_h_bond_fraction_helix = 0.0
 
-        computed_observables.append({
-            'Computed Dihedrals': computed_dihedral_fraction_helix,
-            'Computed H Bonds': computed_h_bond_fraction_helix,
-        })
+        computed_observables.append(
+            {
+                "Computed Dihedrals": computed_dihedral_fraction_helix,
+                "Computed H Bonds": computed_h_bond_fraction_helix,
+            }
+        )
 
     helix_fraction_df = pandas.concat(
         [observable_df, pandas.DataFrame(computed_observables)], axis=1
     )
 
     helix_fraction_df.to_csv(output_path)
-

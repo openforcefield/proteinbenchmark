@@ -1,13 +1,12 @@
 """Script to get initial PDBs for benchmark targets."""
 from pathlib import Path
-import requests
 
+import requests
 
 rcsb_url = "https://files.rcsb.org/view/"
 
 
-def get_rcsb_file(pdb_id, pdb_path, model = None):
-
+def get_rcsb_file(pdb_id, pdb_path, model=None):
     if pdb_path.exists():
         return
 
@@ -16,11 +15,9 @@ def get_rcsb_file(pdb_id, pdb_path, model = None):
         pdb_text = requests.get(f"{rcsb_url}{pdb_id}.pdb").text
 
         if model is None:
-
             # Extract ATOM and TER lines for alternate location A
             for line in pdb_text.split("\n"):
                 if line[:4] == "ATOM" and line[16] in {" ", "A"}:
-
                     # Replace deuterium with hydrogen
                     if line[12:16].lstrip()[0] == "D":
                         pdb_file.write(
@@ -34,7 +31,6 @@ def get_rcsb_file(pdb_id, pdb_path, model = None):
                     pdb_file.write(f"{line}\n")
 
         else:
-
             # Extract specified model
             print_lines = False
             for line in pdb_text.split("\n"):
@@ -52,7 +48,7 @@ def get_rcsb_file(pdb_id, pdb_path, model = None):
 pdb_id = "1PIT"
 nmr_model = 1
 initial_pdb_path = Path(f"bpti-{pdb_id}-model-{nmr_model}.pdb")
-get_rcsb_file(pdb_id, initial_pdb_path, model = nmr_model)
+get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
 
 pdb_id = "5PTI"
 initial_pdb_path = Path(f"bpti-{pdb_id}.pdb")
@@ -71,7 +67,7 @@ get_rcsb_file(pdb_id, initial_pdb_path)
 pdb_id = "1E8L"
 nmr_model = 1
 initial_pdb_path = Path(f"hewl-{pdb_id}-model-{nmr_model}.pdb")
-get_rcsb_file(pdb_id, initial_pdb_path, model = nmr_model)
+get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
 
 pdb_id = "193L"
 initial_pdb_path = Path(f"hewl-{pdb_id}.pdb")
@@ -81,7 +77,7 @@ get_rcsb_file(pdb_id, initial_pdb_path)
 pdb_id = "1D3Z"
 nmr_model = 1
 initial_pdb_path = Path(f"ubq-{pdb_id}-model-{nmr_model}.pdb")
-get_rcsb_file(pdb_id, initial_pdb_path, model = nmr_model)
+get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
 
 pdb_id = "1UBQ"
 initial_pdb_path = Path(f"ubq-{pdb_id}.pdb")

@@ -38,7 +38,9 @@ benchmark_targets = {
             "fraction_helix": {
                 "experimental_datasets": ["shalongo_jacs_1994"],
                 "observable_path": Path(
-                    observable_directory, "aaqaa3", "aaqaa3-fraction-helix-by-residue.dat"
+                    observable_directory,
+                    "aaqaa3",
+                    "aaqaa3-fraction-helix-by-residue.dat",
                 ),
             },
         },
@@ -57,7 +59,9 @@ benchmark_targets = {
             "fraction_helix": {
                 "experimental_datasets": ["shalongo_jacs_1994"],
                 "observable_path": Path(
-                    observable_directory, "aaqaa3", "aaqaa3-fraction-helix-by-residue.dat"
+                    observable_directory,
+                    "aaqaa3",
+                    "aaqaa3-fraction-helix-by-residue.dat",
                 ),
             },
         },
@@ -127,6 +131,22 @@ benchmark_targets = {
         },
     },
     "ala5": {
+        "target_type": "peptide",
+        "aa_sequence": "AAAAA",
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 300.0 * unit.kelvin,
+        "ph": 2.0,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["graf_jacs_2007"],
+                "observable_path": Path(
+                    observable_directory, "ala5", "ala5_scalar_couplings.dat"
+                ),
+            },
+        },
+    },
+    "ala5-hmr": {
         "target_type": "peptide",
         "aa_sequence": "AAAAA",
         "pressure": 1.0 * unit.atmosphere,
@@ -220,6 +240,25 @@ benchmark_targets = {
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
             "3j_ha_hb": "berndt_jmb_1992",
+        },
+    },
+    "cln025": {
+        "target_type": "peptide",
+        "aa_sequence": "YYDPETGTWY",
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 313.0 * unit.kelvin,
+        "ph": 7.0,
+        "ionic_strength": 0.0 * unit.molar,
+        "traj_length": 10.0 * unit.microsecond,
+        "observables": {
+            "fraction_folded": {
+                "experimental_datasets": ["honda_jacs_2008"],
+                "observable_path": Path(
+                    observable_directory,
+                    "cln025",
+                    "cln025-fraction-folded-by-temperature.dat",
+                ),
+            },
         },
     },
     "gag": {

@@ -480,9 +480,8 @@ class ProteinBenchmarkSystem:
         # Fraction helix
         fraction_helix = f"{analysis_prefix}-fraction-helix.dat"
 
-        if (
-            "fraction_helix" in target_observables
-            and not exists_and_not_empty(fraction_helix)
+        if "fraction_helix" in target_observables and not exists_and_not_empty(
+            fraction_helix
         ):
             print(f"Computing fraction helix for system {self.system_name}")
 
