@@ -637,7 +637,6 @@ def solvate(
 
     if sim_platform != 'gmx':
         # Create an OpenMM System from the solvated system
-    # Create an OpenMM System from the solvated system
         if smirnoff:
             openmm_system = force_field.createSystem(modeller.topology)
 
@@ -669,16 +668,6 @@ def solvate(
                 rigidWater=True,
                 hydrogenMass=hydrogen_mass,
                 switchDistance=switch_distance,
-            )
-
-        else:
-            switch_distance = nonbonded_cutoff - vdw_switch_width
-            openmm_system = force_field.createSystem(
-                modeller.topology,
-                nonbondedMethod=app.PME,
-                nonbondedCutoff=nonbonded_cutoff,
-                switchDistance=switch_distance,
-                constraints=app.HBonds,
             )
 
         # Validate total charge of solvated system
