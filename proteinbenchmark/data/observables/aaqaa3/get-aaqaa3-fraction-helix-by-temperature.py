@@ -10,7 +10,7 @@ BOLTZMANN_CONSTANT = 0.001987204259 * unit.kilocalorie_per_mole / unit.kelvin
 @click.option(
     "-o",
     "--output_path",
-    default="aaqaa_fraction_helix.dat",
+    default="aaqaa-fraction-helix-by-temperature.dat",
     show_default=True,
     type=click.STRING,
     help="Path to write fraction helix as a function of temperature.",

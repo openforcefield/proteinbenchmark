@@ -3,7 +3,6 @@ from pathlib import Path
 import numpy
 import openmm
 from openmm import app, unit
-from openmmtools.integrators import LangevinIntegrator
 
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml
 
@@ -139,10 +138,10 @@ class OpenMMSimulation:
         initial_pdb = app.PDBFile(self.initial_pdb_file)
 
         # Set up BAOAB Langevin integrator from openmmtools with VRORV splitting
-        integrator = LangevinIntegrator(
-            temperature=self.temperature,
-            collision_rate=self.langevin_friction,
-            timestep=self.timestep,
+        integrator = openmm.LangevinMiddleIntegrator(
+            self.temperature,
+            self.langevin_friction,
+            self.timestep,
         )
 
         # Set up Monte Carlo barostat
@@ -161,6 +160,7 @@ class OpenMMSimulation:
             openmm_system,
             integrator,
             openmm.Platform.getPlatformByName("CUDA"),
+            {"Precision": "mixed"},
         )
 
         if return_pdb:
