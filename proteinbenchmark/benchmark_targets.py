@@ -222,6 +222,25 @@ benchmark_targets = {
             "3j_ha_hb": "berndt_jmb_1992",
         },
     },
+    "cln025": {
+        "target_type": "peptide",
+        "aa_sequence": "YYDPETGTWY",
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 313.0 * unit.kelvin,
+        "ph": 7.0,
+        "ionic_strength": 0.0 * unit.molar,
+        "traj_length": 10.0 * unit.microsecond,
+        "observables": {
+            "fraction_folded": {
+                "experimental_datasets": ["honda_jacs_2008"],
+                "observable_path": Path(
+                    observable_directory,
+                    "cln025",
+                    "cln025-fraction-folded-by-temperature.dat",
+                ),
+            },
+        },
+    },
     "gag": {
         "target_type": "peptide",
         "aa_sequence": "GAG",

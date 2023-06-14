@@ -11,6 +11,7 @@ from proteinbenchmark.analysis import (align_trajectory,
                                        measure_dihedrals,
                                        measure_h_bond_geometries)
 from proteinbenchmark.openmm_simulation import OpenMMSimulation
+from proteinbenchmark.gmx_simulation import GMXSimulation
 from proteinbenchmark.simulation_parameters import *
 from proteinbenchmark.system_setup import (build_initial_coordinates, minimize,
                                            solvate)
@@ -217,6 +218,9 @@ class ProteinBenchmarkSystem:
         replica_dir.mkdir(parents=True, exist_ok=True)
 
         replica_prefix = Path(replica_dir, self.system_name)
+        setup_dir = Path(self.base_path, "setup")
+        setup_prefix = Path(setup_dir, self.system_name)
+
         equil_prefix = f"{replica_prefix}-equilibration"
         prod_prefix = f"{replica_prefix}-production"
 
@@ -290,6 +294,7 @@ class ProteinBenchmarkSystem:
                 NVT_simulation = GMXSimulation(
                     initial_pdb_file=self.minimized_pdb,
                     save_state_prefix=equil_prefix,
+                    setup_prefix=setup_prefix,
                     temperature=self.target_parameters["temperature"],
                     pressure=self.target_parameters["pressure"],
                     langevin_friction=equil_langevin_friction,
@@ -307,6 +312,7 @@ class ProteinBenchmarkSystem:
                 NPT_simulation = GMXSimulation(
                     initial_pdb_file=self.minimized_pdb,
                     save_state_prefix=equil_prefix,
+                    setup_prefix=setup_prefix,
                     temperature=self.target_parameters["temperature"],
                     pressure=self.target_parameters["pressure"],
                     langevin_friction=equil_langevin_friction,
@@ -409,16 +415,17 @@ class ProteinBenchmarkSystem:
         else:
             production_simulation = GMXSimulation(
                     initial_pdb_file=self.minimized_pdb,
-                    save_state_prefix=equil_prefix,
+                    setup_prefix=setup_prefix,
+                    save_state_prefix=prod_prefix,
                     temperature=self.target_parameters["temperature"],
                     pressure=self.target_parameters["pressure"],
-                    langevin_friction=equil_langevin_friction,
-                    barostat_frequency=equil_barostat_frequency,
-                    timestep=equil_timestep,
-                    traj_length=equil_traj_length,
-                    frame_length=equil_frame_length,
-                    checkpoint_length=equil_traj_length,
-                    save_state_length=equil_traj_length,
+                    langevin_friction=langevin_friction,
+                    barostat_frequency=barostat_frequency,
+                    timestep=timestep,
+                    traj_length=traj_length,
+                    frame_length=frame_length,
+                    checkpoint_length=checkpoint_length,
+                    save_state_length=save_state_length,
                     restraints_present = False,
                 )
             #Run Production
@@ -448,10 +455,15 @@ class ProteinBenchmarkSystem:
 
             replica_dir = Path(self.base_path, f"replica-{replica:d}")
             replica_prefix = Path(replica_dir, self.system_name)
+            
+            if simulation_platform != 'gmx':
+                traj_path = f"{replica_prefix}-production.dcd"
+            else:
+                traj_path = f"{replica_dir}/mdrun_0_i0_0/traj_comp.xtc"
 
             align_trajectory(
                 topology_path=self.minimized_pdb,
-                trajectory_path=f"{replica_prefix}-production.dcd",
+                trajectory_path=traj_path,
                 output_prefix=f"{analysis_prefix}-reimaged",
                 output_selection='chainid == "A"',
                 align_selection='name == "CA"',

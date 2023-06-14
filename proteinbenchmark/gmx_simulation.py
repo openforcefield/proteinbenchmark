@@ -1,9 +1,11 @@
 from pathlib import Path
 
+import gmxapi as gmx
 import numpy
 import openmm
 from openmm import app, unit
 from openmmtools.integrators import LangevinIntegrator
+import os
 
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml
 
@@ -14,8 +16,8 @@ class GMXSimulation:
     def __init__(
         self,
         initial_pdb_file: str,
-        checkpoint_file: str,
         save_state_prefix: str,
+        setup_prefix:str,
         temperature: unit.Quantity,
         pressure: unit.Quantity,
         langevin_friction: unit.Quantity,
@@ -34,8 +36,6 @@ class GMXSimulation:
         ----------
         initial_pdb_file
             Path to PDB file used to set initial coordinates.
-        checkpoint_file
-            Path to file to write binary checkpoints.
         save_state_prefix
             Path prefix for files to write serialized simulation states.
         temperature
@@ -64,8 +64,8 @@ class GMXSimulation:
         """
 
         self.initial_pdb_file = initial_pdb_file
-        self.checkpoint_file = checkpoint_file
         self.save_state_prefix = save_state_prefix
+        self.setup_prefix=setup_prefix
 
         # Check units of arguments
         if not temperature.unit.is_compatible(unit.kelvin):
@@ -110,81 +110,113 @@ class GMXSimulation:
         return_pdb
             Return PDBFile as well as print TPR
         """
-
-        #Create MDP File
-        mdpfile = self.save_state_prefix + '-min.mdp'
+        
+        #create mdp file
+        state_dir = str(self.save_state_prefix).rsplit('/', 1)
+        if self.restraints_present == 'NVT':
+            mdpfile = state_dir[1] + '-nvt.mdp'
+        elif self.restraints_present == 'NPT':
+            mdpfile = state_dir[1] + '-npt.mdp'
+        else:
+            mdpfile = state_dir[1] + '-md.mdp'
+        #convert timestep from fs to ps
+        time_step = str(float(str(self.timestep).split()[0])/1000)
+        
+        #Write settings to MDP File
         mdpfile_w = open(mdpfile, 'w')
         if self.restraints_present == 'NVT' or self.restraints_present == 'NPT':
-            mdpfile_w.write('define = -DPOSRES')
-        mdpfile_w.write('integrator = bd\n' + 'nsteps=' + str(self.n_steps) + '\n' + 'dt = ' + str(self.timestep) + '\n' + 'nstenergy = ' + str(self.save_state_frequency) + '\n' + 'nstlog = ' + str(self.save_state_frequency) + '\n'
-                        'nstxout-compressed = ' + str(self.save_state_frequency) + '\n' + 'continuation = no\n' + 'constraint_algorithm = lincs\n' + 'constraints = h-bond\n' + 'lincs_iter = 1\n' + 'lincs_order = 4' + 'cuttoff-scheme = Verlet\n'
-                         'ns_type = grid\n' + 'rlist = 1.0\n' + 'vdwtype = cutoff\n' + 'vdw-modifier = force-switch\n' + 'rvdw-switch = 1.0\n' + 'rvdw = 1.0\n' + 'coulombtype = PME\n' + 'rcoulomb = 1.0\n'  + 'pme_order = 4\n' + 'fourierspacing = 0.16\n' 
-                         'bd_fric = ' + str(self.langevin_friction) + '\n' + 'ref_t = ' + str(self.temperature) + '\n' + 'pbc = xyz\n')
-        if self.restraints_present == 'NVT':
-            mdpfile_w.write('gen_vel = yes\n' + 'gen_temp = ' + str(self.temperature) + '\n' + 'gen_seed = -1')
+            mdpfile_w.write('define=-DPOSRES\n' + 'nsteps=' + str(int(float(self.n_steps)/2)) + '\n')
         else:
-            mdpfile_w.write('pcoupl = Parrinello-Rahman\n' + 'pcoupltype = isotropic\n' + 'tau_p = ' + str(self.barostat_frequency) + '\n' + 'ref_p = ' + str(self.pressure) + '\n' + 'compressibility = 4.5e-5' + 'refcoord_scaling = com' + 'gen_vel = no')
+            mdpfile_w.write('nsteps=' + str(self.n_steps) + '\n')
+
+        if self.restraints_present == 'NVT':
+            mdpfile_w.write('continuation=no\n')
+        else:
+            mdpfile_w.write('continuation=yes\n')
+        mdpfile_w.write('integrator = md\n' + 'dt = ' + str(time_step) + '\n' + 'nstenergy = ' + str(self.save_state_frequency) + '\n' + 'nstlog = ' + str(self.save_state_frequency) + '\n'
+                        'nstxout-compressed = ' + str(self.save_state_frequency) + '\n' + 'constraint_algorithm = lincs\n' + 'constraints = h-bonds\n' + 'lincs_iter = 2\n' + 'lincs_order = 4\n' + 'cutoff-scheme = Verlet\n'
+                         'ns_type = grid\n' + 'nstlist = 20\n' + 'rlist = 0.9\n' + 'vdwtype = cutoff\n' + 'vdw-modifier = force-switch\n' + 'rvdw-switch = 0.88\n' + 'rvdw = 0.9\n' + 'coulombtype = PME\n' + 'rcoulomb = 1.0\n'  + 'pme_order = 4\n' + 'fourierspacing = 0.16\n' 
+                         'tc-grps = System\n' + 'tau_t = 0.2\n' + 'ref_t = ' + str(self.temperature).split()[0] + '\n' + 'pbc = xyz\n' + 'DispCorr = EnerPres\n')
+        if self.restraints_present == 'NVT':
+            mdpfile_w.write('gen_vel = yes\n' + 'gen_temp = ' + str(self.temperature).split()[0] + '\n' + 'gen_seed = -1')
+        else:
+            mdpfile_w.write('pcoupl = Parrinello-Rahman\n' + 'pcoupltype = isotropic\n' + 'tau_p = ' + str(self.barostat_frequency) + '\n' + 'ref_p = ' + str(self.pressure) + '\n' + 'compressibility = 4.5e-5\n' + 'refcoord_scaling = com\n' + 'gen_vel = no\n')
         mdpfile_w.close()
+        
+        return mdpfile
 
-        #Generate TPR
-        if self.restraints_present == 'NVT':
-            out_tprfile = str(self.save_state_prefix) + '-nvt.tpr'
-            grompp = gmx.commandline_operation('gmx', 'grompp',
-                                   input_files={
-                                       '-f': mdpfile,
-                                       '-p': str(setup_prefix) + '.top',
-                                       '-c': str(setup_prefix) + '-min.gro',
-                                       '-r': str(setup_prefix) + '-min.gro',
-                                       '-maxwarn': '2',
-                                   },
-                                   output_files={'-o': out_tprfile})
-        
-        elif self.restraints_present == 'NPT':
-            out_tprfile = str(self.save_state_prefix) + '-npt.tpr'
-            grompp = gmx.commandline_operation('gmx', 'grompp',
-                                   input_files={
-                                       '-f': mdpfile,
-                                       '-p': str(setup_prefix) + '.top',
-                                       '-c': str(self.save_state_prefix) + '-nvt.gro',
-                                       '-r': str(self.save_state_prefix) + '-nvt.gro',
-                                       '-t': str(self.save_state_prefix) + '-nvt.cpt',
-                                       '-maxwarn': '2',
-                                   },
-                                   output_files={'-o': out_tprfile})
-        
-        else:
-            out_tprfile = str(self.save_state_prefix) + '-npt.tpr'
-            grompp = gmx.commandline_operation('gmx', 'grompp',
-                                   input_files={
-                                       '-f': mdpfile,
-                                       '-p': str(setup_prefix) + '.top',
-                                       '-c': str(self.save_state_prefix) + '-npt.gro',
-                                       '-r': str(self.save_state_prefix) + '-npt.gro',
-                                       '-t': str(self.save_state_prefix) + '-npt.cpt',
-                                       '-maxwarn': '2',
-                                   },
-                                   output_files={'-o': out_tprfile})
-
-        
-        #Check for errors on TPR File Generation
-        if grompp.output.returncode.result() != 0:
-            raise Exception(grompp.output.stderr.result())
-        
-        return grompp
-
-    def start_run(self):
+    def run(self):
         """
         Start a new simulation initializing positions from a PDB and velocities
         to random samples from a Boltzmann distribution at the simulation
         temperature.
         """
+        #Change Working directory
+        state_dir = str(self.save_state_prefix).rsplit('/', 1)
+        if self.restraints_present == 'NVT' or self.restraints_present == 'NPT':
+            os.chdir(state_dir[0])
+            if not os.path.exists(self.restraints_present):
+                os.mkdir(self.restraints_present)
+            os.chdir(self.restraints_present)
+        else:
+            os.chdir(state_dir[0])
+        print('Working Directory for Energy Minimization: ' + str(os.getcwd()))
+        
+        #Generate MDP
+        mdpfile = self.setup_simulation()
 
-        # Create an OpenMM simulation
-        grompp = self.setup_simulation()
+        #Generate TPR
+        setup_dir = str(self.setup_prefix).rsplit('/', 1)
+        if self.restraints_present == 'NVT':
+            out_tprfile = '../' + state_dir[1] + '-nvt.tpr'
+            grompp = gmx.commandline_operation('gmx', 'grompp',
+                                   input_files={
+                                       '-f': '../' + mdpfile,
+                                       '-p': '../../../setup/' + setup_dir[1] + '.top',
+                                       '-c': '../../../setup/mdrun_0_i0_0/confout.gro',
+                                       '-r': '../../../setup/mdrun_0_i0_0/confout.gro',
+                                       '-maxwarn': '2',
+                                   },
+                                   output_files={'-o': out_tprfile})
+        
+        elif self.restraints_present == 'NPT':
+            out_tprfile = '../' + state_dir[1] + '-npt.tpr'
+            grompp = gmx.commandline_operation('gmx', 'grompp',
+                                   input_files={
+                                       '-f': '../' + mdpfile,
+                                       '-p': '../../../setup/' + setup_dir[1] + '.top',
+                                       '-c': '../../NVT/mdrun_0_i0_0/confout.gro',
+                                       '-r': '../../NVT/mdrun_0_i0_0/confout.gro',
+                                       '-t': '../../NVT/mdrun_0_i0_0/state.cpt',
+                                       '-maxwarn': '2',
+                                   },
+                                   output_files={'-o': out_tprfile})
+        
+        else:
+            out_tprfile = state_dir[1] + '-md.tpr'
+            grompp = gmx.commandline_operation('gmx', 'grompp',
+                                   input_files={
+                                       '-f': '../' + mdpfile,
+                                       '-p': '../../setup/' + setup_dir[1] + '.top',
+                                       '-c': '../NPT/mdrun_0_i0_0/confout.gro',
+                                       '-t': '../NPT/mdrun_0_i0_0/state.cpt',
+                                       '-maxwarn': '2',
+                                   },
+                                   output_files={'-o': out_tprfile})
+
+        #Check for errors on TPR File Generation
+        if grompp.output.returncode.result() != 0:
+            print(grompp.output.stderr.result())
+        print('TPR check')
 
         # Run Simulation
-        simulation = gmx.mdrun(input=grompp)
-        simulation.run
+        #simulation = gmx.mdrun(input=grompp, runtime_args={'-ntomp':1, '-ntmpi':2})
+        simulation = gmx.mdrun(input=grompp.output.file['-o'])
+        simulation.run()
+
+        os.chdir('../../../')
+        if self.restraints_present == 'NVT' or self.restraints_present == 'NPT':
+            os.chdir('../')
 
     def start_from_save_state(
         self,

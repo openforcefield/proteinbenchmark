@@ -70,7 +70,54 @@ class _OFFForceField(OFFForceField):
                 unique_molecules=self._from_openmm_unique_molecules,
             )
         return self.create_openmm_system(openff_topology)
+        
+    def createInter(self, openmm_topology: app.Topology, force_field):
+        """Return an OpenFF topology from an OpenMM topology."""
+        from openff.interchange.components.interchange import Interchange        
 
+        if self._remove_water_virtual_sites:
+            # Create a new OpenMM topology without water virtual sites
+            no_vsite_topology = app.Topology()
+            no_vsite_topology.setPeriodicBoxVectors(
+                openmm_topology.getPeriodicBoxVectors()
+            )
+            no_vsite_atoms = dict()
+
+            for chain in openmm_topology.chains():
+                no_vsite_chain = no_vsite_topology.addChain(chain.id)
+
+                for residue in chain.residues():
+                    no_vsite_residue = no_vsite_topology.addResidue(
+                        residue.name, no_vsite_chain, residue.id, residue.insertionCode
+                    )
+
+                    for atom in residue.atoms():
+                        if residue.name != "HOH" or atom.name in {"O", "H1", "H2"}:
+                            no_vsite_atom = no_vsite_topology.addAtom(
+                                atom.name, atom.element, no_vsite_residue
+                            )
+                            no_vsite_atoms[atom] = no_vsite_atom
+
+            # Include bonds only between non-virtual site atoms
+            for bond in openmm_topology.bonds():
+                if bond[0] in no_vsite_atoms and bond[1] in no_vsite_atoms:
+                    no_vsite_topology.addBond(
+                        no_vsite_atoms[bond[0]], no_vsite_atoms[bond[1]]
+                    )
+
+            openff_topology = OFFTopology.from_openmm(
+                no_vsite_topology,
+                unique_molecules=self._from_openmm_unique_molecules,
+            )
+
+        else:
+            openff_topology = OFFTopology.from_openmm(
+                openmm_topology,
+                unique_molecules=self._from_openmm_unique_molecules,
+            )
+        interchange = Interchange.from_smirnoff(force_field, openff_topology)
+
+        return interchange
 
 def build_initial_coordinates(
     build_method: str,
@@ -580,10 +627,10 @@ def solvate(
 
     print(f"Actual number of ions added: {n_cation} Na+ {n_anion} Cl-")
     
-    if sim_platform != 'gmx':
-        # Write solvated system to PDB file
-        write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
+    # Write solvated system to PDB file
+    write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
 
+    if sim_platform != 'gmx':
         # Create an OpenMM System from the solvated system
         if smirnoff:
             openmm_system = force_field.createsystem(modeller.topology)
@@ -624,30 +671,45 @@ def solvate(
         write_xml(openmm_system_xml, openmm_system)
 
     else:
-        from openff.interchange.components.interchange import Interchange        
         from openff.interchange.drivers import get_openmm_energies, get_gromacs_energies
-
-        solute_off_topology = OFFTopology.from_pdb(protonated_pdb_file)
-
-        unique_molecules = [
-            *solute_off_topology.unique_molecules,
-            OFFMolecule.from_smiles("O"),
-            OFFMolecule.from_smiles("[Na+1]"),
-            OFFMolecule.from_smiles("[Cl-1]"),
-        ]
-
-        off_top = OFFTopology.from_openmm(modeller.topology, unique_molecules)
+        from openff.interchange import Interchange 
         
-        #Create interchange object from OpenFF topology
         if smirnoff:
-            interchange = force_field.create_interchange(topology=off_top)
-            interchange.positions = modeller.positions
+            #Create interchange object without water or ions
+            mol = OFFTopology.from_pdb(protonated_pdb_file)
+            interchange = Interchange.from_smirnoff(force_field=force_field ,topology=mol)
+            
+            #Create interchange object for full system
+            interchange_sys = force_field.createInter(modeller.topology, force_field)
+            interchange_sys.positions = modeller.positions
         else:
-            interchange = Interchange.from_smirnoff(force_field=force_field, topology=off_top) #Does not work!!
-            interchange.positions = modeller.positions
-        
+            #Fill in
+            interchange = force_field.creategmx(modeller.topology)
+       
+        #openmm_energies = get_openmm_energies(interchange)
+        #gmx_energies = get_gromacs_energies(interchange)
+        #print(openmm_energies)
+        #print(gmx_energies)
+
         #Export gromacs top and gro
-        interchange.to_gromacs(str(setup_prefix))
+        interchange_sys.to_gro(str(setup_prefix)+ '.gro')
+        interchange_sys.to_top(str(setup_prefix) + '.top')
+       
+        #Add water and ions to topology
+        print(water_model_file)
+        match_string = '[ system ]'
+        insert_string = '#ifdef POSRES\n#include "' + str(setup_prefix) + '_posre.itp"\n#endif\n'
+        with open(str(setup_prefix) + '.top', 'r+') as fd:
+            contents = fd.readlines()
+            if match_string in contents[-1]:  # Handle last line to prevent IndexError
+                contents.append(insert_string)
+            else:
+                for index, line in enumerate(contents):
+                    if match_string in line and insert_string not in contents[index - 1]:
+                        contents.insert(index - 1, insert_string)
+                        break
+            fd.seek(0)
+            fd.writelines(contents)
         print('GROMACS Files Printed')
 
 def minimize(
@@ -800,3 +862,4 @@ def minimize(
         #Run Energy Minimization
         min_sim = gmx.mdrun(input=min_grompp.output.file['-o'])
         min_sim.run()
+        os.chdir('../../../')
