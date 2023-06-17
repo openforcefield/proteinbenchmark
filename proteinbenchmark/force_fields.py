@@ -73,6 +73,16 @@ force_fields = {
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },
+    "null-0.0.2-qamber-opc": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-QAmber.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "null-0.0.2-qamber-tip3p": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-QAmber.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
     "null-0.0.2-tip3p": {
         "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-NH2.offxml"),
         "water_model": "tip3p",
@@ -102,6 +112,16 @@ force_fields = {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-NH2.offxml"),
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "specific-0.0.2-qamber-opc": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-QAmber.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "specific-0.0.2-qamber-tip3p": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-QAmber.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": None,
     },
     "specific-0.0.2-tip3p": {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-NH2.offxml"),
