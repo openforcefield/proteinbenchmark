@@ -721,18 +721,20 @@ def solvate(
         interchange_sys.to_top(str(setup_prefix) + '.top')
        
         #Add water and ions to topology
-        print(water_model_file)
-        match_string = '[ system ]'
-        insert_string = '#ifdef POSRES\n#include "' + str(setup_prefix) + '_posre.itp"\n#endif\n'
+        setup_dir = str(setup_prefix).rsplit('/', 1)
+        match_string = '[ moleculetype ]'
+        insert_string = '#ifdef POSRES\n#include "' + str(setup_dir[1]) + '_posre.itp"\n#endif\n'
         with open(str(setup_prefix) + '.top', 'r+') as fd:
             contents = fd.readlines()
             if match_string in contents[-1]:  # Handle last line to prevent IndexError
                 contents.append(insert_string)
             else:
                 for index, line in enumerate(contents):
-                    if match_string in line and insert_string not in contents[index - 1]:
+                    if match_string in line and mol==1 and insert_string not in contents[index - 1]:
                         contents.insert(index - 1, insert_string)
                         break
+                    if match_string in line:
+                        mol=1
             fd.seek(0)
             fd.writelines(contents)
         print('GROMACS Files Printed')

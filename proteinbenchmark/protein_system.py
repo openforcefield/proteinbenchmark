@@ -457,16 +457,18 @@ class ProteinBenchmarkSystem:
             replica_dir = Path(self.base_path, f"replica-{replica:d}")
             replica_prefix = Path(replica_dir, self.system_name)
             
-            if simulation_platform != 'gmx':
+            if self.sim_platform != 'gmx':
                 traj_path = f"{replica_prefix}-production.dcd"
+                output_selection = 'chainid == "A"' 
             else:
                 traj_path = f"{replica_dir}/mdrun_0_i0_0/traj_comp.xtc"
-
+                output_selection = 'resname != "HOH" && resname != "NA"'
+            
             align_trajectory(
                 topology_path=self.minimized_pdb,
                 trajectory_path=traj_path,
                 output_prefix=f"{analysis_prefix}-reimaged",
-                output_selection='chainid == "A"',
+                output_selection=output_selection,
                 align_selection='name == "CA"',
                 reference_path=self.initial_pdb,
             )

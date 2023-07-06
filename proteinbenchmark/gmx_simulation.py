@@ -133,10 +133,10 @@ class GMXSimulation:
             mdpfile_w.write('continuation=no\n')
         else:
             mdpfile_w.write('continuation=yes\n')
-        mdpfile_w.write('integrator = md\n' + 'dt = ' + str(time_step) + '\n' + 'nstenergy = ' + str(self.save_state_frequency) + '\n' + 'nstlog = ' + str(self.save_state_frequency) + '\n'
-                        'nstxout-compressed = ' + str(self.save_state_frequency) + '\n' + 'constraint_algorithm = lincs\n' + 'constraints = h-bonds\n' + 'lincs_iter = 2\n' + 'lincs_order = 4\n' + 'cutoff-scheme = Verlet\n'
+        mdpfile_w.write('integrator = md\n' + 'dt = ' + str(time_step) + '\n' + 'nstenergy = ' + '5000' + '\n' + 'nstlog = ' + '5000' + '\n'
+                        'nstxout-compressed = ' + '5000' + '\n' + 'constraint_algorithm = lincs\n' + 'constraints = h-bonds\n' + 'lincs_iter = 2\n' + 'lincs_order = 4\n' + 'cutoff-scheme = Verlet\n'
                          'ns_type = grid\n' + 'nstlist = 20\n' + 'rlist = 0.9\n' + 'vdwtype = cutoff\n' + 'vdw-modifier = force-switch\n' + 'rvdw-switch = 0.88\n' + 'rvdw = 0.9\n' + 'coulombtype = PME\n' + 'rcoulomb = 1.0\n'  + 'pme_order = 4\n' + 'fourierspacing = 0.16\n' 
-                         'tc-grps = System\n' + 'tau_t = 0.2\n' + 'ref_t = ' + str(self.temperature).split()[0] + '\n' + 'pbc = xyz\n' + 'DispCorr = EnerPres\n')
+                         + 'tcoupl = V-rescale\n' + 'tc-grps = System\n' + 'tau_t = 0.2\n' + 'ref_t = ' + str(self.temperature).split()[0] + '\n' + 'pbc = xyz\n' + 'DispCorr = EnerPres\n')
         if self.restraints_present == 'NVT':
             mdpfile_w.write('gen_vel = yes\n' + 'gen_temp = ' + str(self.temperature).split()[0] + '\n' + 'gen_seed = -1')
         else:
