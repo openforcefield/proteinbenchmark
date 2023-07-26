@@ -635,41 +635,52 @@ def solvate(
     # Write solvated system to PDB file
     write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
 
-    if sim_platform != 'gmx':
-        # Create an OpenMM System from the solvated system
-        if smirnoff:
-            openmm_system = force_field.createSystem(modeller.topology)
+    
+    # Create an OpenMM System from the solvated system
+    if smirnoff and sim_platform != 'gmx':
+        openmm_system = force_field.createSystem(modeller.topology)
 
-            # Manually change hydrogen masses in OpenMM system. Taken from
-            # https://github.com/openmm/openmm/blob/f30d716ace8331003c5115bdfa9e03341a757878/wrappers/python/openmm/app/forcefield.py#L1249
-            _hydrogen = app.element.hydrogen
-            for atom1, atom2 in modeller.topology.bonds():
-                if atom1.element == _hydrogen:
-                    (atom1, atom2) = (atom2, atom1)
-                if (
-                    atom2.element == _hydrogen
-                    and atom1.element not in {_hydrogen, None}
-                    and atom2.residue.name != "HOH"
-                ):
-                    transfer_mass = hydrogen_mass - openmm_system.getParticleMass(
-                        atom2.index
-                    )
-                    heavy_mass = openmm_system.getParticleMass(atom1.index) - transfer_mass
-                    openmm_system.setParticleMass(atom2.index, hydrogen_mass)
-                    openmm_system.setParticleMass(atom1.index, heavy_mass)
+        # Manually change hydrogen masses in OpenMM system. Taken from
+        # https://github.com/openmm/openmm/blob/f30d716ace8331003c5115bdfa9e03341a757878/wrappers/python/openmm/app/forcefield.py#L1249
+        _hydrogen = app.element.hydrogen
+        for atom1, atom2 in modeller.topology.bonds():
+            if atom1.element == _hydrogen:
+                (atom1, atom2) = (atom2, atom1)
+            if (
+                atom2.element == _hydrogen
+                and atom1.element not in {_hydrogen, None}
+                and atom2.residue.name != "HOH"
+            ):
+                transfer_mass = hydrogen_mass - openmm_system.getParticleMass(
+                    atom2.index
+                )
+                heavy_mass = openmm_system.getParticleMass(atom1.index) - transfer_mass
+                openmm_system.setParticleMass(atom2.index, hydrogen_mass)
+                openmm_system.setParticleMass(atom1.index, heavy_mass)
 
-        else:
-            switch_distance = nonbonded_cutoff - vdw_switch_width
-            openmm_system = force_field.createSystem(
-                modeller.topology,
-                nonbondedMethod=app.PME,
-                nonbondedCutoff=nonbonded_cutoff,
-                constraints=app.HBonds,
-                rigidWater=True,
-                hydrogenMass=hydrogen_mass,
-                switchDistance=switch_distance,
-            )
-
+    elif sim_platform != 'gmx':
+        switch_distance = nonbonded_cutoff - vdw_switch_width
+        openmm_system = force_field.createSystem(
+            modeller.topology,
+            nonbondedMethod=app.PME,
+            nonbondedCutoff=nonbonded_cutoff,
+            constraints=app.HBonds,
+            rigidWater=True,
+            hydrogenMass=hydrogen_mass,
+            switchDistance=switch_distance,
+        )
+    elif sim_platform == 'gmx' and smirnoff == False:
+        switch_distance = nonbonded_cutoff - vdw_switch_width
+        openmm_system = force_field.createSystem(
+            modeller.topology,
+            nonbondedMethod=app.PME,
+            nonbondedCutoff=nonbonded_cutoff,
+            rigidWater=False,
+            hydrogenMass=hydrogen_mass,
+            switchDistance=switch_distance,
+        )
+    
+    if (smirnoff and sim_platform != 'gmx') or smirnoff == False:
         # Validate total charge of solvated system
         for i in range(openmm_system.getNumForces()):
             if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
@@ -690,40 +701,41 @@ def solvate(
         if solvated_total_charge != 0:
             raise ValueError(
                 f"Total charge of solvated system is {solvated_total_charge:d}"
-            )
-
+                )
+    
+    if sim_platform != 'gmx':
         # Write OpenMM system to XML file
         write_xml(openmm_system_xml, openmm_system)
-
     else:
-        from openff.interchange.drivers import get_openmm_energies, get_gromacs_energies
-        from openff.interchange import Interchange 
-        
+        import parmed as pmd
         if smirnoff:
-            #Create interchange object without water or ions
-            mol = OFFTopology.from_pdb(protonated_pdb_file)
-            interchange = Interchange.from_smirnoff(force_field=force_field ,topology=mol)
+            interchange = force_field.createInter(modeller.topology, force_field)
+            interchange.positions = modeller.positions
             
-            #Create interchange object for full system
-            interchange_sys = force_field.createInter(modeller.topology, force_field)
-            interchange_sys.positions = modeller.positions
-        else:
-            #Fill in
-            interchange = force_field.creategmx(modeller.topology)
-       
-        #openmm_energies = get_openmm_energies(interchange)
-        #gmx_energies = get_gromacs_energies(interchange)
-        #print(openmm_energies)
-        #print(gmx_energies)
+            openmm_sys = interchange.to_openmm()
+            
+            struct = pmd.openmm.load_topology(modeller.topology, openmm_sys, xyz=modeller.positions)
+            
+            hmass = pmd.tools.HMassRepartition(struct, 3)
+            hmass.execute()
 
-        #Export gromacs top and gro
-        interchange_sys.to_gro(str(setup_prefix)+ '.gro')
-        interchange_sys.to_top(str(setup_prefix) + '.top')
-       
-        #Add water and ions to topology
+            struct.save(str(setup_prefix)+ '.gro')
+            struct.save(str(setup_prefix)+ '.top')
+        else:   
+            #Write GROMACS files
+            struct = pmd.openmm.load_topology(modeller.topology, openmm_system, xyz=modeller.positions)
+            
+            hmass = pmd.tools.HMassRepartition(struct, 3)
+            hmass.execute()
+
+            struct.save(str(setup_prefix)+ '.gro')
+            struct.save(str(setup_prefix)+ '.top')
+        
+        #Add position restraints file to topology
         setup_dir = str(setup_prefix).rsplit('/', 1)
         match_string = '[ moleculetype ]'
         insert_string = '#ifdef POSRES\n#include "' + str(setup_dir[1]) + '_posre.itp"\n#endif\n'
+        mol=0
         with open(str(setup_prefix) + '.top', 'r+') as fd:
             contents = fd.readlines()
             if match_string in contents[-1]:  # Handle last line to prevent IndexError
@@ -853,12 +865,12 @@ def minimize(
         #Create MDP file
         mdpfile = setup_dir[1] + '-min.mdp'
         mdpfile_w = open(mdpfile, 'w')
-        mdpfile_w.write('integrator = steep\n' + 'emtol = 100\n' + 'emstep = 0.01\n' + 'nsteps=50000\n' + 'nstlist = 1\n' + 
-                      'cutoff-scheme = Verlet\n' + 'ns_type = grid\n' + 'rlist = 1.0\n' + 'coulombtype = PME\n' +
-                      'rcoulomb = 1.0\n' + 'rvdw = 1.0\n' + 'pbc = xyz\n')
+        mdpfile_w.write('integrator = steep\n' + f'emtol = {restraint_energy_constant.value_in_unit(unit.kilojoules_per_mole / unit.nanometer)}\n' + 
+                        'emstep = 0.01\n' + 'nsteps=50000\n' + 'nstlist = 1\n' + 'cutoff-scheme = Verlet\n' + 'ns_type = grid\n' + 'rlist = 0.9\n' + 
+                        'coulombtype = PME\n' + 'rcoulomb = 1.0\n' + 'rvdw = 0.9\n' + 'pbc = xyz\n')
         mdpfile_w.close()
 
-        #Create position restrints file
+        #Create position restrints file for backbone atoms
         posre = gmx.commandline_operation('gmx', 'genrestr',
                                   input_files={
                                       '-f': '../' + setup_dir[1] + '.gro',
