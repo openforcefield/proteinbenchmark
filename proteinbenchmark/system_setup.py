@@ -725,18 +725,17 @@ def solvate(
             #Write GROMACS files
             struct = pmd.openmm.load_topology(modeller.topology, openmm_system, xyz=modeller.positions)
             
-            hmass = pmd.tools.HMassRepartition(struct, 3)
+            hmass = pmd.tools.HMassRepartition(struct, hmass)
             hmass.execute()
 
             struct.save(str(setup_prefix)+ '.gro')
             struct.save(str(setup_prefix)+ '.top')
         
         #Add position restraints file to topology
-        setup_dir = str(setup_prefix).rsplit('/', 1)
         match_string = '[ moleculetype ]'
-        insert_string = '#ifdef POSRES\n#include "' + str(setup_dir[1]) + '_posre.itp"\n#endif\n'
+        insert_string = f'#ifdef POSRES\n#include "{setup_prefix}_posre.itp"\n#endif\n'
         mol=0
-        with open(str(setup_prefix) + '.top', 'r+') as fd:
+        with open(f'{setup_prefix}.top', 'r+') as fd:
             contents = fd.readlines()
             if match_string in contents[-1]:  # Handle last line to prevent IndexError
                 contents.append(insert_string)
@@ -758,6 +757,7 @@ def minimize(
     minimized_pdb_file: str,
     setup_prefix: str,
     sim_platform: str,
+    gmx_executable: str=None,
 ):
     """
     Minimize energy of solvated system with Cartesian restraints on non-hydrogen
@@ -777,25 +777,25 @@ def minimize(
         Simulation platform to use for energy minimization
     """
 
-    # Check units of arguments
-    if not restraint_energy_constant.unit.is_compatible(
-        unit.kilojoules_per_mole / unit.nanometer**2
-    ):
-        raise ValueError(
-            "restraint_energy_constant does not have units of Energy Length^-2"
-        )
-
-    k = restraint_energy_constant.value_in_unit(
-        unit.kilocalories_per_mole / unit.angstrom**2
-    )
-
-    print(
-        f"Minimizing energy with Cartesian restraint energy constant {k:.4f} "
-        "kcal mol^-1 angstrom^-2"
-    )
-
     #If running in OpenMM 
     if sim_platform != 'gmx':
+        # Check units of arguments
+        if not restraint_energy_constant.unit.is_compatible(
+            unit.kilojoules_per_mole / unit.nanometer**2
+        ):
+            raise ValueError(
+                "restraint_energy_constant does not have units of Energy Length^-2"
+            )
+
+        k = restraint_energy_constant.value_in_unit(
+            unit.kilocalories_per_mole / unit.angstrom**2
+        )
+
+        print(
+            f"Minimizing energy with Cartesian restraint energy constant {k:.4f} "
+            "kcal mol^-1 angstrom^-2"
+        )
+        
         # Load OpenMM system and solvated PDB
         openmm_system = read_xml(openmm_system_xml)
         solvated_pdb = app.PDBFile(solvated_pdb_file)
@@ -854,51 +854,36 @@ def minimize(
         )
     
     else:
-        import gmxapi as gmx
+        # Check units of arguments
+        if not restraint_energy_constant.unit.is_compatible(
+            unit.kilojoules_per_mole / unit.nanometer
+        ):
+            raise ValueError(
+                "restraint_energy_constant does not have units of Energy Length"
+            )
+
+        k = restraint_energy_constant.value_in_unit(
+            unit.kilojoules_per_mole / unit.nanometer
+        )
+        import subprocess
         import os
-        
-        #Change working directory
-        setup_dir = str(setup_prefix).rsplit('/', 1)
-        os.chdir(setup_dir[0])
-        print('Working Directory for Energy Minimization: ' + str(os.getcwd()))
 
         #Create MDP file
-        mdpfile = setup_dir[1] + '-min.mdp'
+        mdpfile = setup_prefix + '-min.mdp'
         mdpfile_w = open(mdpfile, 'w')
-        mdpfile_w.write('integrator = steep\n' + f'emtol = {restraint_energy_constant.value_in_unit(unit.kilojoules_per_mole / unit.nanometer)}\n' + 
-                        'emstep = 0.01\n' + 'nsteps=50000\n' + 'nstlist = 1\n' + 'cutoff-scheme = Verlet\n' + 'ns_type = grid\n' + 'rlist = 0.9\n' + 
-                        'coulombtype = PME\n' + 'rcoulomb = 1.0\n' + 'rvdw = 0.9\n' + 'pbc = xyz\n')
+        mdpfile_w.write('integrator = steep\n' + f'emtol = {k}\n' + 'emstep = 0.01\n' + 'nsteps=50000\n' + 'nstlist = 1\n' + 
+                        'cutoff-scheme = Verlet\n' + 'ns_type = grid\n' + 'rlist = 0.9\n' + 'coulombtype = PME\n' + 'rcoulomb = 1.0\n' + 
+                        'rvdw = 0.9\n' + 'pbc = xyz\n')
         mdpfile_w.close()
 
         #Create position restrints file for backbone atoms
-        posre = gmx.commandline_operation('gmx', 'genrestr',
-                                  input_files={
-                                      '-f': '../' + setup_dir[1] + '.gro',
-                                  },
-                                  output_files={
-                                      '-o': '../' + setup_dir[1] + '_posre.itp',
-                                  },
-                                  stdin='4')
-        
-        #Check for errors on Position Restraint File Generation
-        if posre.output.returncode.result() != 0:
-            raise Exception(posre.output.stderr.result())
+        restr = subprocess.Popen([gmx_executable, 'genrestr', '-f', f'{setup_prefix}.gro', '-o', f'{setup_prefix}_posre.itp'], stdin=subprocess.PIPE)
+        restr.communicate(b'4\n')
+        restr.wait()
        
         #Generate TPR for Energy Minimization
-        out_tprfile = '../' + setup_dir[1] + '-min.tpr'
-        min_grompp = gmx.commandline_operation('gmx', 'grompp',
-                                   input_files={
-                                       '-f': '../' + mdpfile,
-                                       '-p': '../' + setup_dir[1] + '.top',
-                                       '-c': '../' + setup_dir[1] + '.gro',
-                                   },
-                                   output_files={'-o': out_tprfile})
-
-        #Check for errors on TPR File Generation
-        if min_grompp.output.returncode.result() != 0:
-            raise Exception(min_grompp.output.stderr.result())
+        out_tprfile = setup_prefix + '-min'
+        grompp = subprocess.run([gmx_executable, 'grompp', '-f', mdpfile, '-p', setup_prefix + '.top', '-c', setup_prefix + '.gro', '-o', out_tprfile])
         
         #Run Energy Minimization
-        min_sim = gmx.mdrun(input=min_grompp.output.file['-o'])
-        min_sim.run()
-        os.chdir('../../../')
+        run = subprocess.run([gmx_executable, 'mdrun', '-deffnm', out_tprfile])

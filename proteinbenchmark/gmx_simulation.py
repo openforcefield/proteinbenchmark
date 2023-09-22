@@ -6,7 +6,7 @@ import openmm
 from openmm import app, unit
 from openmmtools.integrators import LangevinIntegrator
 import os
-
+import subprocess
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml
 
 
@@ -15,6 +15,7 @@ class GMXSimulation:
 
     def __init__(
         self,
+        gmx_executable: str,
         initial_pdb_file: str,
         save_state_prefix: str,
         setup_prefix:str,
@@ -26,12 +27,14 @@ class GMXSimulation:
         traj_length: unit.Quantity,
         frame_length: unit.Quantity,
         restraints_present: bool,
+        load_state_prefix: str = None,
     ):
         """
         Initializes the simulation parameters and checks units.
 
         Parameters
         ----------
+        
         initial_pdb_file
             Path to PDB file used to set initial coordinates.
         save_state_prefix
@@ -57,7 +60,9 @@ class GMXSimulation:
 
         self.initial_pdb_file = initial_pdb_file
         self.save_state_prefix = save_state_prefix
-        self.setup_prefix=setup_prefix
+        self.setup_prefix = setup_prefix
+        self.load_prefix = load_state_prefix
+        self.gmx_executable = gmx_executable
 
         # Check units of arguments
         if not temperature.unit.is_compatible(unit.kelvin):
@@ -97,11 +102,7 @@ class GMXSimulation:
         """
         
         #create mdp file
-        state_dir = str(self.save_state_prefix).rsplit('/', 1)
-        if self.restraints_present == 'NPT':
-            mdpfile = state_dir[1] + '.mdp'
-        else:
-            mdpfile = state_dir[1] + '.mdp'
+        mdpfile = self.save_state_prefix + '.mdp'
         
         #Write settings to MDP File
         mdpfile_w = open(mdpfile, 'w')
@@ -111,7 +112,7 @@ class GMXSimulation:
             mdpfile_w.write('continuation=yes\n')
 
         mdpfile_w.write('integrator = md\n' + f'nsteps={self.n_steps}\n' + f'dt = {self.timestep}\n' + 'nstenergy = 5000\n' + 'nstlog = 5000\n' + 
-                        f'nstxout-compressed = {self.output_frequency}\n' + 'constraint_algorithm = lincs\n' + 'constraints = h-bonds\n' + 
+                        f'nstxout-compressed = {self.output_frequency}\n' + 'constraint_algorithm = lincs\n' + 'lincs-warnangle = 45\n' + 'constraints = h-bonds\n' + 
                         'lincs_iter = 2\n' + 'lincs_order = 4\n' + 'cutoff-scheme = Verlet\n' + 'ns_type = grid\n' + 'nstlist = 40\n' + 
                         'rlist = 0.9\n' + 'vdwtype = cutoff\n' + 'vdw-modifier = force-switch\n' + 'rvdw-switch = 0.88\n' + 'rvdw = 0.9\n' + 
                         'coulombtype = PME\n' + 'rcoulomb = 0.9\n'  + 'pme_order = 4\n' + 'fourierspacing = 0.16\n' + 'tcoupl = V-rescale\n' + 
@@ -132,60 +133,36 @@ class GMXSimulation:
         to random samples from a Boltzmann distribution at the simulation
         temperature.
         """
-        #Change Working directory
-        state_dir = str(self.save_state_prefix).rsplit('/', 1)
-        if self.restraints_present == 'NPT':
-            os.chdir(state_dir[0])
-            if not os.path.exists(self.restraints_present):
-                os.mkdir(self.restraints_present)
-            os.chdir(self.restraints_present)
-        else:
-            os.chdir(state_dir[0])
-        print(f'Working Directory for Energy Minimization: {os.getcwd()}')
-        
         #Generate MDP
         mdpfile = self.setup_simulation()
 
         #Generate TPR
-        setup_dir = str(self.setup_prefix).rsplit('/', 1)
         if self.restraints_present == 'NPT':
-            out_tprfile = '../' + state_dir[1] + '-nvt.tpr'
-            grompp = gmx.commandline_operation('gmx', 'grompp',
-                                   input_files={
-                                       '-f': '../' + mdpfile,
-                                       '-p': '../../../setup/' + setup_dir[1] + '.top',
-                                       '-c': '../../../setup/mdrun_0_i0_0/confout.gro',
-                                       '-r': '../../../setup/mdrun_0_i0_0/confout.gro',
-                                       '-maxwarn': '2',
-                                   },
-                                   output_files={'-o': out_tprfile})
+            grompp = subprocess.run([self.gmx_executable, 'grompp', 
+                                       '-f', mdpfile, 
+                                       '-p', f'{self.setup_prefix}.top', 
+                                       '-c', f'{self.setup_prefix}-min.gro', 
+                                       '-r', f'{self.setup_prefix}-min.gro', 
+                                       '-maxwarn', '2', 
+                                       '-o', str(self.save_state_prefix)])
         
         else:
-            out_tprfile = state_dir[1] + '-md.tpr'
-            grompp = gmx.commandline_operation('gmx', 'grompp',
-                                   input_files={
-                                       '-f': '../' + mdpfile,
-                                       '-p': '../../setup/' + setup_dir[1] + '.top',
-                                       '-c': '../NPT/mdrun_0_i0_0/confout.gro',
-                                       '-t': '../NPT/mdrun_0_i0_0/state.cpt',
-                                       '-maxwarn': '2',
-                                   },
-                                   output_files={'-o': out_tprfile})
-
-        #Check for errors on TPR File Generation
-        if grompp.output.returncode.result() != 0:
-            print(grompp.output.stderr.result())
+            print(self.gmx_executable)
+            grompp = subprocess.run([self.gmx_executable, 'grompp', 
+                                       '-f', mdpfile, 
+                                       '-p', f'{self.setup_prefix}.top', 
+                                       '-c', f'{self.load_prefix}.gro', 
+                                       '-t', f'{self.load_prefix}.cpt', 
+                                       '-maxwarn', '2', 
+                                       '-o', str(self.save_state_prefix)])
 
         # Run Simulation
         if self.restraints_present == 'NPT':
-            simulation = gmx.mdrun(input=grompp.output.file['-o'], runtime_args={'-ntmpi': '1'})
+            simulation = subprocess.run([self.gmx_executable, 'mdrun', '-deffnm', str(self.save_state_prefix), '-ntmpi', '1'])
+            #simulation = gmx.mdrun(input=grompp.output.file['-o'], runtime_args={'-ntmpi': '1'})
         else:
-            simulation = gmx.mdrun(input=grompp.output.file['-o'], runtime_args={'-ntomp': '1'})
-        simulation.run()
-
-        os.chdir('../../../')
-        if self.restraints_present == 'NPT':
-            os.chdir('../')
+            simulation = subprocess.run([self.gmx_executable, 'mdrun', '-deffnm', str(self.save_state_prefix), '-ntomp', '1'])
+            #simulation = gmx.mdrun(input=grompp.output.file['-o'], runtime_args={'-ntomp': '1'})
 
     def start_from_save_state(
         self,
@@ -200,10 +177,6 @@ class GMXSimulation:
         save_state_file
             Path to the serialized simulation state.
         """
-        # Create an OpenMM simulation
-        grompp = self.setup_simulation()
-
         # Run Simulation
-        simulation = gmx.mdrun(input=grompp, runtime_args={'-cpi': save_state_file})
-        simulation.run
+        simulation = subprocess.run([self.gmx_executable, 'mdrun', '-deffnm', str(self.save_state_prefix), '-cpi', save_state_file, '-ntomp', '1'])
        

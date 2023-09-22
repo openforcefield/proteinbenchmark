@@ -34,7 +34,8 @@ class ProteinBenchmarkSystem:
         water_model_name: str,
         force_field_file: str,
         water_model_file: str = None,
-        sim_platform: str = 'open_mm'
+        sim_platform: str = 'open_mm',
+        gmx_executable: str = None,
     ):
         """
         Initializes the ProteinBenchmarkSystem object with target parameters.
@@ -68,6 +69,7 @@ class ProteinBenchmarkSystem:
         self.force_field_file = force_field_file
         self.water_model_file = water_model_file
         self.sim_platform = sim_platform
+        self.gmx_executable = gmx_executable
 
         # Check thermodynamic state
         for quantity in ["pressure", "temperature", "ph", "ionic_strength"]:
@@ -189,7 +191,6 @@ class ProteinBenchmarkSystem:
 
         # Minimize energy of solvated system with Cartesian restraints on
         # non-hydrogen solute atoms
-        print(f'{self.setup_dir}/mdrun_0_i0_0/confout.gro')
         if self.sim_platform != 'gmx' and not exists_and_not_empty(self.minimized_pdb):
             print(f"Minimizing energy for system {self.system_name}")
 
@@ -207,9 +208,9 @@ class ProteinBenchmarkSystem:
                 solvated_pdb_file=solvated_pdb,
                 minimized_pdb_file=self.minimized_pdb,
                 setup_prefix = self.setup_prefix,
-                sim_platform = self.sim_platform
+                sim_platform = self.sim_platform,
             )
-        elif self.sim_platform == 'gmx' and not exists_and_not_empty(f'{self.setup_dir}/mdrun_0_i0_0/confout.gro'):
+        elif self.sim_platform == 'gmx' and not exists_and_not_empty(f'{self.setup_dir}/confout.gro'):
             print(f"Minimizing energy for system {self.system_name}")
 
             if "energy_tolerance" in self.target_parameters:
@@ -227,6 +228,7 @@ class ProteinBenchmarkSystem:
                 minimized_pdb_file=self.minimized_pdb,
                 setup_prefix = self.setup_prefix,
                 sim_platform = self.sim_platform,
+                gmx_executable = self.gmx_executable
             )
         print(f"Setup complete for system {self.system_name}")
 
@@ -247,9 +249,13 @@ class ProteinBenchmarkSystem:
         if self.sim_platform != 'gmx':
             # Serialized OpenMM state from the end of the equilibration simulation
             equilibrated_state = f"{equil_prefix}-1.xml"
+        else:
+            equilibrated_state = f"{equil_prefix}.gro"
+        print(equilibrated_state)
+        print(exists_and_not_empty(equilibrated_state))
 
         # Equilibrate at constant pressure and temperature
-        if (self.sim_platform != 'gmx' and not exists_and_not_empty(equilibrated_state)) or (self.sim_platform == 'gmx' and not exists_and_not_empty(f'{replica_prefix}/NPT/mdrun_0_i0_0/traj.xtc')):
+        if (not exists_and_not_empty(equilibrated_state)):
             print(f"Running NPT equilibration for system {self.system_name}")
 
             # Get parameters for equilibration simulation
@@ -328,6 +334,7 @@ class ProteinBenchmarkSystem:
                     equil_thermostat_constant = EQUIL_THERMOSTAT_CONSTANT
 
                 NPT_simulation = GMXSimulation(
+                    gmx_executable = self.gmx_executable,
                     initial_pdb_file=self.minimized_pdb,
                     save_state_prefix=equil_prefix,
                     setup_prefix=setup_prefix,
@@ -442,10 +449,11 @@ class ProteinBenchmarkSystem:
             else:
                 thermostat_constant = THERMOSTAT_CONSTANT
             
-            state_dir = str(self.save_state_prefix).rsplit('/', 1)
-            production_checkpoint = f"{state_dir[0]}/mdrun_1_i0_0/state.cpt"
+            state_dir = str(prod_prefix).rsplit('/', 1)
+            production_checkpoint = f"{prod_prefix}.cpt"
 
             production_simulation = GMXSimulation(
+                    gmx_executable = self.gmx_executable,
                     initial_pdb_file=self.minimized_pdb,
                     setup_prefix=setup_prefix,
                     save_state_prefix=prod_prefix,
@@ -457,14 +465,16 @@ class ProteinBenchmarkSystem:
                     traj_length=traj_length,
                     frame_length=frame_length,
                     restraints_present = False,
+                    load_state_prefix=equil_prefix,
                 )
+            
             #Run Production
             if not exists_and_not_empty(production_checkpoint):
                 # Start production simulation, initializing positions and velocities
                 # to the final state from the equilibration simulation
-                production_simulation.start_from_save_state(production_checkpoint)
+                production_simulation.run()
             else:
-                production_simulation.run()    
+                production_simulation.start_from_save_state(production_checkpoint) 
 
     def analyze_observables(self, replica: int = 1):
         """Process trajectories and estimate observables."""
@@ -492,12 +502,14 @@ class ProteinBenchmarkSystem:
             if self.sim_platform != 'gmx':
                 traj_path = f"{replica_prefix}-production.dcd"
                 output_selection = 'chainid == "A"' 
+                topology_path = self.minimized_pdb
             else:
-                traj_path = f"{replica_dir}/mdrun_0_i0_0/traj_comp.xtc"
+                traj_path = f"{replica_dir}/traj.xtc"
                 output_selection = 'resname != "HOH" && resname != "NA"'
+                topology_path = f"{replica_dir}/confout.gro"
             
             align_trajectory(
-                topology_path=self.minimized_pdb,
+                topology_path=topology_path,
                 trajectory_path=traj_path,
                 output_prefix=f"{analysis_prefix}-reimaged",
                 output_selection=output_selection,
