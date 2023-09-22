@@ -11,6 +11,7 @@ DISORDERED_SOLVENT_PADDING = 1.4 * unit.nanometer
 
 # Default minimization parameters
 RESTRAINT_ENERGY_CONSTANT = 1.0 * unit.kilocalorie_per_mole / unit.angstrom**2
+ENERGY_TOLERANCE = 100 * unit.kilojoules_per_mole / unit.nanometer
 
 # Default equilibration simulation parameters
 EQUIL_LANGEVIN_FRICTION = 5.0 / unit.picosecond
@@ -18,6 +19,8 @@ EQUIL_BAROSTAT_FREQUENCY = 5
 EQUIL_TIMESTEP = 1.0 * unit.femtosecond
 EQUIL_TRAJ_LENGTH = 1.0 * unit.nanosecond
 EQUIL_FRAME_LENGTH = 10.0 * unit.picosecond
+EQUIL_BAROSTAT_CONSTANT = 10.0 * unit.picosecond
+EQUIL_THERMOSTAT_CONSTANT = 2.0 * unit.picosecond
 
 # Default production simulation parameters
 LANGEVIN_FRICTION = 1.0 / unit.picosecond
@@ -26,6 +29,8 @@ TIMESTEP = 4.0 * unit.femtosecond
 FRAME_LENGTH = 100.0 * unit.picosecond
 CHECKPOINT_LENGTH = FRAME_LENGTH * 100
 SAVE_STATE_LENGTH = CHECKPOINT_LENGTH * 10
+BAROSTAT_CONSTANT = 10.0 * unit.picosecond
+THERMOSTAT_CONSTANT = 2.0 * unit.picosecond
 
 # Production trajectory length for peptides, folded proteins, and disordered
 # proteins

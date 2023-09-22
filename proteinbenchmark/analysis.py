@@ -82,7 +82,7 @@ def align_trajectory(
     output_trajectory = loos.DCDWriter(f"{output_prefix}.dcd")
 
     first_frame = True
-
+    
     for frame in trajectory:
         # Align frame onto reference
         transform_matrix = align_atoms.superposition(reference_atoms)
@@ -101,10 +101,9 @@ def align_trajectory(
             first_frame = False
             pdb = loos.PDB.fromAtomicGroup(output_atoms)
             pdb.clearBonds()
-
+            
             with open(f"{output_prefix}.pdb", "w") as pdb_file:
                 pdb_file.write(str(pdb))
-
 
 def measure_dihedrals(
     topology_path: str,

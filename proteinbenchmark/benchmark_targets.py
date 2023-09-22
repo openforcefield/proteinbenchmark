@@ -304,15 +304,42 @@ benchmark_targets = {
                     "vogeli_jacs_2007",
                 ],
                 "observable_path": Path(
-                    observable_directory, "gb3", "gb3_scalar_couplings.dat"
+                    observable_directory, "gb3", "gb3-scalar-couplings.dat"
                 ),
             },
             "h_bond_scalar_couplings": {
                 "experimental_datasets": ["cornilescu_jacs_1999_b"],
-                "observable_path": Path(observable_directory, "gb3", "gb3_3j_n_co.dat"),
+                "observable_path": Path(observable_directory, "gb3", "gb3-3j-n-co.dat"),
             },
             "backbone_rdc": "ulmer_jacs_2003",
         },
+    },
+    "gb3_test": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "gb3-1P7E.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 298.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": [
+                    "chou_jacs_2003",
+                    "miclet_jbnmr_2005",
+                    "vogeli_jacs_2007",
+                ],
+                "observable_path": Path(
+                    observable_directory, "gb3", "gb3-scalar-couplings.dat"
+                ),
+            },
+            "h_bond_scalar_couplings": {
+                "experimental_datasets": "cornilescu_jacs_1999",
+                "observable_path": Path(observable_directory, "gb3", "gb3-3j-n-co.dat"),
+            },
+            "backbone_rdc": "ulmer_jacs_2003",
+        },
+        "traj_length": 10 * unit.nanosecond,
+        "equil_timestep": 0.002 * unit.picosecond
     },
     "gb3-3j-ha-hb": {
         "target_type": "folded",
