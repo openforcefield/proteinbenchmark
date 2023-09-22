@@ -725,15 +725,16 @@ def solvate(
             #Write GROMACS files
             struct = pmd.openmm.load_topology(modeller.topology, openmm_system, xyz=modeller.positions)
             
-            hmass = pmd.tools.HMassRepartition(struct, hmass)
+            hmass = pmd.tools.HMassRepartition(struct, hydrogen_mass.value_in_unit(unit.dalton))
             hmass.execute()
 
             struct.save(str(setup_prefix)+ '.gro')
             struct.save(str(setup_prefix)+ '.top')
         
         #Add position restraints file to topology
+        setup_split = str(setup_prefix).split('/')
         match_string = '[ moleculetype ]'
-        insert_string = f'#ifdef POSRES\n#include "{setup_prefix}_posre.itp"\n#endif\n'
+        insert_string = f'#ifdef POSRES\n#include "{setup_split[-1]}_posre.itp"\n#endif\n'
         mol=0
         with open(f'{setup_prefix}.top', 'r+') as fd:
             contents = fd.readlines()
@@ -869,7 +870,7 @@ def minimize(
         import os
 
         #Create MDP file
-        mdpfile = setup_prefix + '-min.mdp'
+        mdpfile = str(setup_prefix) + '-min.mdp'
         mdpfile_w = open(mdpfile, 'w')
         mdpfile_w.write('integrator = steep\n' + f'emtol = {k}\n' + 'emstep = 0.01\n' + 'nsteps=50000\n' + 'nstlist = 1\n' + 
                         'cutoff-scheme = Verlet\n' + 'ns_type = grid\n' + 'rlist = 0.9\n' + 'coulombtype = PME\n' + 'rcoulomb = 1.0\n' + 
@@ -882,8 +883,8 @@ def minimize(
         restr.wait()
        
         #Generate TPR for Energy Minimization
-        out_tprfile = setup_prefix + '-min'
-        grompp = subprocess.run([gmx_executable, 'grompp', '-f', mdpfile, '-p', setup_prefix + '.top', '-c', setup_prefix + '.gro', '-o', out_tprfile])
+        out_tprfile = str(setup_prefix) + '-min'
+        grompp = subprocess.run([gmx_executable, 'grompp', '-f', mdpfile, '-p', str(setup_prefix) + '.top', '-c', str(setup_prefix) + '.gro', '-o', out_tprfile])
         
         #Run Energy Minimization
         run = subprocess.run([gmx_executable, 'mdrun', '-deffnm', out_tprfile])
