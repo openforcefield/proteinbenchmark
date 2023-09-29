@@ -1,5 +1,5 @@
 """Default parameter values for MD simulations."""
-from openmm import unit
+from openff.units import unit
 
 # Default system setup parameters
 SOLVENT_PADDING = 1.2 * unit.nanometer

@@ -5,7 +5,8 @@ import openmm
 from openff.toolkit import ForceField as OFFForceField
 from openff.toolkit import Molecule as OFFMolecule
 from openff.toolkit import Topology as OFFTopology
-from openmm import app, unit
+from openff.units import unit
+from openmm import app
 
 from proteinbenchmark.force_fields import water_model_files
 from proteinbenchmark.utilities import (read_xml, remove_model_lines,
@@ -319,18 +320,18 @@ def solvate(
             "Exactly one of solvent_padding or n_solvent must be specified."
         )
 
-    if solvent_padding is not None and not solvent_padding.unit.is_compatible(
+    if solvent_padding is not None and not solvent_padding.unit.is_compatible_with(
         unit.nanometer
     ):
         raise ValueError("solvent_padding does not have units of Length")
 
-    if not ionic_strength.unit.is_compatible(unit.molar):
+    if not ionic_strength.unit.is_compatible_with(unit.molar):
         raise ValueError("ionic_strength does not have units of Amount Length^-3")
-    if not nonbonded_cutoff.unit.is_compatible(unit.nanometer):
+    if not nonbonded_cutoff.unit.is_compatible_with(unit.nanometer):
         raise ValueError("nonbonded_cutoff does not have units of Length")
-    if not vdw_switch_width.unit.is_compatible(unit.nanometer):
+    if not vdw_switch_width.unit.is_compatible_with(unit.nanometer):
         raise ValueError("vdw_switch_width does not have units of Length")
-    if not hydrogen_mass.unit.is_compatible(unit.dalton):
+    if not hydrogen_mass.unit.is_compatible_with(unit.dalton):
         raise ValueError("hydrogen_mass does not have units of Mass")
 
     if water_model in ["opc3", "tip3p", "tip3p-fb"]:
@@ -342,8 +343,7 @@ def solvate(
 
     if solvent_padding is not None:
         solvent_arg_str = (
-            "\n    solvent_padding "
-            f"{solvent_padding.value_in_unit(unit.nanometer):.3f} nm"
+            f"\n    solvent_padding {solvent_padding.m_as(unit.nanometer):.3f} nm"
         )
 
     else:
@@ -353,11 +353,11 @@ def solvate(
         f"Solvating system with water model {water_model} and"
         f"{solvent_arg_str}"
         "\n    ionic_strength "
-        f"{ionic_strength.value_in_unit(unit.molar):.3f} M"
+        f"{ionic_strength.m_as(unit.molar):.3f} M"
         "\n    nonbonded_cutoff "
-        f"{nonbonded_cutoff.value_in_unit(unit.nanometer):.3f} nm"
+        f"{nonbonded_cutoff.m_as(unit.nanometer):.3f} nm"
         "\n    vdw_switch_width "
-        f"{vdw_switch_width.value_in_unit(unit.nanometer):.3f} nm"
+        f"{vdw_switch_width.m_as(unit.nanometer):.3f} nm"
     )
 
     # Set up force field
@@ -447,9 +447,7 @@ def solvate(
         # Set dodecahedron box vectors correctly
         from openmm.vec3 import Vec3
 
-        box_width = modeller.topology.getPeriodicBoxVectors()[0][0].value_in_unit(
-            unit.nanometer
-        )
+        box_width = modeller.topology.getPeriodicBoxVectors()[0][0].m_as(unit.nanometer)
         box_vectors = (
             Vec3(box_width, 0, 0),
             Vec3(1 / 3, 2 * numpy.sqrt(2) / 3, 0) * box_width,
@@ -475,7 +473,7 @@ def solvate(
         total_charge += nonbonded_force.getParticleParameters(i)[0]
 
     # Round to nearest integer
-    total_charge = int(numpy.round(total_charge.value_in_unit(unit.elementary_charge)))
+    total_charge = int(numpy.round(total_charge.m_as(unit.elementary_charge)))
 
     print(f"Total charge is {total_charge} e")
 
@@ -503,7 +501,7 @@ def solvate(
     # C_eff = C_0 sqrt(1 + Q^2 / (2 V_w C_0)^2) - |Q| / (2 V_w C_0))
 
     # If ionic strength is zero, then Q / (2 V_w C_0) is undefined
-    if ionic_strength.value_in_unit(unit.molar) > 0:
+    if ionic_strength.m_as(unit.molar) > 0:
         bulk_water_concentration = 55.4 * unit.molar
 
         charge_magnitude = numpy.abs(total_charge)
@@ -540,7 +538,7 @@ def solvate(
         print(
             f"Solute-to-ion ratio |Q| / (2 e V_w C_0): {solute_ion_ratio:f}"
             "\nEffective ionic strength: "
-            f"{sltcap_effective_ionic_strength.value_in_unit(unit.molar):f} M"
+            f"{sltcap_effective_ionic_strength.m_as(unit.molar):f} M"
             "\nExpected number of ions for neutral solute: "
             f"{int(numpy.round(n_cation_expected_neutral)):d} Na+ "
             f"{int(numpy.round(n_anion_expected_neutral)):d} Cl-"
@@ -633,7 +631,7 @@ def solvate(
         solvated_total_charge += nonbonded_force.getParticleParameters(i)[0]
 
     solvated_total_charge = int(
-        numpy.round(solvated_total_charge.value_in_unit(unit.elementary_charge))
+        numpy.round(solvated_total_charge.m_as(unit.elementary_charge))
     )
 
     if solvated_total_charge != 0:
@@ -668,16 +666,14 @@ def minimize(
     """
 
     # Check units of arguments
-    if not restraint_energy_constant.unit.is_compatible(
-        unit.kilojoules_per_mole / unit.nanometer**2
+    if not restraint_energy_constant.unit.is_compatible_with(
+        unit.kilojoule_per_mole / unit.nanometer**2
     ):
         raise ValueError(
             "restraint_energy_constant does not have units of Energy Length^-2"
         )
 
-    k = restraint_energy_constant.value_in_unit(
-        unit.kilocalories_per_mole / unit.angstrom**2
-    )
+    k = restraint_energy_constant.m_as(unit.kilocalorie_per_mole / unit.angstrom**2)
 
     print(
         f"Minimizing energy with Cartesian restraint energy constant {k:.4f} "
@@ -721,17 +717,13 @@ def minimize(
     )
     simulation.context.setPositions(solvated_pdb.positions)
     initial_state = simulation.context.getState(getEnergy=True)
-    initial_energy = initial_state.getPotentialEnergy().value_in_unit(
-        unit.kilocalories_per_mole
-    )
+    initial_energy = initial_state.getPotentialEnergy().m_as(unit.kilocalorie_per_mole)
     print(f"Initial energy of solvated system: {initial_energy:.4f} kcal mol^-1")
 
     # Run minimization with Cartesian restraints and print final energy
     simulation.minimizeEnergy()
     final_state = simulation.context.getState(getEnergy=True, getPositions=True)
-    final_energy = final_state.getPotentialEnergy().value_in_unit(
-        unit.kilocalories_per_mole
-    )
+    final_energy = final_state.getPotentialEnergy().m_as(unit.kilocalorie_per_mole)
     print(f"Final energy of minimized system: {final_energy:.4f} kcal mol^-1")
 
     # Write minimized coordinates to PDB

@@ -1,8 +1,6 @@
 from pathlib import Path
 
 import numpy
-import openmm
-from openmm import app, unit
 
 from proteinbenchmark.analysis import (align_trajectory,
                                        assign_dihedral_clusters,
@@ -265,15 +263,15 @@ class ProteinBenchmarkSystem:
                 state_reporter_file=equilibration_state_data,
                 checkpoint_file=equilibration_checkpoint,
                 save_state_prefix=equil_prefix,
-                temperature=self.target_parameters["temperature"],
-                pressure=self.target_parameters["pressure"],
-                langevin_friction=equil_langevin_friction,
+                temperature=self.target_parameters["temperature"].to_openmm(),
+                pressure=self.target_parameters["pressure"].to_openmm(),
+                langevin_friction=equil_langevin_friction.to_openmm(),
                 barostat_frequency=equil_barostat_frequency,
-                timestep=equil_timestep,
-                traj_length=equil_traj_length,
-                frame_length=equil_frame_length,
-                checkpoint_length=equil_traj_length,
-                save_state_length=equil_traj_length,
+                timestep=equil_timestep.to_openmm(),
+                traj_length=equil_traj_length.to_openmm(),
+                frame_length=equil_frame_length.to_openmm(),
+                checkpoint_length=equil_traj_length.to_openmm(),
+                save_state_length=equil_traj_length.to_openmm(),
             )
 
             # Run equilibration
@@ -340,15 +338,15 @@ class ProteinBenchmarkSystem:
             state_reporter_file=production_state_data,
             checkpoint_file=production_checkpoint,
             save_state_prefix=prod_prefix,
-            temperature=self.target_parameters["temperature"],
-            pressure=self.target_parameters["pressure"],
-            langevin_friction=langevin_friction,
+            temperature=self.target_parameters["temperature"].to_openmm(),
+            pressure=self.target_parameters["pressure"].to_openmm(),
+            langevin_friction=langevin_friction.to_openmm(),
             barostat_frequency=barostat_frequency,
-            timestep=timestep,
-            traj_length=traj_length,
-            frame_length=frame_length,
-            checkpoint_length=checkpoint_length,
-            save_state_length=save_state_length,
+            timestep=timestep.to_openmm(),
+            traj_length=traj_length.to_openmm(),
+            frame_length=frame_length.to_openmm(),
+            checkpoint_length=checkpoint_length.to_openmm(),
+            save_state_length=save_state_length.to_openmm(),
         )
 
         # Run production
