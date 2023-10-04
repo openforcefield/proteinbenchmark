@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy
 import openmm
+from openmm import unit as openmm_unit
 from openff.toolkit import ForceField as OFFForceField
 from openff.toolkit import Molecule as OFFMolecule
 from openff.toolkit import Topology as OFFTopology
@@ -30,6 +31,11 @@ class _OFFForceField(OFFForceField):
     def createSystem(self, openmm_topology: app.Topology):
         """Return an OpenMM system from an OpenMM topology."""
 
+        return self.createInter(openmm_topology).to_openmm(combine_nonbonded_forces=True)
+        
+    def createInter(self, openmm_topology: app.Topology):
+        """Return an OpenFF Interchange object from an OpenMM topology."""
+
         if self._remove_water_virtual_sites:
             # Create a new OpenMM topology without water virtual sites
             no_vsite_topology = app.Topology()
@@ -43,7 +49,10 @@ class _OFFForceField(OFFForceField):
 
                 for residue in chain.residues():
                     no_vsite_residue = no_vsite_topology.addResidue(
-                        residue.name, no_vsite_chain, residue.id, residue.insertionCode
+                        residue.name,
+                        no_vsite_chain,
+                        residue.id,
+                        residue.insertionCode,
                     )
 
                     for atom in residue.atoms():
@@ -71,7 +80,7 @@ class _OFFForceField(OFFForceField):
                 unique_molecules=self._from_openmm_unique_molecules,
             )
 
-        return self.create_openmm_system(openff_topology)
+        return self.create_interchange(openff_topology)
 
 
 def build_initial_coordinates(
@@ -267,18 +276,20 @@ def build_initial_coordinates(
 
 
 def solvate(
+    simulation_platform: str,
     ionic_strength: unit.Quantity,
     nonbonded_cutoff: unit.Quantity,
     vdw_switch_width: unit.Quantity,
     protonated_pdb_file: str,
     solvated_pdb_file: str,
-    openmm_system_xml: str,
+    parametrized_system: str,
     water_model: str,
     force_field_file: str,
     water_model_file: str = None,
     hydrogen_mass: unit.Quantity = 3.0 * unit.dalton,
     solvent_padding: unit.Quantity = None,
     n_solvent: int = None,
+    setup_prefix: str = None,
 ):
     """
     Add water and salt ions and write OpenMM System to XML. Exactly one of
@@ -286,6 +297,8 @@ def solvate(
 
     Parameters
     ----------
+    simulation_platform
+        Simulation platform for file exporting.
     ionic_strength
         The bulk ionic strength of the desired thermodynamic state.
     nonbonded_cutoff
@@ -298,7 +311,7 @@ def solvate(
         The path to the protonated PDB with initial coordinates.
     solvated_pdb_file
         The path to write the solvated PDB with ions.
-    openmm_system_xml
+    parametrized_system
         The path to write the parametrized OpenMM system as a serialized XML.
     water_model
         The name of the water model used to parametrize the water.
@@ -320,18 +333,18 @@ def solvate(
             "Exactly one of solvent_padding or n_solvent must be specified."
         )
 
-    if solvent_padding is not None and not solvent_padding.unit.is_compatible_with(
+    if solvent_padding is not None and not solvent_padding.is_compatible_with(
         unit.nanometer
     ):
         raise ValueError("solvent_padding does not have units of Length")
 
-    if not ionic_strength.unit.is_compatible_with(unit.molar):
+    if not ionic_strength.is_compatible_with(unit.molar):
         raise ValueError("ionic_strength does not have units of Amount Length^-3")
-    if not nonbonded_cutoff.unit.is_compatible_with(unit.nanometer):
+    if not nonbonded_cutoff.is_compatible_with(unit.nanometer):
         raise ValueError("nonbonded_cutoff does not have units of Length")
-    if not vdw_switch_width.unit.is_compatible_with(unit.nanometer):
+    if not vdw_switch_width.is_compatible_with(unit.nanometer):
         raise ValueError("vdw_switch_width does not have units of Length")
-    if not hydrogen_mass.unit.is_compatible_with(unit.dalton):
+    if not hydrogen_mass.is_compatible_with(unit.dalton):
         raise ValueError("hydrogen_mass does not have units of Mass")
 
     if water_model in ["opc3", "tip3p", "tip3p-fb"]:
@@ -428,9 +441,9 @@ def solvate(
         modeller.addSolvent(
             forcefield=force_field,
             model=modeller_water_model,
-            padding=solvent_padding,
+            padding=solvent_padding.to_openmm(),
             boxShape="dodecahedron",
-            ionicStrength=0 * unit.molar,
+            ionicStrength=0 * openmm_unit.molar,
             neutralize=False,
         )
 
@@ -440,20 +453,22 @@ def solvate(
             numAdded=n_solvent,
             model=modeller_water_model,
             boxShape="dodecahedron",
-            ionicStrength=0 * unit.molar,
+            ionicStrength=0 * openmm_unit.molar,
             neutralize=False,
         )
 
         # Set dodecahedron box vectors correctly
         from openmm.vec3 import Vec3
 
-        box_width = modeller.topology.getPeriodicBoxVectors()[0][0].m_as(unit.nanometer)
+        box_width = modeller.topology.getPeriodicBoxVectors()[0][0].value_in_unit(
+            openmm_unit.nanometer
+        )
         box_vectors = (
             Vec3(box_width, 0, 0),
             Vec3(1 / 3, 2 * numpy.sqrt(2) / 3, 0) * box_width,
             Vec3(-1 / 3, numpy.sqrt(2) / 3, numpy.sqrt(6) / 3) * box_width,
         )
-        modeller.topology.setPeriodicBoxVectors(box_vectors * unit.nanometer)
+        modeller.topology.setPeriodicBoxVectors(box_vectors * openmm_unit.nanometer)
 
     # Add salt ions using the SLTCAP method
 
@@ -468,12 +483,14 @@ def solvate(
     else:
         raise ValueError("The ForceField does not specify a NonbondedForce")
 
-    total_charge = unit.Quantity(0, unit.elementary_charge)
+    total_charge = openmm_unit.Quantity(0, openmm_unit.elementary_charge)
     for i in range(nonbonded_force.getNumParticles()):
         total_charge += nonbonded_force.getParticleParameters(i)[0]
 
     # Round to nearest integer
-    total_charge = int(numpy.round(total_charge.m_as(unit.elementary_charge)))
+    total_charge = int(
+        numpy.round(total_charge.value_in_unit(openmm_unit.elementary_charge))
+    )
 
     print(f"Total charge is {total_charge} e")
 
@@ -553,7 +570,7 @@ def solvate(
             force_field,
             n_water,
             water_positions,
-            ionicStrength=sltcap_effective_ionic_strength,
+            ionicStrength=sltcap_effective_ionic_strength.to_openmm(),
             neutralize=True,
         )
 
@@ -563,7 +580,7 @@ def solvate(
             force_field,
             n_water,
             water_positions,
-            ionicStrength=ionic_strength,
+            ionicStrength=ionic_strength.to_openmm(),
             neutralize=True,
         )
 
@@ -583,105 +600,167 @@ def solvate(
     # Write solvated system to PDB file
     write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
 
-    # Create an OpenMM System from the solvated system
+    # Create the parametrized system from the solvated topology
     if smirnoff:
         openmm_system = force_field.createSystem(modeller.topology)
 
-        # Manually change hydrogen masses in OpenMM system. Taken from
-        # https://github.com/openmm/openmm/blob/f30d716ace8331003c5115bdfa9e03341a757878/wrappers/python/openmm/app/forcefield.py#L1249
-        _hydrogen = app.element.hydrogen
-        for atom1, atom2 in modeller.topology.bonds():
-            if atom1.element == _hydrogen:
-                (atom1, atom2) = (atom2, atom1)
-            if (
-                atom2.element == _hydrogen
-                and atom1.element not in {_hydrogen, None}
-                and atom2.residue.name != "HOH"
-            ):
-                transfer_mass = hydrogen_mass - openmm_system.getParticleMass(
-                    atom2.index
-                )
-                heavy_mass = openmm_system.getParticleMass(atom1.index) - transfer_mass
-                openmm_system.setParticleMass(atom2.index, hydrogen_mass)
-                openmm_system.setParticleMass(atom1.index, heavy_mass)
+        if simulation_platform == "openmm":
+            openmm_hydrogen_mass = hydrogen_mass.to_openmm()
+            # Manually change hydrogen masses in OpenMM system. Taken from
+            # https://github.com/openmm/openmm/blob/f30d716ace8331003c5115bdfa9e03341a757878/wrappers/python/openmm/app/forcefield.py#L1249
+            _hydrogen = app.element.hydrogen
+            for atom1, atom2 in modeller.topology.bonds():
+                if atom1.element == _hydrogen:
+                    (atom1, atom2) = (atom2, atom1)
+                if (
+                    atom2.element == _hydrogen
+                    and atom1.element not in {_hydrogen, None}
+                    and atom2.residue.name != "HOH"
+                ):
+                    transfer_mass = (
+                        openmm_hydrogen_mass
+                        - openmm_system.getParticleMass(atom2.index)
+                    )
+                    heavy_mass = (
+                        openmm_system.getParticleMass(atom1.index)
+                        - transfer_mass
+                    )
+                    openmm_system.setParticleMass(atom2.index, openmm_hydrogen_mass)
+                    openmm_system.setParticleMass(atom1.index, heavy_mass)
 
     else:
         switch_distance = nonbonded_cutoff - vdw_switch_width
-        openmm_system = force_field.createSystem(
+        if simulation_platform == "openmm":
+            openmm_system = force_field.createSystem(
+                modeller.topology,
+                nonbondedMethod=app.PME,
+                nonbondedCutoff=nonbonded_cutoff.to_openmm(),
+                constraints=app.HBonds,
+                rigidWater=True,
+                hydrogenMass=hydrogen_mass.to_openmm(),
+                switchDistance=switch_distance.to_openmm(),
+            )
+        elif simulation_platform == "gmx":
+            openmm_system = force_field.createSystem(
+                modeller.topology,
+                nonbondedMethod=app.PME,
+                nonbondedCutoff=nonbonded_cutoff.to_openmm(),
+                rigidWater=False,
+                hydrogenMass=hydrogen_mass.to_openmm(),
+                switchDistance=switch_distance.to_openmm(),
+            )
+        
+    if (smirnoff and simulation_platform == "openmm") or smirnoff == False:
+        # Validate total charge of solvated system
+        for i in range(openmm_system.getNumForces()):
+            if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
+                nonbonded_force = openmm_system.getForce(i)
+                break
+
+        else:
+            raise ValueError("The ForceField does not specify a NonbondedForce")
+
+        solvated_total_charge = openmm_unit.Quantity(0, openmm_unit.elementary_charge)
+        for i in range(nonbonded_force.getNumParticles()):
+            solvated_total_charge += nonbonded_force.getParticleParameters(i)[0]
+
+        solvated_total_charge = int(
+            numpy.round(
+                solvated_total_charge.value_in_unit(openmm_unit.elementary_charge)
+            )
+        )
+
+        if solvated_total_charge != 0:
+            raise ValueError(
+                f"Total charge of solvated system is {solvated_total_charge:d}"
+            )
+
+    if simulation_platform == "openmm":
+        # Write OpenMM system to XML file
+        write_xml(parametrized_system, openmm_system)
+
+    elif simulation_platform == "gmx":
+        import parmed as pmd
+
+        #Write GROMACS files
+        struct = pmd.openmm.load_topology(
             modeller.topology,
-            nonbondedMethod=app.PME,
-            nonbondedCutoff=nonbonded_cutoff,
-            constraints=app.HBonds,
-            rigidWater=True,
-            hydrogenMass=hydrogen_mass,
-            switchDistance=switch_distance,
+            openmm_system,
+            xyz=modeller.positions
         )
+        hmass = pmd.tools.HMassRepartition(struct, hydrogen_mass.m_as(unit.dalton))
+        hmass.execute()
 
-    # Validate total charge of solvated system
-    for i in range(openmm_system.getNumForces()):
-        if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
-            nonbonded_force = openmm_system.getForce(i)
-            break
+        struct.save(str(setup_prefix)+ '.gro')
+        struct.save(parametrized_system)
+        
+        #Add position restraints file to topology
+        itp_file = f"{setup_prefix.name}_posre.itp"
+        setup_split = str(setup_prefix).split('/')
+        match_string = '[ moleculetype ]'
+        insert_string = f'#ifdef POSRES\n#include "{itp_file}"\n#endif\n'
 
-    else:
-        raise ValueError("The ForceField does not specify a NonbondedForce")
+        mol=0
+        with open(parametrized_system, 'r+') as fd:
+            contents = fd.readlines()
+            # Handle last line to prevent IndexError
+            if match_string in contents[-1]:
+                contents.append(insert_string)
+            else:
+                for index, line in enumerate(contents):
+                    if match_string in line:
+                        if mol==1 and insert_string not in contents[index - 1]:
+                            contents.insert(index - 1, insert_string)
+                            break
+                        else:
+                            mol=1
+            fd.seek(0)
+            fd.writelines(contents)
+        print('GROMACS Files Printed')
 
-    solvated_total_charge = unit.Quantity(0, unit.elementary_charge)
-    for i in range(nonbonded_force.getNumParticles()):
-        solvated_total_charge += nonbonded_force.getParticleParameters(i)[0]
 
-    solvated_total_charge = int(
-        numpy.round(solvated_total_charge.m_as(unit.elementary_charge))
-    )
-
-    if solvated_total_charge != 0:
-        raise ValueError(
-            f"Total charge of solvated system is {solvated_total_charge:d}"
-        )
-
-    # Write OpenMM system to XML file
-    write_xml(openmm_system_xml, openmm_system)
-
-
-def minimize(
-    restraint_energy_constant: unit.Quantity,
-    openmm_system_xml: str,
+def minimize_openmm(
+    parametrized_system: str,
     solvated_pdb_file: str,
-    minimized_pdb_file: str,
+    minimized_coords_file: str,
+    restraint_energy_constant: unit.Quantity,
 ):
     """
     Minimize energy of solvated system with Cartesian restraints on non-hydrogen
-    solute atoms.
+    solute atoms using OpenMM.
 
     Parameters
     ----------
-    restraint_energy_constant
-        Energy constant for Cartesian restraints (units Energy Length^-2).
-    openmm_system_xml
-        The path to the parametrized OpenMM system as a serialized XML.
+    parametrized_system
+        The path to the parametrized system (OpenMM XML or GMX TOP).
     solvated_pdb_file
         The path to the solvated PDB with ions.
-    minimized_pdb_file
-        The path to write the minimized PDB.
+    minimized_coords_file
+        The path to write the minimized coords (OpenMM PDB or GMX GRO).
+    restraint_energy_constant
+        Energy constant for Cartesian restraints in OpenMM (units Energy
+        Length^-2).
     """
 
     # Check units of arguments
-    if not restraint_energy_constant.unit.is_compatible_with(
+    if not restraint_energy_constant.is_compatible_with(
         unit.kilojoule_per_mole / unit.nanometer**2
     ):
         raise ValueError(
             "restraint_energy_constant does not have units of Energy Length^-2"
         )
 
-    k = restraint_energy_constant.m_as(unit.kilocalorie_per_mole / unit.angstrom**2)
+    k = restraint_energy_constant.m_as(
+        unit.kilocalories_per_mole / unit.angstrom**2
+    )
 
     print(
         f"Minimizing energy with Cartesian restraint energy constant {k:.4f} "
         "kcal mol^-1 angstrom^-2"
     )
-
+    
     # Load OpenMM system and solvated PDB
-    openmm_system = read_xml(openmm_system_xml)
+    openmm_system = read_xml(parametrized_system)
     solvated_pdb = app.PDBFile(solvated_pdb_file)
 
     # Create Cartesian restraints on non-hydrogen solute atoms
@@ -689,7 +768,7 @@ def minimize(
         "k * periodicdistance(x, y, z, x0, y0, z0)^2"
     )
     openmm_system.addForce(cartesian_restraint)
-    cartesian_restraint.addGlobalParameter("k", restraint_energy_constant)
+    cartesian_restraint.addGlobalParameter("k", restraint_energy_constant.to_openmm())
     cartesian_restraint.addPerParticleParameter("x0")
     cartesian_restraint.addPerParticleParameter("y0")
     cartesian_restraint.addPerParticleParameter("z0")
@@ -708,7 +787,7 @@ def minimize(
                         )
 
     # Set up minimization and print initial energy
-    integrator = openmm.VerletIntegrator(1.0 * unit.femtosecond)
+    integrator = openmm.VerletIntegrator(1.0 * openmm_unit.femtosecond)
     simulation = app.Simulation(
         solvated_pdb.topology,
         openmm_system,
@@ -717,18 +796,105 @@ def minimize(
     )
     simulation.context.setPositions(solvated_pdb.positions)
     initial_state = simulation.context.getState(getEnergy=True)
-    initial_energy = initial_state.getPotentialEnergy().m_as(unit.kilocalorie_per_mole)
+    initial_energy = initial_state.getPotentialEnergy().value_in_unit(
+        openmm_unit.kilocalorie_per_mole
+    )
     print(f"Initial energy of solvated system: {initial_energy:.4f} kcal mol^-1")
 
     # Run minimization with Cartesian restraints and print final energy
     simulation.minimizeEnergy()
     final_state = simulation.context.getState(getEnergy=True, getPositions=True)
-    final_energy = final_state.getPotentialEnergy().m_as(unit.kilocalorie_per_mole)
+    final_energy = final_state.getPotentialEnergy().value_in_unit(
+        openmm_unit.kilocalorie_per_mole
+    )
     print(f"Final energy of minimized system: {final_energy:.4f} kcal mol^-1")
-
+    
     # Write minimized coordinates to PDB
     write_pdb(
-        minimized_pdb_file,
+        minimized_coords_file,
         simulation.topology,
         final_state.getPositions(),
     )
+    
+
+def minimize_gmx(
+    parametrized_system: str,
+    solvated_pdb_file: str,
+    minimized_coords_file: str,
+    setup_prefix: str,
+    gmx_executable: str,
+    energy_tolerance: unit.Quantity,
+):
+    """
+    Minimize energy of solvated system with Cartesian restraints on non-hydrogen
+    solute atoms using GROMACS.
+
+    Parameters
+    ----------
+    parametrized_system
+        The path to the parametrized system (OpenMM XML or GMX TOP).
+    solvated_pdb_file
+        The path to the solvated PDB with ions.
+    minimized_coords_file
+        The path to write the minimized coords (OpenMM PDB or GMX GRO).
+    gmx_executable
+        Name of GROMACS executable to pass to subprocess.
+    energy_tolerance
+        Energy tolerance for minimization in GROMACS (units Energy Length^-1).
+    """
+
+    import subprocess
+
+    # Check units of arguments
+    if not energy_tolerance.unit.is_compatible_with(
+        unit.kilojoule_per_mole / unit.nanometer
+    ):
+        raise ValueError(
+            "energy_tolerance does not have units of Energy Length^-1"
+        )
+
+    k = energy_tolerance.m_as(
+        unit.kilojoule_per_mole / unit.nanometer
+    )
+
+    #Create MDP file
+    mdp_file = str(setup_prefix) + '-min.mdp'
+    with open(mdp_file, 'w') as mdp_file_w:
+        mdp_file_w.write(
+            f"integrator = steep\nemtol = {k}\nemstep = 0.01\nnsteps=50000\n"
+            "nstlist = 1\ncutoff-scheme = Verlet\nns_type = grid\nrlist = 0.9\n"
+            "coulombtype = PME\nrcoulomb = 1.0\nrvdw = 0.9\npbc = xyz\n"
+        )
+
+    #Create position restrints file for backbone atoms
+    restr = subprocess.Popen(
+        [
+            gmx_executable,
+            'genrestr',
+            '-f',
+            minimized_coords_file,
+            '-o',
+            f'{setup_prefix}_posre.itp'
+        ],
+        stdin=subprocess.PIPE
+    )
+    restr.communicate(b'4\n')
+    restr.wait()
+   
+    #Generate TPR for Energy Minimization
+    out_tprfile = str(setup_prefix) + '-min'
+    grompp = subprocess.run([
+        gmx_executable,
+        'grompp',
+        '-f',
+        mdp_file,
+        '-p',
+        parametrized_system,
+        '-c',
+        minimized_coords_file,
+        '-o',
+        out_tprfile
+    ])
+    
+    #Run Energy Minimization
+    run = subprocess.run([gmx_executable, 'mdrun', '-deffnm', out_tprfile])

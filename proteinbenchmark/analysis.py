@@ -13,8 +13,6 @@ from proteinbenchmark.benchmark_targets import (benchmark_targets,
                                                 experimental_datasets)
 from proteinbenchmark.utilities import list_of_dicts_to_csv
 
-DEG_TO_RAD = numpy.pi / 180.0
-
 
 def align_trajectory(
     topology_path: str,

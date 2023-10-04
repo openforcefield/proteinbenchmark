@@ -1,7 +1,7 @@
 """List of benchmark targets specifying observables and thermodynamic state."""
 from pathlib import Path
 
-from openmm import unit
+from openff.units import unit
 
 from proteinbenchmark.utilities import package_data_directory
 
@@ -314,7 +314,7 @@ benchmark_targets = {
             "backbone_rdc": "ulmer_jacs_2003",
         },
     },
-    "gb3-hmr": {
+    "gb3-test": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "gb3-1P7E.pdb"),
         "pressure": 1.0 * unit.atmosphere,
@@ -333,11 +333,13 @@ benchmark_targets = {
                 ),
             },
             "h_bond_scalar_couplings": {
-                "experimental_datasets": ["cornilescu_jacs_1999_b"],
+                "experimental_datasets": "cornilescu_jacs_1999",
                 "observable_path": Path(observable_directory, "gb3", "gb3-3j-n-co.dat"),
             },
             "backbone_rdc": "ulmer_jacs_2003",
         },
+        "traj_length": 10 * unit.nanosecond,
+        "equil_timestep": 0.002 * unit.picosecond
     },
     "gb3-3j-ha-hb": {
         "target_type": "folded",
