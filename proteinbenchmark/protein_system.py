@@ -2,20 +2,24 @@ from pathlib import Path
 
 import numpy
 
-from proteinbenchmark.analysis import (align_trajectory,
-                                       assign_dihedral_clusters,
-                                       compute_fraction_helix,
-                                       compute_h_bond_scalar_couplings,
-                                       compute_scalar_couplings,
-                                       measure_dihedrals,
-                                       measure_h_bond_geometries)
-from proteinbenchmark.openmm_simulation import OpenMMSimulation
+from proteinbenchmark.analysis import (
+    align_trajectory,
+    assign_dihedral_clusters,
+    compute_fraction_helix,
+    compute_h_bond_scalar_couplings,
+    compute_scalar_couplings,
+    measure_dihedrals,
+    measure_h_bond_geometries,
+)
 from proteinbenchmark.gmx_simulation import GMXSimulation
+from proteinbenchmark.openmm_simulation import OpenMMSimulation
 from proteinbenchmark.simulation_parameters import *
-from proteinbenchmark.system_setup import (build_initial_coordinates,
-                                           minimize_gmx,
-                                           minimize_openmm,
-                                           solvate)
+from proteinbenchmark.system_setup import (
+    build_initial_coordinates,
+    minimize_gmx,
+    minimize_openmm,
+    solvate,
+)
 from proteinbenchmark.utilities import exists_and_not_empty, merge_csvs
 
 
@@ -34,7 +38,7 @@ class ProteinBenchmarkSystem:
         water_model_name: str,
         force_field_file: str,
         water_model_file: str = None,
-        simulation_platform: str = 'openmm',
+        simulation_platform: str = "openmm",
         gmx_executable: str = None,
     ):
         """
@@ -103,7 +107,6 @@ class ProteinBenchmarkSystem:
             raise ValueError(
                 f"simulation_platform must be one of:\n    openmm\n    gmx"
             )
-
 
     def setup(self):
         """
@@ -188,7 +191,7 @@ class ProteinBenchmarkSystem:
                 vdw_switch_width = VDW_SWITCH_WIDTH
 
             solvate(
-                simulation_platform = self.simulation_platform,
+                simulation_platform=self.simulation_platform,
                 ionic_strength=self.target_parameters["ionic_strength"],
                 nonbonded_cutoff=nonbonded_cutoff,
                 vdw_switch_width=vdw_switch_width,
@@ -199,7 +202,7 @@ class ProteinBenchmarkSystem:
                 force_field_file=self.force_field_file,
                 water_model_file=self.water_model_file,
                 solvent_padding=solvent_padding,
-                setup_prefix = self.setup_prefix,
+                setup_prefix=self.setup_prefix,
             )
 
         # Minimize energy of solvated system with Cartesian restraints on
@@ -225,9 +228,7 @@ class ProteinBenchmarkSystem:
 
             elif self.simulation_platform == "gmx":
                 if "energy_tolerance" in self.target_parameters:
-                    energy_tolerance = self.target_parameters[
-                        "energy_tolerance"
-                    ]
+                    energy_tolerance = self.target_parameters["energy_tolerance"]
 
                 else:
                     energy_tolerance = ENERGY_TOLERANCE
@@ -253,10 +254,10 @@ class ProteinBenchmarkSystem:
         replica_prefix = Path(replica_dir, self.system_name)
         setup_dir = Path(self.base_path, "setup")
         setup_prefix = Path(setup_dir, self.system_name)
-        
+
         equil_prefix = f"{replica_prefix}-equilibration"
         prod_prefix = f"{replica_prefix}-production"
-        
+
         # Saved state from the end of the equilibration simulation
         if self.simulation_platform == "openmm":
             equilibrated_state = f"{equil_prefix}-1.xml"
@@ -277,14 +278,14 @@ class ProteinBenchmarkSystem:
                 equil_traj_length = self.target_parameters["equil_traj_length"]
             else:
                 equil_traj_length = EQUIL_TRAJ_LENGTH
-            
+
             if "equil_frame_length" in self.target_parameters:
                 equil_frame_length = self.target_parameters["equil_frame_length"]
             else:
                 equil_frame_length = EQUIL_FRAME_LENGTH
 
             if self.simulation_platform == "openmm":
-                #Get OpenMM Specific Parameters
+                # Get OpenMM Specific Parameters
                 if "equil_langevin_friction" in self.target_parameters:
                     equil_langevin_friction = self.target_parameters[
                         "equil_langevin_friction"
@@ -328,7 +329,7 @@ class ProteinBenchmarkSystem:
                 equilibration_simulation.start_from_pdb()
 
             else:
-                #Get GROMACS Specific Parameters
+                # Get GROMACS Specific Parameters
                 if "equil_barostat_constant" in self.target_parameters:
                     equil_barostat_constant = self.target_parameters[
                         "equil_barostat_constant"
@@ -344,7 +345,7 @@ class ProteinBenchmarkSystem:
                     equil_thermostat_constant = EQUIL_GMX_THERMOSTAT_CONSTANT
 
                 NPT_simulation = GMXSimulation(
-                    gmx_executable = self.gmx_executable,
+                    gmx_executable=self.gmx_executable,
                     initial_pdb_file=self.minimized_coords,
                     save_state_prefix=equil_prefix,
                     setup_prefix=setup_prefix,
@@ -355,7 +356,7 @@ class ProteinBenchmarkSystem:
                     timestep=equil_timestep,
                     traj_length=equil_traj_length,
                     frame_length=equil_frame_length,
-                    restraints_present = "NPT",
+                    restraints_present="NPT",
                 )
 
                 NPT_simulation.run()
@@ -389,7 +390,7 @@ class ProteinBenchmarkSystem:
             frame_length = FRAME_LENGTH
 
         if self.simulation_platform == "openmm":
-            #Get OpenMM Specific Parameters
+            # Get OpenMM Specific Parameters
             if "checkpoint_length" in self.target_parameters:
                 checkpoint_length = self.target_parameters["checkpoint_length"]
             else:
@@ -444,46 +445,42 @@ class ProteinBenchmarkSystem:
                 production_simulation.resume_from_checkpoint()
 
         else:
-            #Get GROMACS Specific Parameters
+            # Get GROMACS Specific Parameters
             if "barostat_constant" in self.target_parameters:
-                barostat_constant = self.target_parameters[
-                    "barostat_constant"
-                ]
+                barostat_constant = self.target_parameters["barostat_constant"]
             else:
                 barostat_constant = GMX_BAROSTAT_CONSTANT
 
             if "thermostat_constant" in self.target_parameters:
-                thermostat_constant = self.target_parameters[
-                    "thermostat_constant"
-                ]
+                thermostat_constant = self.target_parameters["thermostat_constant"]
             else:
                 thermostat_constant = GMX_THERMOSTAT_CONSTANT
 
             production_checkpoint = f"{prod_prefix}.cpt"
 
             production_simulation = GMXSimulation(
-                    gmx_executable = self.gmx_executable,
-                    initial_pdb_file=self.minimized_coords,
-                    setup_prefix=setup_prefix,
-                    save_state_prefix=prod_prefix,
-                    temperature=self.target_parameters["temperature"],
-                    pressure=self.target_parameters["pressure"],
-                    barostat_constant=barostat_constant,
-                    thermostat_constant=thermostat_constant,
-                    timestep=timestep,
-                    traj_length=traj_length,
-                    frame_length=frame_length,
-                    restraints_present = False,
-                    load_state_prefix=equil_prefix,
-                )
+                gmx_executable=self.gmx_executable,
+                initial_pdb_file=self.minimized_coords,
+                setup_prefix=setup_prefix,
+                save_state_prefix=prod_prefix,
+                temperature=self.target_parameters["temperature"],
+                pressure=self.target_parameters["pressure"],
+                barostat_constant=barostat_constant,
+                thermostat_constant=thermostat_constant,
+                timestep=timestep,
+                traj_length=traj_length,
+                frame_length=frame_length,
+                restraints_present=False,
+                load_state_prefix=equil_prefix,
+            )
 
-            #Run Production
+            # Run Production
             if not exists_and_not_empty(production_checkpoint):
                 # Start production simulation, initializing positions and
                 # velocities to the final state from the equilibration simulation
                 production_simulation.run()
             else:
-                production_simulation.start_from_save_state(production_checkpoint) 
+                production_simulation.start_from_save_state(production_checkpoint)
 
     def analyze_observables(self, replica: int = 1):
         """Process trajectories and estimate observables."""
@@ -507,14 +504,14 @@ class ProteinBenchmarkSystem:
 
             replica_dir = Path(self.base_path, f"replica-{replica:d}")
             replica_prefix = Path(replica_dir, self.system_name)
-            
+
             if self.simulation_platform == "openmm":
                 traj_path = f"{replica_prefix}-production.dcd"
-                output_selection = 'chainid == "A"' 
+                output_selection = 'chainid == "A"'
             elif self.simulation_platform == "gmx":
                 traj_path = f"{replica_dir}/traj.xtc"
                 output_selection = 'resname != "HOH" && resname != "NA"'
-            
+
             align_trajectory(
                 topology_path=self.minimized_coords,
                 trajectory_path=traj_path,

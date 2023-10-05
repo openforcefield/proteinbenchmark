@@ -339,7 +339,7 @@ benchmark_targets = {
             "backbone_rdc": "ulmer_jacs_2003",
         },
         "traj_length": 10 * unit.nanosecond,
-        "equil_timestep": 0.002 * unit.picosecond
+        "equil_timestep": 0.002 * unit.picosecond,
     },
     "gb3-3j-ha-hb": {
         "target_type": "folded",

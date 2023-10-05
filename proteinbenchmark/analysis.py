@@ -9,8 +9,7 @@ from openff.toolkit import Molecule
 from openff.units import unit
 
 from proteinbenchmark.analysis_parameters import *
-from proteinbenchmark.benchmark_targets import (benchmark_targets,
-                                                experimental_datasets)
+from proteinbenchmark.benchmark_targets import benchmark_targets, experimental_datasets
 from proteinbenchmark.utilities import list_of_dicts_to_csv
 
 

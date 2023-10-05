@@ -1,9 +1,10 @@
+import subprocess
 from pathlib import Path
 
-#import gmxapi as gmx
+# import gmxapi as gmx
 import numpy
 from openff.units import unit
-import subprocess
+
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml
 
 
@@ -16,7 +17,7 @@ class GMXSimulation:
         parametrized_system: str,
         initial_coords_file: str,
         save_state_prefix: str,
-        setup_prefix:str,
+        setup_prefix: str,
         temperature: unit.Quantity,
         pressure: unit.Quantity,
         barostat_constant: unit.Quantity,
@@ -81,32 +82,31 @@ class GMXSimulation:
         if not frame_length.is_compatible_with(unit.picosecond):
             raise ValueError("frame_length does not have units of Time")
 
-        #Ensure proper units for output
-        self.temperature = temperature.m_as(unit.kelvin) #Kelvin
-        self.pressure = pressure.m_as(unit.atmosphere) #atm
-        self.thermostat_constant = thermostat_constant.m_as(unit.picosecond) #ps
-        self.barostat_constant = barostat_constant.m_as(unit.picosecond) #ps
-        self.timestep = timestep.m_as(unit.picosecond) #fs
-        self.n_steps = int(numpy.round(traj_length / timestep)) #steps
-        self.output_frequency = int(numpy.round(frame_length / timestep)) #steps
-        self.restraints_present = restraints_present #str
-
+        # Ensure proper units for output
+        self.temperature = temperature.m_as(unit.kelvin)  # Kelvin
+        self.pressure = pressure.m_as(unit.atmosphere)  # atm
+        self.thermostat_constant = thermostat_constant.m_as(unit.picosecond)  # ps
+        self.barostat_constant = barostat_constant.m_as(unit.picosecond)  # ps
+        self.timestep = timestep.m_as(unit.picosecond)  # fs
+        self.n_steps = int(numpy.round(traj_length / timestep))  # steps
+        self.output_frequency = int(numpy.round(frame_length / timestep))  # steps
+        self.restraints_present = restraints_present  # str
 
     def setup_simulation(self):
         """
         Set up a GROMACS simulation.
         """
-        
-        #create mdp file
-        mdp_file = self.save_state_prefix + '.mdp'
-        
-        #Write settings to MDP File
-        with open(mdp_file, 'w') as mdp_file_w:
-            #Apply position restraints for equilibration
-            if self.restraints_present == 'NPT':
-                mdp_file_w.write('define=-DPOSRES\n' + 'continuation=no\n')
+
+        # create mdp file
+        mdp_file = self.save_state_prefix + ".mdp"
+
+        # Write settings to MDP File
+        with open(mdp_file, "w") as mdp_file_w:
+            # Apply position restraints for equilibration
+            if self.restraints_present == "NPT":
+                mdp_file_w.write("define=-DPOSRES\n" + "continuation=no\n")
             else:
-                mdp_file_w.write('continuation=yes\n')
+                mdp_file_w.write("continuation=yes\n")
 
             mdp_file_w.write(
                 f"integrator = md\nnsteps={self.n_steps}\n"
@@ -125,16 +125,15 @@ class GMXSimulation:
                 f"ref_p = {self.pressure}\ncompressibility = 4.5e-5\n"
                 "refcoord_scaling = com\n"
             )
-            if self.restraints_present == 'NPT':
+            if self.restraints_present == "NPT":
                 mdp_file_w.write(
                     f"gen_vel = yes\ngen_temp = {self.temperature}\n"
                     "gen_seed = -1\npcoupl = C-rescale\n"
                 )
             else:
                 mdp_file_w.write("gen_vel = no\npcoupl = Parrinello-Rahman\n")
-        
-        return mdp_file
 
+        return mdp_file
 
     def run(self):
         """
@@ -143,73 +142,80 @@ class GMXSimulation:
         temperature.
         """
 
-        #Generate MDP
+        # Generate MDP
         mdp_file = self.setup_simulation()
 
-        #Generate TPR
-        if self.restraints_present == 'NPT':
-            grompp = subprocess.run([
-                self.gmx_executable,
-                'grompp', 
-                '-f',
-                mdp_file, 
-                '-p',
-                self.parametrized_system,
-                '-c',
-                self.minimized_coords,
-                '-r',
-                self.minimized_coords,
-                '-maxwarn',
-                '2', 
-                '-o',
-                str(self.save_state_prefix)
-            ])
-        
+        # Generate TPR
+        if self.restraints_present == "NPT":
+            grompp = subprocess.run(
+                [
+                    self.gmx_executable,
+                    "grompp",
+                    "-f",
+                    mdp_file,
+                    "-p",
+                    self.parametrized_system,
+                    "-c",
+                    self.minimized_coords,
+                    "-r",
+                    self.minimized_coords,
+                    "-maxwarn",
+                    "2",
+                    "-o",
+                    str(self.save_state_prefix),
+                ]
+            )
+
         else:
             print(self.gmx_executable)
-            grompp = subprocess.run([
-                self.gmx_executable,
-                'grompp', 
-                '-f',
-                mdp_file, 
-                '-p',
-                self.parametrized_system,
-                '-c',
-                f'{self.load_prefix}.gro', 
-                '-t',
-                f'{self.load_prefix}.cpt', 
-                '-maxwarn',
-                '2', 
-                '-o',
-                str(self.save_state_prefix)
-            ])
+            grompp = subprocess.run(
+                [
+                    self.gmx_executable,
+                    "grompp",
+                    "-f",
+                    mdp_file,
+                    "-p",
+                    self.parametrized_system,
+                    "-c",
+                    f"{self.load_prefix}.gro",
+                    "-t",
+                    f"{self.load_prefix}.cpt",
+                    "-maxwarn",
+                    "2",
+                    "-o",
+                    str(self.save_state_prefix),
+                ]
+            )
 
         # Run Simulation
-        if self.restraints_present == 'NPT':
-            simulation = subprocess.run([
-                self.gmx_executable,
-                'mdrun',
-                '-deffnm',
-                str(self.save_state_prefix),
-                '-ntmpi',
-                '1'
-            ])
-            #simulation = gmx.mdrun(
+        if self.restraints_present == "NPT":
+            simulation = subprocess.run(
+                [
+                    self.gmx_executable,
+                    "mdrun",
+                    "-deffnm",
+                    str(self.save_state_prefix),
+                    "-ntmpi",
+                    "1",
+                ]
+            )
+            # simulation = gmx.mdrun(
             #    input=grompp.output.file['-o'], runtime_args={'-ntmpi': '1'}
-            #)
+            # )
         else:
-            simulation = subprocess.run([
-                self.gmx_executable,
-                'mdrun',
-                '-deffnm',
-                str(self.save_state_prefix),
-                '-ntomp',
-                '1'
-            ])
-            #simulation = gmx.mdrun(
+            simulation = subprocess.run(
+                [
+                    self.gmx_executable,
+                    "mdrun",
+                    "-deffnm",
+                    str(self.save_state_prefix),
+                    "-ntomp",
+                    "1",
+                ]
+            )
+            # simulation = gmx.mdrun(
             #    input=grompp.output.file['-o'], runtime_args={'-ntomp': '1'}
-            #)
-
+            # )
 
     def start_from_save_state(
         self,
@@ -225,13 +231,15 @@ class GMXSimulation:
             Path to the serialized simulation state.
         """
         # Run Simulation
-        simulation = subprocess.run([
-            self.gmx_executable,
-            'mdrun',
-            '-deffnm',
-            str(self.save_state_prefix),
-            '-cpi',
-            save_state_file,
-            '-ntomp',
-            '1'
-        ])
+        simulation = subprocess.run(
+            [
+                self.gmx_executable,
+                "mdrun",
+                "-deffnm",
+                str(self.save_state_prefix),
+                "-cpi",
+                save_state_file,
+                "-ntomp",
+                "1",
+            ]
+        )

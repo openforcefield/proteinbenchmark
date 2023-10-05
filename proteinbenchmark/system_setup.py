@@ -2,16 +2,20 @@ from pathlib import Path
 
 import numpy
 import openmm
-from openmm import unit as openmm_unit
 from openff.toolkit import ForceField as OFFForceField
 from openff.toolkit import Molecule as OFFMolecule
 from openff.toolkit import Topology as OFFTopology
 from openff.units import unit
 from openmm import app
+from openmm import unit as openmm_unit
 
 from proteinbenchmark.force_fields import water_model_files
-from proteinbenchmark.utilities import (read_xml, remove_model_lines,
-                                        write_pdb, write_xml)
+from proteinbenchmark.utilities import (
+    read_xml,
+    remove_model_lines,
+    write_pdb,
+    write_xml,
+)
 
 
 class _OFFForceField(OFFForceField):
@@ -31,8 +35,10 @@ class _OFFForceField(OFFForceField):
     def createSystem(self, openmm_topology: app.Topology):
         """Return an OpenMM system from an OpenMM topology."""
 
-        return self.createInter(openmm_topology).to_openmm(combine_nonbonded_forces=True)
-        
+        return self.createInter(openmm_topology).to_openmm(
+            combine_nonbonded_forces=True
+        )
+
     def createInter(self, openmm_topology: app.Topology):
         """Return an OpenFF Interchange object from an OpenMM topology."""
 
@@ -622,8 +628,7 @@ def solvate(
                         - openmm_system.getParticleMass(atom2.index)
                     )
                     heavy_mass = (
-                        openmm_system.getParticleMass(atom1.index)
-                        - transfer_mass
+                        openmm_system.getParticleMass(atom1.index) - transfer_mass
                     )
                     openmm_system.setParticleMass(atom2.index, openmm_hydrogen_mass)
                     openmm_system.setParticleMass(atom1.index, heavy_mass)
@@ -649,7 +654,7 @@ def solvate(
                 hydrogenMass=hydrogen_mass.to_openmm(),
                 switchDistance=switch_distance.to_openmm(),
             )
-        
+
     if (smirnoff and simulation_platform == "openmm") or smirnoff == False:
         # Validate total charge of solvated system
         for i in range(openmm_system.getNumForces()):
@@ -682,26 +687,24 @@ def solvate(
     elif simulation_platform == "gmx":
         import parmed as pmd
 
-        #Write GROMACS files
+        # Write GROMACS files
         struct = pmd.openmm.load_topology(
-            modeller.topology,
-            openmm_system,
-            xyz=modeller.positions
+            modeller.topology, openmm_system, xyz=modeller.positions
         )
         hmass = pmd.tools.HMassRepartition(struct, hydrogen_mass.m_as(unit.dalton))
         hmass.execute()
 
-        struct.save(str(setup_prefix)+ '.gro')
+        struct.save(str(setup_prefix) + ".gro")
         struct.save(parametrized_system)
-        
-        #Add position restraints file to topology
+
+        # Add position restraints file to topology
         itp_file = f"{setup_prefix.name}_posre.itp"
-        setup_split = str(setup_prefix).split('/')
-        match_string = '[ moleculetype ]'
+        setup_split = str(setup_prefix).split("/")
+        match_string = "[ moleculetype ]"
         insert_string = f'#ifdef POSRES\n#include "{itp_file}"\n#endif\n'
 
-        mol=0
-        with open(parametrized_system, 'r+') as fd:
+        mol = 0
+        with open(parametrized_system, "r+") as fd:
             contents = fd.readlines()
             # Handle last line to prevent IndexError
             if match_string in contents[-1]:
@@ -709,14 +712,14 @@ def solvate(
             else:
                 for index, line in enumerate(contents):
                     if match_string in line:
-                        if mol==1 and insert_string not in contents[index - 1]:
+                        if mol == 1 and insert_string not in contents[index - 1]:
                             contents.insert(index - 1, insert_string)
                             break
                         else:
-                            mol=1
+                            mol = 1
             fd.seek(0)
             fd.writelines(contents)
-        print('GROMACS Files Printed')
+        print("GROMACS Files Printed")
 
 
 def minimize_openmm(
@@ -750,15 +753,13 @@ def minimize_openmm(
             "restraint_energy_constant does not have units of Energy Length^-2"
         )
 
-    k = restraint_energy_constant.m_as(
-        unit.kilocalories_per_mole / unit.angstrom**2
-    )
+    k = restraint_energy_constant.m_as(unit.kilocalories_per_mole / unit.angstrom**2)
 
     print(
         f"Minimizing energy with Cartesian restraint energy constant {k:.4f} "
         "kcal mol^-1 angstrom^-2"
     )
-    
+
     # Load OpenMM system and solvated PDB
     openmm_system = read_xml(parametrized_system)
     solvated_pdb = app.PDBFile(solvated_pdb_file)
@@ -808,14 +809,14 @@ def minimize_openmm(
         openmm_unit.kilocalorie_per_mole
     )
     print(f"Final energy of minimized system: {final_energy:.4f} kcal mol^-1")
-    
+
     # Write minimized coordinates to PDB
     write_pdb(
         minimized_coords_file,
         simulation.topology,
         final_state.getPositions(),
     )
-    
+
 
 def minimize_gmx(
     parametrized_system: str,
@@ -849,52 +850,50 @@ def minimize_gmx(
     if not energy_tolerance.unit.is_compatible_with(
         unit.kilojoule_per_mole / unit.nanometer
     ):
-        raise ValueError(
-            "energy_tolerance does not have units of Energy Length^-1"
-        )
+        raise ValueError("energy_tolerance does not have units of Energy Length^-1")
 
-    k = energy_tolerance.m_as(
-        unit.kilojoule_per_mole / unit.nanometer
-    )
+    k = energy_tolerance.m_as(unit.kilojoule_per_mole / unit.nanometer)
 
-    #Create MDP file
-    mdp_file = str(setup_prefix) + '-min.mdp'
-    with open(mdp_file, 'w') as mdp_file_w:
+    # Create MDP file
+    mdp_file = str(setup_prefix) + "-min.mdp"
+    with open(mdp_file, "w") as mdp_file_w:
         mdp_file_w.write(
             f"integrator = steep\nemtol = {k}\nemstep = 0.01\nnsteps=50000\n"
             "nstlist = 1\ncutoff-scheme = Verlet\nns_type = grid\nrlist = 0.9\n"
             "coulombtype = PME\nrcoulomb = 1.0\nrvdw = 0.9\npbc = xyz\n"
         )
 
-    #Create position restrints file for backbone atoms
+    # Create position restrints file for backbone atoms
     restr = subprocess.Popen(
         [
             gmx_executable,
-            'genrestr',
-            '-f',
+            "genrestr",
+            "-f",
             minimized_coords_file,
-            '-o',
-            f'{setup_prefix}_posre.itp'
+            "-o",
+            f"{setup_prefix}_posre.itp",
         ],
-        stdin=subprocess.PIPE
+        stdin=subprocess.PIPE,
     )
-    restr.communicate(b'4\n')
+    restr.communicate(b"4\n")
     restr.wait()
-   
-    #Generate TPR for Energy Minimization
-    out_tprfile = str(setup_prefix) + '-min'
-    grompp = subprocess.run([
-        gmx_executable,
-        'grompp',
-        '-f',
-        mdp_file,
-        '-p',
-        parametrized_system,
-        '-c',
-        minimized_coords_file,
-        '-o',
-        out_tprfile
-    ])
-    
-    #Run Energy Minimization
-    run = subprocess.run([gmx_executable, 'mdrun', '-deffnm', out_tprfile])
+
+    # Generate TPR for Energy Minimization
+    out_tprfile = str(setup_prefix) + "-min"
+    grompp = subprocess.run(
+        [
+            gmx_executable,
+            "grompp",
+            "-f",
+            mdp_file,
+            "-p",
+            parametrized_system,
+            "-c",
+            minimized_coords_file,
+            "-o",
+            out_tprfile,
+        ]
+    )
+
+    # Run Energy Minimization
+    run = subprocess.run([gmx_executable, "mdrun", "-deffnm", out_tprfile])
