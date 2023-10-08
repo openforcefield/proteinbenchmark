@@ -346,7 +346,8 @@ class ProteinBenchmarkSystem:
 
                 NPT_simulation = GMXSimulation(
                     gmx_executable=self.gmx_executable,
-                    initial_pdb_file=self.minimized_coords,
+                    initial_coords_file=self.minimized_coords,
+                    parametrized_system=self.parametrized_system,
                     save_state_prefix=equil_prefix,
                     setup_prefix=setup_prefix,
                     temperature=self.target_parameters["temperature"],
@@ -460,7 +461,8 @@ class ProteinBenchmarkSystem:
 
             production_simulation = GMXSimulation(
                 gmx_executable=self.gmx_executable,
-                initial_pdb_file=self.minimized_coords,
+                parametrized_system=self.parametrized_system,
+                initial_coords_file=equil_prefix,
                 setup_prefix=setup_prefix,
                 save_state_prefix=prod_prefix,
                 temperature=self.target_parameters["temperature"],

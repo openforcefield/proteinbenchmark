@@ -847,7 +847,7 @@ def minimize_gmx(
     import subprocess
 
     # Check units of arguments
-    if not energy_tolerance.unit.is_compatible_with(
+    if not energy_tolerance.is_compatible_with(
         unit.kilojoule_per_mole / unit.nanometer
     ):
         raise ValueError("energy_tolerance does not have units of Energy Length^-1")
@@ -855,7 +855,7 @@ def minimize_gmx(
     k = energy_tolerance.m_as(unit.kilojoule_per_mole / unit.nanometer)
 
     # Create MDP file
-    mdp_file = str(setup_prefix) + "-min.mdp"
+    mdp_file = str(setup_prefix) + "-minimized.mdp"
     with open(mdp_file, "w") as mdp_file_w:
         mdp_file_w.write(
             f"integrator = steep\nemtol = {k}\nemstep = 0.01\nnsteps=50000\n"
@@ -869,7 +869,7 @@ def minimize_gmx(
             gmx_executable,
             "genrestr",
             "-f",
-            minimized_coords_file,
+            solvated_pdb_file,
             "-o",
             f"{setup_prefix}_posre.itp",
         ],
@@ -879,7 +879,7 @@ def minimize_gmx(
     restr.wait()
 
     # Generate TPR for Energy Minimization
-    out_tprfile = str(setup_prefix) + "-min"
+    out_prefix = str(setup_prefix) + "-minimized"
     grompp = subprocess.run(
         [
             gmx_executable,
@@ -889,11 +889,11 @@ def minimize_gmx(
             "-p",
             parametrized_system,
             "-c",
-            minimized_coords_file,
+            solvated_pdb_file,
             "-o",
-            out_tprfile,
+            out_prefix,
         ]
     )
 
     # Run Energy Minimization
-    run = subprocess.run([gmx_executable, "mdrun", "-deffnm", out_tprfile])
+    run = subprocess.run([gmx_executable, "mdrun", "-deffnm", out_prefix])
