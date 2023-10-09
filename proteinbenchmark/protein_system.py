@@ -15,6 +15,7 @@ from proteinbenchmark.gmx_simulation import GMXSimulation
 from proteinbenchmark.openmm_simulation import OpenMMSimulation
 from proteinbenchmark.simulation_parameters import *
 from proteinbenchmark.system_setup import (
+    assign_parameters,
     build_initial_coordinates,
     minimize_gmx,
     minimize_openmm,
@@ -168,8 +169,8 @@ class ProteinBenchmarkSystem:
                     'contain one of "aa_sequence" or "initial_pdb"'
                 )
 
-        # Solvate, add ions, and construct parametrized system
-        if not exists_and_not_empty(self.parametrized_system):
+        # Solvate and add ions using Amber ff14SB as a reference force field
+        if not exists_and_not_empty(solvated_pdb):
             print(f"Solvating system {self.system_name}")
 
             # Get parameters for solvation and constructing OpenMM system
@@ -191,8 +192,29 @@ class ProteinBenchmarkSystem:
                 vdw_switch_width = VDW_SWITCH_WIDTH
 
             solvate(
-                simulation_platform=self.simulation_platform,
                 ionic_strength=self.target_parameters["ionic_strength"],
+                protonated_pdb_file=self.protonated_pdb,
+                solvated_pdb_file=solvated_pdb,
+                water_model=self.water_model,
+                solvent_padding=solvent_padding,
+            )
+
+        # Construct parametrized system
+        if not exists_and_not_empty(self.parametrized_system):
+            print(f"Parametrizing system {self.system_name}")
+
+            if "nonbonded_cutoff" in self.target_parameters:
+                nonbonded_cutoff = self.target_parameters["nonbonded_cutoff"]
+            else:
+                nonbonded_cutoff = NONBONDED_CUTOFF
+
+            if "vdw_switch_width" in self.target_parameters:
+                vdw_switch_width = self.target_parameters["vdw_switch_width"]
+            else:
+                vdw_switch_width = VDW_SWITCH_WIDTH
+
+            assign_parameters(
+                simulation_platform=self.simulation_platform,
                 nonbonded_cutoff=nonbonded_cutoff,
                 vdw_switch_width=vdw_switch_width,
                 protonated_pdb_file=self.protonated_pdb,
@@ -201,7 +223,6 @@ class ProteinBenchmarkSystem:
                 water_model=self.water_model,
                 force_field_file=self.force_field_file,
                 water_model_file=self.water_model_file,
-                solvent_padding=solvent_padding,
                 setup_prefix=self.setup_prefix,
             )
 

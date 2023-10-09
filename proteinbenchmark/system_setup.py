@@ -2,91 +2,18 @@ from pathlib import Path
 
 import numpy
 import openmm
-from openff.toolkit import ForceField as OFFForceField
-from openff.toolkit import Molecule as OFFMolecule
-from openff.toolkit import Topology as OFFTopology
+from openff.toolkit import ForceField, Molecule, Topology
 from openff.units import unit
 from openmm import app
 from openmm import unit as openmm_unit
 
-from proteinbenchmark.force_fields import water_model_files
+from proteinbenchmark.force_fields import force_fields
 from proteinbenchmark.utilities import (
     read_xml,
     remove_model_lines,
     write_pdb,
     write_xml,
 )
-
-
-class _OFFForceField(OFFForceField):
-    """
-    Dummy class that defines a `createSystem()` method so that this force field
-    can be passed to the `addSolvent() and `_addIons()` methods of
-    `openmm.app.Modeller`.
-    """
-
-    def __init__(
-        self, unique_molecules, *args, remove_water_virtual_sites=False, **kwargs
-    ):
-        self._from_openmm_unique_molecules = unique_molecules
-        self._remove_water_virtual_sites = remove_water_virtual_sites
-        super().__init__(*args, **kwargs)
-
-    def createSystem(self, openmm_topology: app.Topology):
-        """Return an OpenMM system from an OpenMM topology."""
-
-        return self.createInter(openmm_topology).to_openmm(
-            combine_nonbonded_forces=True
-        )
-
-    def createInter(self, openmm_topology: app.Topology):
-        """Return an OpenFF Interchange object from an OpenMM topology."""
-
-        if self._remove_water_virtual_sites:
-            # Create a new OpenMM topology without water virtual sites
-            no_vsite_topology = app.Topology()
-            no_vsite_topology.setPeriodicBoxVectors(
-                openmm_topology.getPeriodicBoxVectors()
-            )
-            no_vsite_atoms = dict()
-
-            for chain in openmm_topology.chains():
-                no_vsite_chain = no_vsite_topology.addChain(chain.id)
-
-                for residue in chain.residues():
-                    no_vsite_residue = no_vsite_topology.addResidue(
-                        residue.name,
-                        no_vsite_chain,
-                        residue.id,
-                        residue.insertionCode,
-                    )
-
-                    for atom in residue.atoms():
-                        if residue.name != "HOH" or atom.name in {"O", "H1", "H2"}:
-                            no_vsite_atom = no_vsite_topology.addAtom(
-                                atom.name, atom.element, no_vsite_residue
-                            )
-                            no_vsite_atoms[atom] = no_vsite_atom
-
-            # Include bonds only between non-virtual site atoms
-            for bond in openmm_topology.bonds():
-                if bond[0] in no_vsite_atoms and bond[1] in no_vsite_atoms:
-                    no_vsite_topology.addBond(
-                        no_vsite_atoms[bond[0]], no_vsite_atoms[bond[1]]
-                    )
-
-            openff_topology = OFFTopology.from_openmm(
-                no_vsite_topology,
-                unique_molecules=self._from_openmm_unique_molecules,
-            )
-
-        else:
-            openff_topology = OFFTopology.from_openmm(
-                openmm_topology,
-                unique_molecules=self._from_openmm_unique_molecules,
-            )
-
-        return self.create_interchange(openff_topology)
 
 
 def build_initial_coordinates(
@@ -282,51 +209,27 @@ def build_initial_coordinates(
 
 
 def solvate(
-    simulation_platform: str,
     ionic_strength: unit.Quantity,
-    nonbonded_cutoff: unit.Quantity,
-    vdw_switch_width: unit.Quantity,
     protonated_pdb_file: str,
     solvated_pdb_file: str,
-    parametrized_system: str,
     water_model: str,
-    force_field_file: str,
-    water_model_file: str = None,
-    hydrogen_mass: unit.Quantity = 3.0 * unit.dalton,
     solvent_padding: unit.Quantity = None,
     n_solvent: int = None,
-    setup_prefix: str = None,
 ):
     """
-    Add water and salt ions and write OpenMM System to XML. Exactly one of
-    solvent_padding or n_solvent must be specified.
+    Add water and salt ions. Exactly one of solvent_padding or n_solvent must be
+    specified.
 
     Parameters
     ----------
-    simulation_platform
-        Simulation platform for file exporting.
     ionic_strength
         The bulk ionic strength of the desired thermodynamic state.
-    nonbonded_cutoff
-        The cutoff for the Lennard-Jones potential and PME direct space
-        summation.
-    vdw_switch_width
-        The distance from the nonbonded cutoff at which to apply the
-        switching function.
     protonated_pdb_file
         The path to the protonated PDB with initial coordinates.
     solvated_pdb_file
         The path to write the solvated PDB with ions.
-    parametrized_system
-        The path to write the parametrized OpenMM system as a serialized XML.
     water_model
         The name of the water model used to parametrize the water.
-    force_field_file
-        The path to the force field to parametrize the system.
-    water_model_file
-        The path to the force field containing the water model.
-    hydrogen_mass
-        The mass of solute hydrogen atoms for hydrogen mass repartitioning.
     solvent_padding
         The padding distance used to setup the solvent box.
     n_solvent
@@ -346,19 +249,6 @@ def solvate(
 
     if not ionic_strength.is_compatible_with(unit.molar):
         raise ValueError("ionic_strength does not have units of Amount Length^-3")
-    if not nonbonded_cutoff.is_compatible_with(unit.nanometer):
-        raise ValueError("nonbonded_cutoff does not have units of Length")
-    if not vdw_switch_width.is_compatible_with(unit.nanometer):
-        raise ValueError("vdw_switch_width does not have units of Length")
-    if not hydrogen_mass.is_compatible_with(unit.dalton):
-        raise ValueError("hydrogen_mass does not have units of Mass")
-
-    if water_model in ["opc3", "tip3p", "tip3p-fb"]:
-        water_has_virtual_sites = False
-        modeller_water_model = "tip3p"
-    elif water_model in ["opc", "tip4p-fb"]:
-        water_has_virtual_sites = True
-        modeller_water_model = "tip4pew"
 
     if solvent_padding is not None:
         solvent_arg_str = (
@@ -373,76 +263,28 @@ def solvate(
         f"{solvent_arg_str}"
         "\n    ionic_strength "
         f"{ionic_strength.m_as(unit.molar):.3f} M"
-        "\n    nonbonded_cutoff "
-        f"{nonbonded_cutoff.m_as(unit.nanometer):.3f} nm"
-        "\n    vdw_switch_width "
-        f"{vdw_switch_width.m_as(unit.nanometer):.3f} nm"
     )
 
-    # Set up force field
-    smirnoff = Path(force_field_file).suffix == ".offxml"
-
-    if smirnoff:
-        # SMIRNOFF force field
-
-        # Get unique molecules (solute, water, sodium ion, chloride ion) needed
-        # for openff.toolkit.topology.Topology.from_openmm()
-        solute_off_topology = OFFTopology.from_pdb(protonated_pdb_file)
-        unique_molecules = [
-            *solute_off_topology.unique_molecules,
-            OFFMolecule.from_smiles("O"),
-            OFFMolecule.from_smiles("[Na+1]"),
-            OFFMolecule.from_smiles("[Cl-1]"),
-        ]
-
-        # Use the dummy class _OFFForceField so we can pass this to Modeller
-        if water_model_file is None:
-            force_field = _OFFForceField(
-                unique_molecules,
-                force_field_file,
-                remove_water_virtual_sites=water_has_virtual_sites,
-            )
-            print(f"Force field read from\n    {force_field_file}")
-
-        else:
-            force_field = _OFFForceField(
-                unique_molecules,
-                force_field_file,
-                water_model_file,
-                remove_water_virtual_sites=water_has_virtual_sites,
-            )
-            print(
-                f"Force field read from\n    {force_field_file}"
-                f"\n    and {water_model_file}"
-            )
-
-        # Set up solute topology and positions
-        solute_interchange = force_field.create_interchange(solute_off_topology)
-        solute_topology = solute_interchange.topology.to_openmm()
-        solute_positions = solute_interchange.positions.to_openmm()
-
+    if water_model in {"opc3", "tip3p", "tip3p-fb"}:
+        water_has_virtual_sites = False
+        modeller_water_model = "tip3p"
+    elif water_model in {"opc", "tip4p-fb"}:
+        water_has_virtual_sites = True
+        modeller_water_model = "tip4pew"
     else:
-        if water_model_file is None:
-            # OpenMM force field with no separate water model
-            force_field = app.ForceField(force_field_file)
-            print(f"Force field read from\n    {force_field_file}")
+        raise ValueError(
+            "water_model must be one of\n    opc\n    opc3\n    tip3p"
+            "\n    tip3p-fb\n    tip4p-fb"
+        )
 
-        else:
-            # OpenMM force field with separate water model
-            force_field = app.ForceField(force_field_file, water_model_file)
-            print(
-                f"Force field read from\n    {force_field_file}"
-                f"\n    and {water_model_file}"
-            )
+    # Use Amber ff14SB as a reference for building solvent coordinates
+    force_field = app.ForceField(force_fields["ff14sb-tip3p"]["force_field_file"])
 
-        # Set up solute topology and positions
-        solute_pdb = app.PDBFile(protonated_pdb_file)
-        solute_topology = solute_pdb.topology
-        solute_positions = solute_pdb.positions
+    # Set up solute topology and positions
+    solute_pdb = app.PDBFile(protonated_pdb_file)
+    modeller = app.Modeller(solute_pdb.topology, solute_pdb.positions)
 
     # Add water in a rhombic dodecahedral box with no ions
-    modeller = app.Modeller(solute_topology, solute_positions)
-
     if solvent_padding is not None:
         modeller.addSolvent(
             forcefield=force_field,
@@ -606,9 +448,134 @@ def solvate(
     # Write solvated system to PDB file
     write_pdb(solvated_pdb_file, modeller.topology, modeller.positions)
 
+
+def assign_parameters(
+    simulation_platform: str,
+    nonbonded_cutoff: unit.Quantity,
+    vdw_switch_width: unit.Quantity,
+    protonated_pdb_file: str,
+    solvated_pdb_file: str,
+    parametrized_system: str,
+    water_model: str,
+    force_field_file: str,
+    water_model_file: str = None,
+    hydrogen_mass: unit.Quantity = 3.0 * unit.dalton,
+    setup_prefix: str = None,
+):
+    """
+    Assign parameters to the solvated topology.
+
+    Parameters
+    ----------
+    simulation_platform
+        Simulation platform for file exporting.
+    nonbonded_cutoff
+        The cutoff for the Lennard-Jones potential and PME direct space
+        summation.
+    vdw_switch_width
+        The distance from the nonbonded cutoff at which to apply the
+        switching function.
+    protonated_pdb_file
+        The path to the protonated PDB with initial coordinates.
+    solvated_pdb_file
+        The path to the solvated PDB with ions.
+    parametrized_system
+        The path to write the parametrized system.
+    water_model
+        The name of the water model used to parametrize the water.
+    force_field_file
+        The path to the force field to parametrize the system.
+    water_model_file
+        The path to the force field containing the water model.
+    hydrogen_mass
+        The mass of solute hydrogen atoms for hydrogen mass repartitioning.
+    """
+
+    # Check arguments
+    if not nonbonded_cutoff.is_compatible_with(unit.nanometer):
+        raise ValueError("nonbonded_cutoff does not have units of Length")
+    if not vdw_switch_width.is_compatible_with(unit.nanometer):
+        raise ValueError("vdw_switch_width does not have units of Length")
+    if not hydrogen_mass.is_compatible_with(unit.dalton):
+        raise ValueError("hydrogen_mass does not have units of Mass")
+
+    solvated_pdb = app.PDBFile(solvated_pdb_file)
+    openmm_topology = solvated_pdb.topology
+
+    # Set up force field
+    smirnoff = Path(force_field_file).suffix == ".offxml"
+    ff_class = ForceField if smirnoff else app.ForceField
+
+    if water_model_file is None:
+        force_field = ff_class(force_field_file)
+        print(f"Force field read from\n    {force_field_file}")
+
+    else:
+        force_field = ff_class(force_field_file, water_model_file)
+        print(
+            f"Force field read from\n    {force_field_file}"
+            f"\n    and {water_model_file}"
+        )
+
     # Create the parametrized system from the solvated topology
     if smirnoff:
-        openmm_system = force_field.createSystem(modeller.topology)
+        # SMIRNOFF force field
+
+        # Get unique molecules (solute, water, sodium ion, chloride ion) needed
+        # for openff.toolkit.topology.Topology.from_openmm()
+        solute_openff_topology = Topology.from_pdb(protonated_pdb_file)
+        unique_molecules = [
+            *solute_openff_topology.unique_molecules,
+            OFFMolecule.from_smiles("O"),
+            OFFMolecule.from_smiles("[Na+1]"),
+            OFFMolecule.from_smiles("[Cl-1]"),
+        ]
+
+        if water_model in {"opc", "tip4p-fb"}:
+            # Create a new OpenMM topology without water virtual sites
+            no_vsite_topology = app.Topology()
+            no_vsite_topology.setPeriodicBoxVectors(
+                openmm_topology.getPeriodicBoxVectors()
+            )
+            no_vsite_atoms = dict()
+
+            for chain in openmm_topology.chains():
+                no_vsite_chain = no_vsite_topology.addChain(chain.id)
+
+                for residue in chain.residues():
+                    no_vsite_residue = no_vsite_topology.addResidue(
+                        residue.name,
+                        no_vsite_chain,
+                        residue.id,
+                        residue.insertionCode,
+                    )
+
+                    for atom in residue.atoms():
+                        if residue.name != "HOH" or atom.name in {"O", "H1", "H2"}:
+                            no_vsite_atom = no_vsite_topology.addAtom(
+                                atom.name, atom.element, no_vsite_residue
+                            )
+                            no_vsite_atoms[atom] = no_vsite_atom
+
+            # Include bonds only between non-virtual site atoms
+            for bond in openmm_topology.bonds():
+                if bond[0] in no_vsite_atoms and bond[1] in no_vsite_atoms:
+                    no_vsite_topology.addBond(
+                        no_vsite_atoms[bond[0]], no_vsite_atoms[bond[1]]
+                    )
+
+            openff_topology = Topology.from_openmm(
+                no_vsite_topology,
+                unique_molecules=unique_molecules,
+            )
+
+        else:
+            openff_topology = Topology.from_openmm(
+                openmm_topology,
+                unique_molecules=unique_molecules,
+            )
+
+        openmm_system = force_field.create_openmm_system(openff_topology)
 
         if simulation_platform == "openmm":
             openmm_hydrogen_mass = hydrogen_mass.to_openmm()
