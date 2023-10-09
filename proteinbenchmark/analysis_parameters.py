@@ -2,11 +2,11 @@
 from pathlib import Path
 
 import pandas
-from openmm import unit
+from openff.units import unit
 
 from proteinbenchmark.utilities import package_data_directory
 
-DCD_TIME_TO_PICOSECONDS = 0.04888821 * unit.picoseconds
+DCD_TIME_TO_PICOSECONDS = 0.04888821 * unit.picosecond
 
 # Lists of atoms that make up named dihedrals in protein residues
 DIHEDRAL_ATOMS = {

@@ -1,7 +1,7 @@
 """List of benchmark targets specifying observables and thermodynamic state."""
 from pathlib import Path
 
-from openmm import unit
+from openff.units import unit
 
 from proteinbenchmark.utilities import package_data_directory
 
@@ -77,7 +77,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "ala3", "ala3_scalar_couplings.dat"
+                    observable_directory, "ala3", "ala3-scalar-couplings.dat"
                 ),
             },
         },
@@ -93,7 +93,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "ala3", "ala3_scalar_couplings.dat"
+                    observable_directory, "ala3", "ala3-scalar-couplings.dat"
                 ),
             },
         },
@@ -109,7 +109,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "ala4", "ala4_scalar_couplings.dat"
+                    observable_directory, "ala4", "ala4-scalar-couplings.dat"
                 ),
             },
         },
@@ -125,7 +125,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "ala4", "ala4_scalar_couplings.dat"
+                    observable_directory, "ala4", "ala4-scalar-couplings.dat"
                 ),
             },
         },
@@ -141,7 +141,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "ala5", "ala5_scalar_couplings.dat"
+                    observable_directory, "ala5", "ala5-scalar-couplings.dat"
                 ),
             },
         },
@@ -157,7 +157,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "ala5", "ala5_scalar_couplings.dat"
+                    observable_directory, "ala5", "ala5-scalar-couplings.dat"
                 ),
             },
         },
@@ -173,7 +173,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "ala5", "ala5_scalar_couplings.dat"
+                    observable_directory, "ala5", "ala5-scalar-couplings.dat"
                 ),
             },
         },
@@ -272,7 +272,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["hagarman_jacs_2010"],
                 "observable_path": Path(
-                    observable_directory, "gag", "gag_scalar_couplings.dat"
+                    observable_directory, "gag", "gag-scalar-couplings.dat"
                 ),
             },
         },
@@ -314,7 +314,7 @@ benchmark_targets = {
             "backbone_rdc": "ulmer_jacs_2003",
         },
     },
-    "gb3_test": {
+    "gb3-test": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "gb3-1P7E.pdb"),
         "pressure": 1.0 * unit.atmosphere,
@@ -339,7 +339,7 @@ benchmark_targets = {
             "backbone_rdc": "ulmer_jacs_2003",
         },
         "traj_length": 10 * unit.nanosecond,
-        "equil_timestep": 0.002 * unit.picosecond
+        "equil_timestep": 0.002 * unit.picosecond,
     },
     "gb3-3j-ha-hb": {
         "target_type": "folded",
@@ -386,7 +386,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["hagarman_jacs_2010"],
                 "observable_path": Path(
-                    observable_directory, "geg", "geg_scalar_couplings.dat"
+                    observable_directory, "geg", "geg-scalar-couplings.dat"
                 ),
             },
         },
@@ -402,7 +402,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["hagarman_jacs_2010"],
                 "observable_path": Path(
-                    observable_directory, "gfg", "gfg_scalar_couplings.dat"
+                    observable_directory, "gfg", "gfg-scalar-couplings.dat"
                 ),
             },
         },
@@ -418,7 +418,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["hagarman_jacs_2010"],
                 "observable_path": Path(
-                    observable_directory, "gkg", "gkg_scalar_couplings.dat"
+                    observable_directory, "gkg", "gkg-scalar-couplings.dat"
                 ),
             },
         },
@@ -434,7 +434,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["hagarman_jacs_2010"],
                 "observable_path": Path(
-                    observable_directory, "glg", "glg_scalar_couplings.dat"
+                    observable_directory, "glg", "glg-scalar-couplings.dat"
                 ),
             },
         },
@@ -450,7 +450,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "gly3", "gly3_scalar_couplings.dat"
+                    observable_directory, "gly3", "gly3-scalar-couplings.dat"
                 ),
             },
         },
@@ -467,7 +467,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["hagarman_jacs_2010"],
                 "observable_path": Path(
-                    observable_directory, "gmg", "gmg_scalar_couplings.dat"
+                    observable_directory, "gmg", "gmg-scalar-couplings.dat"
                 ),
             },
         },
@@ -483,7 +483,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["hagarman_jacs_2010"],
                 "observable_path": Path(
-                    observable_directory, "gsg", "gsg_scalar_couplings.dat"
+                    observable_directory, "gsg", "gsg-scalar-couplings.dat"
                 ),
             },
         },
@@ -499,7 +499,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["hagarman_jacs_2010"],
                 "observable_path": Path(
-                    observable_directory, "gvg", "gvg_scalar_couplings.dat"
+                    observable_directory, "gvg", "gvg-scalar-couplings.dat"
                 ),
             },
         },
@@ -553,7 +553,7 @@ benchmark_targets = {
                     "hu_jacs_1997",
                 ],
                 "observable_path": Path(
-                    observable_directory, "ubq", "ubq_scalar_couplings.dat"
+                    observable_directory, "ubq", "ubq-scalar-couplings.dat"
                 ),
             },
         },
@@ -675,7 +675,7 @@ benchmark_targets = {
             "scalar_couplings": {
                 "experimental_datasets": ["graf_jacs_2007"],
                 "observable_path": Path(
-                    observable_directory, "val3", "val3_scalar_couplings.dat"
+                    observable_directory, "val3", "val3-scalar-couplings.dat"
                 ),
             },
         },

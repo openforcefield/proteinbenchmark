@@ -1,18 +1,16 @@
 from pathlib import Path
 from typing import List
 
+import loos
 import numpy
 import pandas
 from loos.pyloos import Trajectory
 from openff.toolkit import Molecule
-from openmm import unit
+from openff.units import unit
 
 from proteinbenchmark.analysis_parameters import *
-from proteinbenchmark.benchmark_targets import (benchmark_targets,
-                                                experimental_datasets)
+from proteinbenchmark.benchmark_targets import benchmark_targets, experimental_datasets
 from proteinbenchmark.utilities import list_of_dicts_to_csv
-
-DEG_TO_RAD = numpy.pi / 180.0
 
 
 def align_trajectory(
@@ -49,8 +47,6 @@ def align_trajectory(
         structure. Default is align selection.
     """
 
-    import loos
-
     # Load topology and trajectory
     topology = loos.createSystem(topology_path)
     trajectory = Trajectory(trajectory_path, topology)
@@ -82,7 +78,7 @@ def align_trajectory(
     output_trajectory = loos.DCDWriter(f"{output_prefix}.dcd")
 
     first_frame = True
-    
+
     for frame in trajectory:
         # Align frame onto reference
         transform_matrix = align_atoms.superposition(reference_atoms)
@@ -101,9 +97,10 @@ def align_trajectory(
             first_frame = False
             pdb = loos.PDB.fromAtomicGroup(output_atoms)
             pdb.clearBonds()
-            
+
             with open(f"{output_prefix}.pdb", "w") as pdb_file:
                 pdb_file.write(str(pdb))
+
 
 def measure_dihedrals(
     topology_path: str,
@@ -126,8 +123,6 @@ def measure_dihedrals(
     output_path
         The path to write the time series of dihedrals.
     """
-
-    import loos
 
     # Load topology
     topology = loos.createSystem(topology_path)
@@ -218,7 +213,7 @@ def measure_dihedrals(
         frame_time += frame_length
 
         frame_index = trajectory.index()
-        frame_time_ns = frame_time.value_in_unit(unit.nanosecond)
+        frame_time_ns = frame_time.m_as(unit.nanosecond)
 
         # Write dihedrals to file every 10 000 frames to avoid pandas
         # out-of-memory
@@ -290,8 +285,6 @@ def measure_h_bond_geometries(
         Fraction of frames in which a putative hydrogen bond must be occupied to
         be considered observed and be measured.
     """
-
-    import loos
 
     # Load topology
     topology = loos.createSystem(topology_path)
@@ -393,7 +386,7 @@ def measure_h_bond_geometries(
         # Set up HBondDetector to determine H bond occupancy from a distance and
         # angle cutoff. Do this for each frame to grab the periodic box vectors.
         h_bond_detector = loos.HBondDetector(
-            h_bond_distance_cutoff.value_in_unit(unit.angstrom),
+            h_bond_distance_cutoff.m_as(unit.angstrom),
             h_bond_angle_cutoff,
             frame,
         )
@@ -477,7 +470,7 @@ def measure_h_bond_geometries(
         frame_time += frame_length
 
         frame_index = trajectory.index()
-        frame_time_ns = frame_time.value_in_unit(unit.nanosecond)
+        frame_time_ns = frame_time.m_as(unit.nanosecond)
 
         # Write hydrogen bond geomtries to file every 10 000 frames to avoid
         # pandas out-of-memory
@@ -675,8 +668,8 @@ def compute_scalar_couplings(
 
     else:
         raise ValueError(
-            "Argument `karplus` must be one of\n    best\n    hu\n    case_dft1"
-            "\n    case_dft2"
+            "Argument `karplus` must be one of\n    vogeli\n    schmidt\n    hu"
+            "\n    case_dft1\n    case_dft2"
         )
 
     karplus_parameters.update(WIRMER_KARPLUS_PARAMETERS)
@@ -725,23 +718,19 @@ def compute_scalar_couplings(
         if observable == "3j_hn_ca":
             # Compute sine and cosine of phi and psi
             # Reset indices for products, e.g. cos phi * cos psi
-            phi = (
-                DEG_TO_RAD
-                * dihedral_df[
+            phi = numpy.deg2rad(
+                dihedral_df[
                     (dihedral_df["Dihedral Name"] == "phi")
                     & (dihedral_df["Resid"] == observable_resid)
-                ]["Dihedral (deg)"]
+                ]["Dihedral (deg)"].values
             )
-            phi.reset_index(drop=True, inplace=True)
 
-            prev_psi = (
-                DEG_TO_RAD
-                * dihedral_df[
+            prev_psi = numpy.deg2rad(
+                dihedral_df[
                     (dihedral_df["Dihedral Name"] == "psi")
                     & (dihedral_df["Resid"] == observable_resid - 1)
-                ]["Dihedral (deg)"]
+                ]["Dihedral (deg)"].values
             )
-            prev_psi.reset_index(drop=True, inplace=True)
 
             cos_phi = numpy.cos(phi)
             sin_phi = numpy.sin(phi)
@@ -749,7 +738,7 @@ def compute_scalar_couplings(
             sin_psi = numpy.sin(prev_psi)
 
             # Compute estimate for scalar coupling
-            computed_coupling = (
+            computed_coupling = numpy.mean(
                 observable_parameters["cos_phi"] * cos_phi
                 + observable_parameters["sin_phi"] * sin_phi
                 + observable_parameters["cos_psi"] * cos_psi
@@ -759,7 +748,7 @@ def compute_scalar_couplings(
                 + observable_parameters["sin_phi_cos_psi"] * sin_phi * cos_psi
                 + observable_parameters["sin_phi_sin_psi"] * sin_phi * sin_psi
                 + observable_parameters["C"]
-            ).mean()
+            )
 
             # Extrema of 3j_hn_ca Karplus curve from numerical optimization
             karplus_extrema = [0.0329976 / unit.second, 1.08915 / unit.second]
@@ -789,8 +778,8 @@ def compute_scalar_couplings(
                 observable_parameters = observable_parameters[dihedral_resname]
 
             # Compute cos(theta + delta) and cos^2(theta + delta)
-            karplus_angle = DEG_TO_RAD * (
-                observable_parameters["delta"] + karplus_df["Dihedral (deg)"]
+            karplus_angle = numpy.deg2rad(
+                observable_parameters["delta"] + karplus_df["Dihedral (deg)"].values
             )
 
             cos_angle = numpy.cos(karplus_angle)
@@ -802,14 +791,14 @@ def compute_scalar_couplings(
             karplus_B = observable_parameters["B"]
             karplus_C = observable_parameters["C"]
 
-            computed_coupling = (
+            computed_coupling = numpy.mean(
                 karplus_A * cos_sq_angle + karplus_B * cos_angle + karplus_C
-            ).mean()
+            )
 
             # Get extrema of Karplus curve at
             # J(0) = A + B + C
             # J(pi) = A - B + C
-            # J(+/- arccos(-B / 2 A)) = -B^2 / (4A) + C
+            # J(+/- arccos(-B / 2 A)) = -B^2 / (4 A) + C
             karplus_extrema = [
                 karplus_A + karplus_B + karplus_C,
                 karplus_A - karplus_B + karplus_C,
@@ -836,11 +825,11 @@ def compute_scalar_couplings(
 
         computed_observables.append(
             {
-                "Uncertainty": uncertainty.value_in_unit(unit.second**-1),
-                "Computed": computed_coupling.value_in_unit(unit.second**-1),
+                "Uncertainty": uncertainty.m_as(unit.second**-1),
+                "Computed": computed_coupling.m_as(unit.second**-1),
                 "Chi^2": chi_sq,
                 "Truncated Experiment": (
-                    truncated_experimental_coupling.value_in_unit(unit.second**-1)
+                    truncated_experimental_coupling.m_as(unit.second**-1)
                 ),
                 "Truncated Chi^2": truncated_chi_sq,
             }
@@ -948,9 +937,9 @@ def compute_h_bond_scalar_couplings(
             & (h_bond_df["Acceptor Name"] == "O")
         ]
 
-        HO_distance = geometry_df["HA Distance (Angstrom)"] * unit.angstrom
-        HOC_angle = DEG_TO_RAD * geometry_df["HOC Angle (deg)"]
-        HOCN_dihedral = DEG_TO_RAD * geometry_df["HOCN Dihedral (deg)"]
+        HO_distance = geometry_df["HA Distance (Angstrom)"].values * unit.angstrom
+        HOC_angle = numpy.deg2rad(geometry_df["HOC Angle (deg)"].values)
+        HOCN_dihedral = numpy.deg2rad(geometry_df["HOCN Dihedral (deg)"].values)
 
         exp_HO_distance = numpy.exp(-karplus_exp * HO_distance)
         cos_sq_HOC_angle = numpy.square(numpy.cos(HOC_angle))
@@ -961,9 +950,7 @@ def compute_h_bond_scalar_couplings(
         # 3J(R, theta, phi) = (
         #     (exp(a R_0) A cos^2 phi + exp(a R_0) B cos phi + exp(a R_0) C)
         #     * sin^2 theta + exp(a R_0) D cos^2 theta) * exp(-a R)
-        # Order of multiplication must be Quantity * DataFrame rather than
-        # DataFrame * Quantity
-        computed_coupling = (
+        computed_coupling = numpy.mean(
             (
                 (
                     karplus_sin_sq_cos_sq * cos_sq_HOCN_dihedral
@@ -974,7 +961,7 @@ def compute_h_bond_scalar_couplings(
                 + karplus_cos_sq * cos_sq_HOC_angle
             )
             * exp_HO_distance
-        ).mean()
+        )
 
         # Compute contribution to chi^2
         experimental_coupling = row["Experiment"] / unit.second
@@ -983,8 +970,8 @@ def compute_h_bond_scalar_couplings(
 
         computed_observables.append(
             {
-                "Uncertainty": uncertainty.value_in_unit(unit.second**-1),
-                "Computed": computed_coupling.value_in_unit(unit.second**-1),
+                "Uncertainty": uncertainty.m_as(unit.second**-1),
+                "Computed": computed_coupling.m_as(unit.second**-1),
                 "Chi^2": chi_sq,
             }
         )
@@ -1025,7 +1012,7 @@ def compute_fraction_helix(
         which a hydrogen bond is considered to be occupied.
     """
 
-    h_bond_distance_threshold = h_bond_distance_cutoff.value_in_unit(unit.angstrom)
+    h_bond_distance_threshold = h_bond_distance_cutoff.m_as(unit.angstrom)
     h_bond_angle_threshold = 180 - h_bond_angle_cutoff
 
     # Load data for experimental observables

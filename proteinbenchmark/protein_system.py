@@ -1,21 +1,25 @@
 from pathlib import Path
 
 import numpy
-import openmm
-from openmm import app, unit
 
-from proteinbenchmark.analysis import (align_trajectory,
-                                       assign_dihedral_clusters,
-                                       compute_fraction_helix,
-                                       compute_h_bond_scalar_couplings,
-                                       compute_scalar_couplings,
-                                       measure_dihedrals,
-                                       measure_h_bond_geometries)
-from proteinbenchmark.openmm_simulation import OpenMMSimulation
+from proteinbenchmark.analysis import (
+    align_trajectory,
+    assign_dihedral_clusters,
+    compute_fraction_helix,
+    compute_h_bond_scalar_couplings,
+    compute_scalar_couplings,
+    measure_dihedrals,
+    measure_h_bond_geometries,
+)
 from proteinbenchmark.gmx_simulation import GMXSimulation
+from proteinbenchmark.openmm_simulation import OpenMMSimulation
 from proteinbenchmark.simulation_parameters import *
-from proteinbenchmark.system_setup import (build_initial_coordinates, minimize,
-                                           solvate)
+from proteinbenchmark.system_setup import (
+    build_initial_coordinates,
+    minimize_gmx,
+    minimize_openmm,
+    solvate,
+)
 from proteinbenchmark.utilities import exists_and_not_empty, merge_csvs
 
 
@@ -34,7 +38,7 @@ class ProteinBenchmarkSystem:
         water_model_name: str,
         force_field_file: str,
         water_model_file: str = None,
-        sim_platform: str = 'open_mm',
+        simulation_platform: str = "openmm",
         gmx_executable: str = None,
     ):
         """
@@ -58,8 +62,11 @@ class ProteinBenchmarkSystem:
             The name of the file containing the force field parameters.
         water_model_file
             The name of the file containing the water model parameters.
-        sim_platform
-            Simulation platform from which to run energy minimization, equilibration, and production simulations
+        simuation_platform
+            Simulation platform from which to run energy minimization,
+            equilibration, and production simulations.
+        gmx_executable
+            Name of GROMACS executable to pass to subprocess.
         """
 
         self.target_name = target_name
@@ -68,7 +75,7 @@ class ProteinBenchmarkSystem:
         self.water_model = water_model_name
         self.force_field_file = force_field_file
         self.water_model_file = water_model_file
-        self.sim_platform = sim_platform
+        self.simulation_platform = simulation_platform.lower()
         self.gmx_executable = gmx_executable
 
         # Check thermodynamic state
@@ -89,8 +96,17 @@ class ProteinBenchmarkSystem:
         self.setup_prefix = Path(self.setup_dir, self.system_name)
         self.initial_pdb = f"{self.setup_prefix}-initial.pdb"
         self.protonated_pdb = f"{self.setup_prefix}-protonated.pdb"
-        self.minimized_pdb = f"{self.setup_prefix}-minimized.pdb"
-        self.openmm_system = f"{self.setup_prefix}-openmm-system.xml"
+
+        if self.simulation_platform == "openmm":
+            self.minimized_coords = f"{self.setup_prefix}-minimized.pdb"
+            self.parametrized_system = f"{self.setup_prefix}-openmm-system.xml"
+        elif self.simulation_platform == "gmx":
+            self.minimized_coords = f"{self.setup_prefix}-minimized.gro"
+            self.parametrized_system = f"{self.setup_prefix}-gmx-system.top"
+        else:
+            raise ValueError(
+                f"simulation_platform must be one of:\n    openmm\n    gmx"
+            )
 
     def setup(self):
         """
@@ -152,8 +168,8 @@ class ProteinBenchmarkSystem:
                     'contain one of "aa_sequence" or "initial_pdb"'
                 )
 
-        # Solvate, add ions, and construct OpenMM system
-        if (self.sim_platform != 'gmx' and not exists_and_not_empty(self.openmm_system)) or (self.sim_platform == 'gmx' and not exists_and_not_empty(f'{self.setup_prefix}.top')):
+        # Solvate, add ions, and construct parametrized system
+        if not exists_and_not_empty(self.parametrized_system):
             print(f"Solvating system {self.system_name}")
 
             # Get parameters for solvation and constructing OpenMM system
@@ -175,61 +191,57 @@ class ProteinBenchmarkSystem:
                 vdw_switch_width = VDW_SWITCH_WIDTH
 
             solvate(
+                simulation_platform=self.simulation_platform,
                 ionic_strength=self.target_parameters["ionic_strength"],
                 nonbonded_cutoff=nonbonded_cutoff,
                 vdw_switch_width=vdw_switch_width,
                 protonated_pdb_file=self.protonated_pdb,
                 solvated_pdb_file=solvated_pdb,
-                openmm_system_xml=self.openmm_system,
+                parametrized_system=self.parametrized_system,
                 water_model=self.water_model,
                 force_field_file=self.force_field_file,
                 water_model_file=self.water_model_file,
                 solvent_padding=solvent_padding,
-                setup_prefix = self.setup_prefix,
-                sim_platform = self.sim_platform,
+                setup_prefix=self.setup_prefix,
             )
 
         # Minimize energy of solvated system with Cartesian restraints on
         # non-hydrogen solute atoms
-        if self.sim_platform != 'gmx' and not exists_and_not_empty(self.minimized_pdb):
+        if not exists_and_not_empty(self.minimized_coords):
             print(f"Minimizing energy for system {self.system_name}")
 
-            if "restraint_energy_constant" in self.target_parameters:
-                restraint_energy_constant = self.target_parameters[
-                    "restraint_energy_constant"
-                ]
+            if self.simulation_platform == "openmm":
+                if "restraint_energy_constant" in self.target_parameters:
+                    restraint_energy_constant = self.target_parameters[
+                        "restraint_energy_constant"
+                    ]
 
-            else:
-                restraint_energy_constant = RESTRAINT_ENERGY_CONSTANT
+                else:
+                    restraint_energy_constant = RESTRAINT_ENERGY_CONSTANT
 
-            minimize(
-                restraint_energy_constant=restraint_energy_constant,
-                openmm_system_xml=self.openmm_system,
-                solvated_pdb_file=solvated_pdb,
-                minimized_pdb_file=self.minimized_pdb,
-                setup_prefix = self.setup_prefix,
-                sim_platform = self.sim_platform,
-            )
-        elif self.sim_platform == 'gmx' and not exists_and_not_empty(f'{self.setup_dir}/confout.gro'):
-            print(f"Minimizing energy for system {self.system_name}")
+                minimize_openmm(
+                    parametrized_system=self.parametrized_system,
+                    solvated_pdb_file=solvated_pdb,
+                    minimized_coords_file=self.minimized_coords,
+                    restraint_energy_constant=restraint_energy_constant,
+                )
 
-            if "energy_tolerance" in self.target_parameters:
-                energy_tolerance = self.target_parameters[
-                    "energy_tolerance"
-                ]
+            elif self.simulation_platform == "gmx":
+                if "energy_tolerance" in self.target_parameters:
+                    energy_tolerance = self.target_parameters["energy_tolerance"]
 
-            else:
-                energy_tolerance = ENERGY_TOLERANCE
+                else:
+                    energy_tolerance = ENERGY_TOLERANCE
 
-            minimize(
-                restraint_energy_constant=energy_tolerance,
-                openmm_system_xml='none',
-                solvated_pdb_file=solvated_pdb,
-                minimized_pdb_file=self.minimized_pdb,
-                setup_prefix = self.setup_prefix,
-                sim_platform = self.sim_platform,
-                gmx_executable = self.gmx_executable
-            )
+                minimize_gmx(
+                    parametrized_system=self.parametrized_system,
+                    solvated_pdb_file=solvated_pdb,
+                    minimized_coords_file=self.minimized_coords,
+                    setup_prefix=self.setup_prefix,
+                    gmx_executable=self.gmx_executable,
+                    energy_tolerance=energy_tolerance,
+                )
+
         print(f"Setup complete for system {self.system_name}")
 
     def run_simulations(self, replica: int = 1):
@@ -242,20 +254,18 @@ class ProteinBenchmarkSystem:
         replica_prefix = Path(replica_dir, self.system_name)
         setup_dir = Path(self.base_path, "setup")
         setup_prefix = Path(setup_dir, self.system_name)
-        
+
         equil_prefix = f"{replica_prefix}-equilibration"
         prod_prefix = f"{replica_prefix}-production"
-        
-        if self.sim_platform != 'gmx':
-            # Serialized OpenMM state from the end of the equilibration simulation
+
+        # Saved state from the end of the equilibration simulation
+        if self.simulation_platform == "openmm":
             equilibrated_state = f"{equil_prefix}-1.xml"
-        else:
+        elif self.simulation_platform == "gmx":
             equilibrated_state = f"{equil_prefix}.gro"
-        print(equilibrated_state)
-        print(exists_and_not_empty(equilibrated_state))
 
         # Equilibrate at constant pressure and temperature
-        if (not exists_and_not_empty(equilibrated_state)):
+        if not exists_and_not_empty(equilibrated_state):
             print(f"Running NPT equilibration for system {self.system_name}")
 
             # Get parameters for equilibration simulation
@@ -268,21 +278,21 @@ class ProteinBenchmarkSystem:
                 equil_traj_length = self.target_parameters["equil_traj_length"]
             else:
                 equil_traj_length = EQUIL_TRAJ_LENGTH
-            
+
             if "equil_frame_length" in self.target_parameters:
                 equil_frame_length = self.target_parameters["equil_frame_length"]
             else:
                 equil_frame_length = EQUIL_FRAME_LENGTH
 
-            if self.sim_platform != 'gmx':
-                #Get OpenMM Specific Parameters
+            if self.simulation_platform == "openmm":
+                # Get OpenMM Specific Parameters
                 if "equil_langevin_friction" in self.target_parameters:
                     equil_langevin_friction = self.target_parameters[
                         "equil_langevin_friction"
                     ]
 
                 else:
-                    equil_langevin_friction = EQUIL_LANGEVIN_FRICTION
+                    equil_langevin_friction = EQUIL_OPENMM_LANGEVIN_FRICTION
 
                 if "equil_barostat_frequency" in self.target_parameters:
                     equil_barostat_frequency = self.target_parameters[
@@ -290,7 +300,7 @@ class ProteinBenchmarkSystem:
                     ]
 
                 else:
-                    equil_barostat_frequency = EQUIL_BAROSTAT_FREQUENCY
+                    equil_barostat_frequency = EQUIL_OPENMM_BAROSTAT_FREQUENCY
 
                 # Initialize the equilibration simulation
                 equilibration_dcd = f"{equil_prefix}.dcd"
@@ -298,44 +308,46 @@ class ProteinBenchmarkSystem:
                 equilibration_checkpoint = f"{equil_prefix}.chk"
 
                 equilibration_simulation = OpenMMSimulation(
-                    openmm_system_file=self.openmm_system,
-                    initial_pdb_file=self.minimized_pdb,
+                    openmm_system_file=self.parametrized_system,
+                    initial_pdb_file=self.minimized_coords,
                     dcd_reporter_file=equilibration_dcd,
                     state_reporter_file=equilibration_state_data,
                     checkpoint_file=equilibration_checkpoint,
                     save_state_prefix=equil_prefix,
-                    temperature=self.target_parameters["temperature"],
-                    pressure=self.target_parameters["pressure"],
-                    langevin_friction=equil_langevin_friction,
+                    temperature=self.target_parameters["temperature"].to_openmm(),
+                    pressure=self.target_parameters["pressure"].to_openmm(),
+                    langevin_friction=equil_langevin_friction.to_openmm(),
                     barostat_frequency=equil_barostat_frequency,
-                    timestep=equil_timestep,
-                    traj_length=equil_traj_length,
-                    frame_length=equil_frame_length,
-                    checkpoint_length=equil_traj_length,
-                    save_state_length=equil_traj_length,
+                    timestep=equil_timestep.to_openmm(),
+                    traj_length=equil_traj_length.to_openmm(),
+                    frame_length=equil_frame_length.to_openmm(),
+                    checkpoint_length=equil_traj_length.to_openmm(),
+                    save_state_length=equil_traj_length.to_openmm(),
                 )
 
                 # Run equilibration
                 equilibration_simulation.start_from_pdb()
+
             else:
-                #Get GROMACS Specific Parameters
+                # Get GROMACS Specific Parameters
                 if "equil_barostat_constant" in self.target_parameters:
                     equil_barostat_constant = self.target_parameters[
                         "equil_barostat_constant"
                     ]
                 else:
-                    equil_barostat_constant = EQUIL_BAROSTAT_CONSTANT
-                
+                    equil_barostat_constant = EQUIL_GMX_BAROSTAT_CONSTANT
+
                 if "equil_thermostat_constant" in self.target_parameters:
                     equil_thermostat_constant = self.target_parameters[
                         "equil_thermostat_constant"
                     ]
                 else:
-                    equil_thermostat_constant = EQUIL_THERMOSTAT_CONSTANT
+                    equil_thermostat_constant = EQUIL_GMX_THERMOSTAT_CONSTANT
 
                 NPT_simulation = GMXSimulation(
-                    gmx_executable = self.gmx_executable,
-                    initial_pdb_file=self.minimized_pdb,
+                    gmx_executable=self.gmx_executable,
+                    initial_coords_file=self.minimized_coords,
+                    parametrized_system=self.parametrized_system,
                     save_state_prefix=equil_prefix,
                     setup_prefix=setup_prefix,
                     temperature=self.target_parameters["temperature"],
@@ -345,7 +357,7 @@ class ProteinBenchmarkSystem:
                     timestep=equil_timestep,
                     traj_length=equil_traj_length,
                     frame_length=equil_frame_length,
-                    restraints_present = 'NPT',
+                    restraints_present="NPT",
                 )
 
                 NPT_simulation.run()
@@ -378,18 +390,8 @@ class ProteinBenchmarkSystem:
         else:
             frame_length = FRAME_LENGTH
 
-        if self.sim_platform != 'gmx':
-            #Get OpenMM Specific Parameters
-            if "langevin_friction" in self.target_parameters:
-                langevin_friction = self.target_parameters["langevin_friction"]
-            else:
-                langevin_friction = LANGEVIN_FRICTION
-
-            if "barostat_frequency" in self.target_parameters:
-                barostat_frequency = self.target_parameters["barostat_frequency"]
-            else:
-                barostat_frequency = BAROSTAT_FREQUENCY
-
+        if self.simulation_platform == "openmm":
+            # Get OpenMM Specific Parameters
             if "checkpoint_length" in self.target_parameters:
                 checkpoint_length = self.target_parameters["checkpoint_length"]
             else:
@@ -399,82 +401,88 @@ class ProteinBenchmarkSystem:
                 save_state_length = self.target_parameters["save_state_length"]
             else:
                 save_state_length = SAVE_STATE_LENGTH
-            
+
+            if "langevin_friction" in self.target_parameters:
+                langevin_friction = self.target_parameters["langevin_friction"]
+            else:
+                langevin_friction = OPENMM_LANGEVIN_FRICTION
+
+            if "barostat_frequency" in self.target_parameters:
+                barostat_frequency = self.target_parameters["barostat_frequency"]
+            else:
+                barostat_frequency = OPENMM_BAROSTAT_FREQUENCY
+
             # Initialize the production simulation
             production_dcd = f"{prod_prefix}.dcd"
             production_state_data = f"{prod_prefix}.out"
             production_checkpoint = f"{prod_prefix}.chk"
 
             production_simulation = OpenMMSimulation(
-                openmm_system_file=self.openmm_system,
-                initial_pdb_file=self.minimized_pdb,
+                openmm_system_file=self.parametrized_system,
+                initial_pdb_file=self.minimized_coords,
                 dcd_reporter_file=production_dcd,
                 state_reporter_file=production_state_data,
                 checkpoint_file=production_checkpoint,
                 save_state_prefix=prod_prefix,
-                temperature=self.target_parameters["temperature"],
-                pressure=self.target_parameters["pressure"],
-                langevin_friction=langevin_friction,
+                temperature=self.target_parameters["temperature"].to_openmm(),
+                pressure=self.target_parameters["pressure"].to_openmm(),
+                langevin_friction=langevin_friction.to_openmm(),
                 barostat_frequency=barostat_frequency,
-                timestep=timestep,
-                traj_length=traj_length,
-                frame_length=frame_length,
-                checkpoint_length=checkpoint_length,
-                save_state_length=save_state_length,
+                timestep=timestep.to_openmm(),
+                traj_length=traj_length.to_openmm(),
+                frame_length=frame_length.to_openmm(),
+                checkpoint_length=checkpoint_length.to_openmm(),
+                save_state_length=save_state_length.to_openmm(),
             )
-            
+
             # Run production
             if not exists_and_not_empty(production_checkpoint):
-                # Start production simulation, initializing positions and velocities
-                # to the final state from the equilibration simulation
+                # Start production simulation, initializing positions and
+                # velocities to the final state from the equilibration simulation
                 production_simulation.start_from_save_state(equilibrated_state)
 
             else:
                 # Resume from a previous production checkpoint
                 production_simulation.resume_from_checkpoint()
-        
+
         else:
-            #Get GROMACS Specific Parameters
+            # Get GROMACS Specific Parameters
             if "barostat_constant" in self.target_parameters:
-                barostat_constant = self.target_parameters[
-                    "barostat_constant"
-                ]
+                barostat_constant = self.target_parameters["barostat_constant"]
             else:
-                barostat_constant = BAROSTAT_CONSTANT
-            
+                barostat_constant = GMX_BAROSTAT_CONSTANT
+
             if "thermostat_constant" in self.target_parameters:
-                thermostat_constant = self.target_parameters[
-                    "thermostat_constant"
-                ]
+                thermostat_constant = self.target_parameters["thermostat_constant"]
             else:
-                thermostat_constant = THERMOSTAT_CONSTANT
-            
-            state_dir = str(prod_prefix).rsplit('/', 1)
+                thermostat_constant = GMX_THERMOSTAT_CONSTANT
+
             production_checkpoint = f"{prod_prefix}.cpt"
 
             production_simulation = GMXSimulation(
-                    gmx_executable = self.gmx_executable,
-                    initial_pdb_file=self.minimized_pdb,
-                    setup_prefix=setup_prefix,
-                    save_state_prefix=prod_prefix,
-                    temperature=self.target_parameters["temperature"],
-                    pressure=self.target_parameters["pressure"],
-                    barostat_constant=barostat_constant,
-                    thermostat_constant=thermostat_constant,
-                    timestep=timestep,
-                    traj_length=traj_length,
-                    frame_length=frame_length,
-                    restraints_present = False,
-                    load_state_prefix=equil_prefix,
-                )
-            
-            #Run Production
+                gmx_executable=self.gmx_executable,
+                parametrized_system=self.parametrized_system,
+                initial_coords_file=equil_prefix,
+                setup_prefix=setup_prefix,
+                save_state_prefix=prod_prefix,
+                temperature=self.target_parameters["temperature"],
+                pressure=self.target_parameters["pressure"],
+                barostat_constant=barostat_constant,
+                thermostat_constant=thermostat_constant,
+                timestep=timestep,
+                traj_length=traj_length,
+                frame_length=frame_length,
+                restraints_present=False,
+                load_state_prefix=equil_prefix,
+            )
+
+            # Run Production
             if not exists_and_not_empty(production_checkpoint):
-                # Start production simulation, initializing positions and velocities
-                # to the final state from the equilibration simulation
+                # Start production simulation, initializing positions and
+                # velocities to the final state from the equilibration simulation
                 production_simulation.run()
             else:
-                production_simulation.start_from_save_state(production_checkpoint) 
+                production_simulation.start_from_save_state(production_checkpoint)
 
     def analyze_observables(self, replica: int = 1):
         """Process trajectories and estimate observables."""
@@ -498,18 +506,16 @@ class ProteinBenchmarkSystem:
 
             replica_dir = Path(self.base_path, f"replica-{replica:d}")
             replica_prefix = Path(replica_dir, self.system_name)
-            
-            if self.sim_platform != 'gmx':
+
+            if self.simulation_platform == "openmm":
                 traj_path = f"{replica_prefix}-production.dcd"
-                output_selection = 'chainid == "A"' 
-                topology_path = self.minimized_pdb
-            else:
+                output_selection = 'chainid == "A"'
+            elif self.simulation_platform == "gmx":
                 traj_path = f"{replica_dir}/traj.xtc"
                 output_selection = 'resname != "HOH" && resname != "NA"'
-                topology_path = f"{replica_dir}/confout.gro"
-            
+
             align_trajectory(
-                topology_path=topology_path,
+                topology_path=self.minimized_coords,
                 trajectory_path=traj_path,
                 output_prefix=f"{analysis_prefix}-reimaged",
                 output_selection=output_selection,
