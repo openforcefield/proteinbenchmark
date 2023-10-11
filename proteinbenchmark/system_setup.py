@@ -503,8 +503,23 @@ def assign_parameters(
     openmm_topology = solvated_pdb.topology
 
     # Set up force field
-    smirnoff = Path(force_field_file).suffix == ".offxml"
-    ff_class = ForceField if smirnoff else app.ForceField
+    ff_extension = Path(force_field_file).suffix
+    if ff_extension == ".offxml":
+        ff_type = "smirnoff"
+        ff_class = ForceField
+
+    elif ff_extension == ".pt":
+        ff_type = "espaloma"
+        espaloma_model = torch.load(force_field_file)
+        espaloma_model.eval()
+
+        # Parametrize with OpenMM ff14SB first
+        ff_class = app.ForceField
+        force_field_file = force_fields["ff14sb-{water_model}"]["force_field_file"]
+
+    else:
+        ff_type = "openmm"
+        ff_class = app.ForceField
 
     if water_model_file is None:
         force_field = ff_class(force_field_file)
@@ -518,14 +533,13 @@ def assign_parameters(
         )
 
     # Create the parametrized system from the solvated topology
-    if smirnoff:
-        # SMIRNOFF force field
-
+    if ff_type in {"smirnoff", "espaloma"}:
         # Get unique molecules (solute, water, sodium ion, chloride ion) needed
         # for openff.toolkit.topology.Topology.from_openmm()
         solute_openff_topology = Topology.from_pdb(protonated_pdb_file)
+        solute_openff_molecules = solute_openff_topology.unique_molecules
         unique_molecules = [
-            *solute_openff_topology.unique_molecules,
+            *solute_openff_molecules,
             OFFMolecule.from_smiles("O"),
             OFFMolecule.from_smiles("[Na+1]"),
             OFFMolecule.from_smiles("[Cl-1]"),
@@ -577,6 +591,11 @@ def assign_parameters(
 
         openmm_system = force_field.create_openmm_system(openff_topology)
 
+        if ff_type == "espaloma":
+            # TODO parametrize solute with espaloma model
+            for offmol in solute_openff_molecules:
+                molecule_graph = espaloma.Graph(offmol)
+
         if simulation_platform == "openmm":
             openmm_hydrogen_mass = hydrogen_mass.to_openmm()
             # Manually change hydrogen masses in OpenMM system. Taken from
@@ -622,7 +641,9 @@ def assign_parameters(
                 switchDistance=switch_distance.to_openmm(),
             )
 
-    if (smirnoff and simulation_platform == "openmm") or smirnoff == False:
+    if (
+        ff_type == "smirnoff" and simulation_platform == "openmm"
+    ) or ff_type != "smirnoff":
         # Validate total charge of solvated system
         for i in range(openmm_system.getNumForces()):
             if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
