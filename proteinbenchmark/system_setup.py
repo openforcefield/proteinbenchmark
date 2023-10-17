@@ -6,6 +6,7 @@ from openff.toolkit import ForceField, Molecule, Topology
 from openff.units import unit
 from openmm import app
 from openmm import unit as openmm_unit
+from openmmforcefields.generators import EspalomaTemplateGenerator
 
 from proteinbenchmark.force_fields import force_fields
 from proteinbenchmark.utilities import (
@@ -278,7 +279,10 @@ def solvate(
         )
 
     # Use Amber ff14SB as a reference for building solvent coordinates
-    force_field = app.ForceField(force_fields["ff14sb-tip3p"]["force_field_file"])
+    force_field = app.ForceField(
+        force_fields["ff14sb-tip3p"]["force_field_file"],
+        force_fields["ff14sb-tip3p"]["water_model_file"],
+    )
 
     # Set up solute topology and positions
     solute_pdb = app.PDBFile(protonated_pdb_file)
@@ -323,9 +327,9 @@ def solvate(
     # Get total charge of system without ions
     system = force_field.createSystem(modeller.topology)
 
-    for i in range(system.getNumForces()):
-        if isinstance(system.getForce(i), openmm.NonbondedForce):
-            nonbonded_force = system.getForce(i)
+    for force in system.getForces():
+        if isinstance(force, openmm.NonbondedForce):
+            nonbonded_force = force
             break
 
     else:
@@ -502,6 +506,29 @@ def assign_parameters(
     solvated_pdb = app.PDBFile(solvated_pdb_file)
     openmm_topology = solvated_pdb.topology
 
+    # Check bond between OXT and HO for protonated C terminus
+    for chain in openmm_topology.chains():
+        for residue in chain.residues():
+            # Check for both OXT and HO atoms in the same residue
+            oxt = None
+            ho = None
+            for atom in residue.atoms():
+                if atom.name == "OXT":
+                    oxt = atom
+                elif atom.name == "HO":
+                    ho = atom
+            if oxt is not None and ho is not None:
+                # Check that there is a bond between these atoms
+                for bond in openmm_topology.bonds():
+                    if (
+                        (bond[0] == oxt and bond[1] == ho)
+                        or (bond[0] == ho and bond[1] == oxt)
+                    ):
+                        break
+                else:
+                    # Create a bond between these atoms
+                    openmm_topology.addBond(oxt, ho)
+
     # Set up force field
     ff_extension = Path(force_field_file).suffix
     if ff_extension == ".offxml":
@@ -510,12 +537,13 @@ def assign_parameters(
 
     elif ff_extension == ".pt":
         ff_type = "espaloma"
-        espaloma_model = torch.load(force_field_file)
-        espaloma_model.eval()
 
-        # Parametrize with OpenMM ff14SB first
+        # Make a force field with the water model, then add espaloma using a
+        # template generator from openmmforcefields
         ff_class = app.ForceField
-        force_field_file = force_fields["ff14sb-{water_model}"]["force_field_file"]
+        espaloma_model_file = force_field_file
+        force_field_file = water_model_file
+        water_model_file = None
 
     else:
         ff_type = "openmm"
@@ -534,15 +562,18 @@ def assign_parameters(
 
     # Create the parametrized system from the solvated topology
     if ff_type in {"smirnoff", "espaloma"}:
+        # Get list of OpenFF Molecules in solute OpenMM topology
+        openff_solute_topology = Topology.from_pdb(protonated_pdb_file)
+        openff_solute_molecules = openff_solute_topology.unique_molecules
+
+    if ff_type == "smirnoff":
         # Get unique molecules (solute, water, sodium ion, chloride ion) needed
         # for openff.toolkit.topology.Topology.from_openmm()
-        solute_openff_topology = Topology.from_pdb(protonated_pdb_file)
-        solute_openff_molecules = solute_openff_topology.unique_molecules
         unique_molecules = [
-            *solute_openff_molecules,
-            OFFMolecule.from_smiles("O"),
-            OFFMolecule.from_smiles("[Na+1]"),
-            OFFMolecule.from_smiles("[Cl-1]"),
+            *openff_solute_molecules,
+            Molecule.from_smiles("O"),
+            Molecule.from_smiles("[Na+1]"),
+            Molecule.from_smiles("[Cl-1]"),
         ]
 
         if water_model in {"opc", "tip4p-fb"}:
@@ -591,11 +622,7 @@ def assign_parameters(
 
         openmm_system = force_field.create_openmm_system(openff_topology)
 
-        if ff_type == "espaloma":
-            # TODO parametrize solute with espaloma model
-            for offmol in solute_openff_molecules:
-                molecule_graph = espaloma.Graph(offmol)
-
+        # Repartition hydrogen mass to bonded heavy atom
         if simulation_platform == "openmm":
             openmm_hydrogen_mass = hydrogen_mass.to_openmm()
             # Manually change hydrogen masses in OpenMM system. Taken from
@@ -620,10 +647,78 @@ def assign_parameters(
                     openmm_system.setParticleMass(atom1.index, heavy_mass)
 
     else:
+        if ff_type == "espaloma":
+            # Set up template generator with espaloma model
+            espaloma_generator = EspalomaTemplateGenerator(
+                molecules=openff_solute_molecules,
+                forcefield=espaloma_model_file,
+            )
+            force_field.registerTemplateGenerator(espaloma_generator.generator)
+
+            # Get OpenMM topology of solute with one residue per molecule
+            openmm_solute_topology = openff_solute_topology.to_openmm()
+            espaloma_topology = app.Topology()
+            espaloma_topology.setPeriodicBoxVectors(
+                openmm_topology.getPeriodicBoxVectors()
+            )
+            solute_atoms = dict()
+            chain_index = 0
+
+            for chain in openmm_solute_topology.chains():
+                new_chain = espaloma_topology.addChain(chain.id)
+                residue_name = f"XX{chain_index:01d}"
+                chain_index += 1
+                resid = '1'
+                new_residue = espaloma_topology.addResidue(
+                    residue_name, new_chain, resid
+                )
+
+                for residue in chain.residues():
+                    for atom in residue.atoms():
+                        new_atom = espaloma_topology.addAtom(
+                            atom.name, atom.element, new_residue, atom.id
+                        )
+                        solute_atoms[atom] = new_atom
+
+            for bond in openmm_solute_topology.bonds():
+                if bond[0] in solute_atoms and bond[1] in solute_atoms:
+                    espaloma_topology.addBond(
+                        solute_atoms[bond[0]], solute_atoms[bond[1]]
+                    )
+
+            # Copy solvent topology from solvated system topology
+            solute_chain_indices = set(
+                chain.index for chain in espaloma_topology.chains()
+            )
+            solvent_atoms = dict()
+
+            for chain in openmm_topology.chains():
+                if chain.index in solute_chain_indices:
+                    continue
+                new_chain = espaloma_topology.addChain(chain.id)
+                for residue in chain.residues():
+                    new_residue = espaloma_topology.addResidue(
+                        residue.name, new_chain, residue.id
+                    )
+                    for atom in residue.atoms():
+                        new_atom = espaloma_topology.addAtom(
+                            atom.name, atom.element, new_residue, atom.id
+                        )
+                        solvent_atoms[atom] = new_atom
+
+            for bond in openmm_topology.bonds():
+                if bond[0] in solvent_atoms and bond[1] in solvent_atoms:
+                    espaloma_topology.addBond(
+                        solvent_atoms[bond[0]], solvent_atoms[bond[1]]
+                    )
+
+            openmm_topology = espaloma_topology
+
+        # Create parametrized system
         switch_distance = nonbonded_cutoff - vdw_switch_width
         if simulation_platform == "openmm":
             openmm_system = force_field.createSystem(
-                modeller.topology,
+                openmm_topology,
                 nonbondedMethod=app.PME,
                 nonbondedCutoff=nonbonded_cutoff.to_openmm(),
                 constraints=app.HBonds,
@@ -633,7 +728,7 @@ def assign_parameters(
             )
         elif simulation_platform == "gmx":
             openmm_system = force_field.createSystem(
-                modeller.topology,
+                openmm_topology,
                 nonbondedMethod=app.PME,
                 nonbondedCutoff=nonbonded_cutoff.to_openmm(),
                 rigidWater=False,
@@ -645,9 +740,9 @@ def assign_parameters(
         ff_type == "smirnoff" and simulation_platform == "openmm"
     ) or ff_type != "smirnoff":
         # Validate total charge of solvated system
-        for i in range(openmm_system.getNumForces()):
-            if isinstance(openmm_system.getForce(i), openmm.NonbondedForce):
-                nonbonded_force = openmm_system.getForce(i)
+        for force in openmm_system.getForces():
+            if isinstance(force, openmm.NonbondedForce):
+                nonbonded_force = force
                 break
 
         else:
@@ -677,7 +772,7 @@ def assign_parameters(
 
         # Write GROMACS files
         struct = pmd.openmm.load_topology(
-            modeller.topology, openmm_system, xyz=modeller.positions
+            openmm_topology, openmm_system, xyz=modeller.positions
         )
         hmass = pmd.tools.HMassRepartition(struct, hydrogen_mass.m_as(unit.dalton))
         hmass.execute()

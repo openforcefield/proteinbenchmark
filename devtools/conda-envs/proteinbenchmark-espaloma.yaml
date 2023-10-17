@@ -14,7 +14,6 @@ dependencies:
   - pip:
     - git+https://github.com/deGrootLab/pmx@develop
     - git+https://github.com/Electrostatics/pdb2pqr@master#egg=pdb2pqr
-    - git+https://github.com/openmm/openmmforcefields@main
 
   # MM calculations
   - ambertools
@@ -25,6 +24,7 @@ dependencies:
   - openff-toolkit>=0.13.0
   - openff-units
   - openmm>=8.0.0
+  - openmmforcefields>=0.12.0
   - openmmtools
 
   # Analysis
