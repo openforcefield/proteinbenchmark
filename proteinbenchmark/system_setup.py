@@ -520,9 +520,8 @@ def assign_parameters(
             if oxt is not None and ho is not None:
                 # Check that there is a bond between these atoms
                 for bond in openmm_topology.bonds():
-                    if (
-                        (bond[0] == oxt and bond[1] == ho)
-                        or (bond[0] == ho and bond[1] == oxt)
+                    if (bond[0] == oxt and bond[1] == ho) or (
+                        bond[0] == ho and bond[1] == oxt
                     ):
                         break
                 else:
@@ -668,7 +667,7 @@ def assign_parameters(
                 new_chain = espaloma_topology.addChain(chain.id)
                 residue_name = f"XX{chain_index:01d}"
                 chain_index += 1
-                resid = '1'
+                resid = "1"
                 new_residue = espaloma_topology.addResidue(
                     residue_name, new_chain, resid
                 )
