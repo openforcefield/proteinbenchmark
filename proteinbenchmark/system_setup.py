@@ -627,7 +627,7 @@ def assign_parameters(
             # Manually change hydrogen masses in OpenMM system. Taken from
             # https://github.com/openmm/openmm/blob/f30d716ace8331003c5115bdfa9e03341a757878/wrappers/python/openmm/app/forcefield.py#L1249
             _hydrogen = app.element.hydrogen
-            for atom1, atom2 in modeller.topology.bonds():
+            for atom1, atom2 in openmm_topology.bonds():
                 if atom1.element == _hydrogen:
                     (atom1, atom2) = (atom2, atom1)
                 if (
@@ -772,7 +772,7 @@ def assign_parameters(
 
         # Write GROMACS files
         struct = pmd.openmm.load_topology(
-            openmm_topology, openmm_system, xyz=modeller.positions
+            openmm_topology, openmm_system, xyz=solvated_pdb.positions
         )
         hmass = pmd.tools.HMassRepartition(struct, hydrogen_mass.m_as(unit.dalton))
         hmass.execute()
