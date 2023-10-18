@@ -78,10 +78,8 @@ class OpenMMSimulation:
         # Check units of arguments
         if not temperature.unit.is_compatible(unit.kelvin):
             raise ValueError("temperature does not have units of Temperature")
-
         if not pressure.unit.is_compatible(unit.atmosphere):
             raise ValueError("pressure does not have units of Mass Length^-1 Time^-2")
-
         if not langevin_friction.unit.is_compatible(unit.picosecond**-1):
             raise ValueError("langevin_friction does not have units of Time^-1")
         if not timestep.unit.is_compatible(unit.picosecond):
