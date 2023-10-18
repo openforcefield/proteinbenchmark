@@ -1,0 +1,35 @@
+name: openff-proteinbenchmark-espaloma
+channels:
+  - conda-forge
+  - openeye
+  - defaults
+dependencies:
+  - black
+  - click
+  - isort
+  - pip
+  - python
+    
+  # System setup
+  - pip:
+    - git+https://github.com/deGrootLab/pmx@develop
+    - git+https://github.com/Electrostatics/pdb2pqr@master#egg=pdb2pqr
+
+  # MM calculations
+  - ambertools
+  - cudatoolkit
+  - espaloma>=0.3.2
+  - openeye-toolkits
+  - openff-forcefields
+  - openff-toolkit>=0.13.0
+  - openff-units
+  - openmm>=8.0.0
+  - openmmforcefields>=0.12.0
+  - openmmtools
+
+  # Analysis
+  - loos
+  - pandas
+  - pymol-open-source
+  - seaborn
+

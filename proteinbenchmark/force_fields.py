@@ -8,6 +8,10 @@ ff_directory = Path(package_data_directory, "force-fields")
 # List of force fields with force field XML file, water model, and water model
 # XML file
 force_fields = {
+    "espaloma-0.3.2-tip3p": {
+        "force_field_file": Path(ff_directory, "espaloma-0.3.2.pt"),
+        "water_model": "tip3p",
+    },
     "ff14sb-opc": {
         "force_field_file": Path(
             ff_directory, "nerenberg_ff14sb_c0ala_c0gly_c0val.xml"
