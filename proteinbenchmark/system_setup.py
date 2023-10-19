@@ -959,9 +959,10 @@ def minimize_gmx(
         raise ValueError("force_tolerance does not have units of Energy Length^-1")
 
     nonbonded_cutoff = nonbonded_cutoff.m_as(unit.nanometer)
-    switch_distance = (nonbonded_cutoff - vdw_switch_width).m_as(unit.nanometer)
+    vdw_switch_width = vdw_switch_width.m_as(unit.nanometer)
+    switch_distance = nonbonded_cutoff - vdw_switch_width
     restraint_energy_constant = restraint_energy_constant.m_as(
-        unit.kilojoule_per_mole / unit.nanometer
+        unit.kilojoule_per_mole / unit.nanometer**2
     )
     force_tolerance = force_tolerance.m_as(unit.kilojoule_per_mole / unit.nanometer)
 
@@ -970,11 +971,10 @@ def minimize_gmx(
     with open(mdp_file, "w") as mdp_file_w:
         mdp_file_w.write(
             "define=-DPOSRES\n"
-            "integrator = l-bfgs\n"
-            f"emtol = {force_tolerance}\n"
+            "integrator = steep\n"
+            f"emtol = {10*force_tolerance}\n"
             "emstep = 0.01\n"
             "nsteps = -1\n"
-            "nstlist = 1\n"
             "constraint_algorithm = lincs\n"
             "lincs-warnangle = 45\n"
             "constraints = h-bonds\n"
@@ -984,10 +984,10 @@ def minimize_gmx(
             "nstlist = 40\n"
             "vdwtype = cut-off\n"
             "vdw-modifier = potential-switch\n"
-            f"rvdw = {self.nonbonded_cutoff}\n"
-            f"rvdw-switch = {self.switch_distance}\n"
+            f"rvdw = {nonbonded_cutoff}\n"
+            f"rvdw-switch = {switch_distance}\n"
             "coulombtype = PME\n"
-            f"rcoulomb = {self.nonbonded_cutoff}\n"
+            f"rcoulomb = {nonbonded_cutoff}\n"
             "pme_order = 4\n"
             "fourierspacing = 0.16\n"
             "pbc = xyz\n"
@@ -1004,7 +1004,7 @@ def minimize_gmx(
             "-o",
             f"{setup_prefix}_posre.itp",
             "-fc",
-            restraint_energy_constant,
+            str(restraint_energy_constant),
         ],
         stdin=subprocess.PIPE,
     )
@@ -1025,6 +1025,8 @@ def minimize_gmx(
             solvated_pdb_file,
             "-r",
             solvated_pdb_file,
+            "-maxwarn",
+            f"{1}",
             "-o",
             out_prefix,
         ]

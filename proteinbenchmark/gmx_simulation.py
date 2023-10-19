@@ -78,7 +78,7 @@ class GMXSimulation:
             raise ValueError("temperature does not have units of Temperature")
         if not pressure.is_compatible_with(unit.atmosphere):
             raise ValueError("pressure does not have units of Mass Length^-1 Time^-2")
-        if not langevin_friction.unit.is_compatible(unit.picosecond**-1):
+        if not langevin_friction.is_compatible_with(unit.picosecond**-1):
             raise ValueError("langevin_friction does not have units of Time^-1")
         if not timestep.is_compatible_with(unit.picosecond):
             raise ValueError("timestep does not have units of Time")
@@ -148,6 +148,7 @@ class GMXSimulation:
                 f"rcoulomb = {self.nonbonded_cutoff}\n"
                 "pme_order = 4\n"
                 "fourierspacing = 0.16\n"
+                "tc-grps = System\n"
                 f"tau_t = {self.thermostat_constant}\n"
                 f"ref_t = {self.temperature}\n"
                 "pbc = xyz\n"
@@ -168,6 +169,9 @@ class GMXSimulation:
         to random samples from a Boltzmann distribution at the simulation
         temperature.
         """
+
+        # Generate MDP
+        mdp_file = self.setup_simulation(continuation=False)
 
         # Generate TPR
         grompp = subprocess.run(
@@ -198,9 +202,6 @@ class GMXSimulation:
                 "1",
             ]
         )
-        # simulation = gmx.mdrun(
-        #    input=grompp.output.file['-o'], runtime_args={'-ntmpi': '1'}
-        # )
 
     def start_from_save_state(
         self,

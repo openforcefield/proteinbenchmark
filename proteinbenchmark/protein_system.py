@@ -443,6 +443,8 @@ class ProteinBenchmarkSystem:
             else:
                 barostat_constant = GMX_BAROSTAT_CONSTANT
 
+            production_checkpoint = f"{prod_prefix}.cpt"
+
             production_simulation = GMXSimulation(
                 gmx_executable=self.gmx_executable,
                 parametrized_system=self.parametrized_system,
