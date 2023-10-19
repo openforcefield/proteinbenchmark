@@ -268,9 +268,11 @@ def solvate(
 
     if water_model in {"opc3", "tip3p", "tip3p-fb"}:
         water_has_virtual_sites = False
+        modeller_force_field = "ff14sb-tip3p"
         modeller_water_model = "tip3p"
     elif water_model in {"opc", "tip4p-fb"}:
         water_has_virtual_sites = True
+        modeller_force_field = "ff14sb-opc"
         modeller_water_model = "tip4pew"
     else:
         raise ValueError(
@@ -280,8 +282,8 @@ def solvate(
 
     # Use Amber ff14SB as a reference for building solvent coordinates
     force_field = app.ForceField(
-        force_fields["ff14sb-tip3p"]["force_field_file"],
-        force_fields["ff14sb-tip3p"]["water_model_file"],
+        force_fields[modeller_force_field]["force_field_file"],
+        force_fields[modeller_force_field]["water_model_file"],
     )
 
     # Set up solute topology and positions
