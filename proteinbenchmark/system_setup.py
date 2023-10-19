@@ -627,7 +627,7 @@ def assign_parameters(
             # Manually change hydrogen masses in OpenMM system. Taken from
             # https://github.com/openmm/openmm/blob/f30d716ace8331003c5115bdfa9e03341a757878/wrappers/python/openmm/app/forcefield.py#L1249
             _hydrogen = app.element.hydrogen
-            for atom1, atom2 in modeller.topology.bonds():
+            for atom1, atom2 in openmm_topology.bonds():
                 if atom1.element == _hydrogen:
                     (atom1, atom2) = (atom2, atom1)
                 if (
@@ -767,11 +767,12 @@ def assign_parameters(
         write_xml(parametrized_system, openmm_system)
 
     elif simulation_platform == "gmx":
+        # TODO write GMX files with Interchange
         import parmed as pmd
 
         # Write GROMACS files
         struct = pmd.openmm.load_topology(
-            openmm_topology, openmm_system, xyz=modeller.positions
+            openmm_topology, openmm_system, xyz=solvated_pdb.positions
         )
         hmass = pmd.tools.HMassRepartition(struct, hydrogen_mass.m_as(unit.dalton))
         hmass.execute()
@@ -809,6 +810,7 @@ def minimize_openmm(
     solvated_pdb_file: str,
     minimized_coords_file: str,
     restraint_energy_constant: unit.Quantity,
+    force_tolerance: unit.Quantity,
 ):
     """
     Minimize energy of solvated system with Cartesian restraints on non-hydrogen
@@ -823,8 +825,9 @@ def minimize_openmm(
     minimized_coords_file
         The path to write the minimized coords (OpenMM PDB or GMX GRO).
     restraint_energy_constant
-        Energy constant for Cartesian restraints in OpenMM (units Energy
-        Length^-2).
+        Energy constant for Cartesian restraints (units Energy Length^-2).
+    force_tolerance
+        Force tolerance for minimization (units Energy Length^-1).
     """
 
     # Check units of arguments
@@ -834,6 +837,8 @@ def minimize_openmm(
         raise ValueError(
             "restraint_energy_constant does not have units of Energy Length^-2"
         )
+    if not force_tolerance.is_compatible_with(unit.kilojoule_per_mole / unit.nanometer):
+        raise ValueError("force_tolerance does not have units of Energy Length^-1")
 
     k = restraint_energy_constant.m_as(unit.kilocalories_per_mole / unit.angstrom**2)
 
@@ -906,7 +911,10 @@ def minimize_gmx(
     minimized_coords_file: str,
     setup_prefix: str,
     gmx_executable: str,
-    energy_tolerance: unit.Quantity,
+    nonbonded_cutoff: unit.Quantity,
+    vdw_switch_width: unit.Quantity,
+    restraint_energy_constant: unit.Quantity,
+    force_tolerance: unit.Quantity,
 ):
     """
     Minimize energy of solvated system with Cartesian restraints on non-hydrogen
@@ -922,30 +930,71 @@ def minimize_gmx(
         The path to write the minimized coords (OpenMM PDB or GMX GRO).
     gmx_executable
         Name of GROMACS executable to pass to subprocess.
-    energy_tolerance
-        Energy tolerance for minimization in GROMACS (units Energy Length^-1).
+    nonbonded_cutoff
+        The cutoff for the Lennard-Jones potential and PME direct space
+        summation.
+    vdw_switch_width
+        The distance from the nonbonded cutoff at which to apply the
+        switching function.
+    restraint_energy_constant
+        Energy constant for Cartesian restraints (units Energy Length^-2).
+    force_tolerance
+        Force tolerance for minimization (units Energy Length^-1).
     """
 
     import subprocess
 
     # Check units of arguments
-    if not energy_tolerance.is_compatible_with(
-        unit.kilojoule_per_mole / unit.nanometer
+    if not nonbonded_cutoff.is_compatible_with(unit.nanometer):
+        raise ValueError("nonbonded_cutoff does not have units of Length")
+    if not vdw_switch_width.is_compatible_with(unit.nanometer):
+        raise ValueError("vdw_switch_width does not have units of Length")
+    if not restraint_energy_constant.is_compatible_with(
+        unit.kilojoule_per_mole / unit.nanometer**2
     ):
-        raise ValueError("energy_tolerance does not have units of Energy Length^-1")
+        raise ValueError(
+            "restraint_energy_constant does not have units of Energy Length^-2"
+        )
+    if not force_tolerance.is_compatible_with(unit.kilojoule_per_mole / unit.nanometer):
+        raise ValueError("force_tolerance does not have units of Energy Length^-1")
 
-    k = energy_tolerance.m_as(unit.kilojoule_per_mole / unit.nanometer)
+    nonbonded_cutoff = nonbonded_cutoff.m_as(unit.nanometer)
+    vdw_switch_width = vdw_switch_width.m_as(unit.nanometer)
+    switch_distance = nonbonded_cutoff - vdw_switch_width
+    restraint_energy_constant = restraint_energy_constant.m_as(
+        unit.kilojoule_per_mole / unit.nanometer**2
+    )
+    force_tolerance = force_tolerance.m_as(unit.kilojoule_per_mole / unit.nanometer)
 
     # Create MDP file
     mdp_file = str(setup_prefix) + "-minimized.mdp"
     with open(mdp_file, "w") as mdp_file_w:
         mdp_file_w.write(
-            f"integrator = steep\nemtol = {k}\nemstep = 0.01\nnsteps=50000\n"
-            "nstlist = 1\ncutoff-scheme = Verlet\nns_type = grid\nrlist = 0.9\n"
-            "coulombtype = PME\nrcoulomb = 1.0\nrvdw = 0.9\npbc = xyz\n"
+            "define=-DPOSRES\n"
+            "integrator = steep\n"
+            f"emtol = {10*force_tolerance}\n"
+            "emstep = 0.01\n"
+            "nsteps = -1\n"
+            "constraint_algorithm = lincs\n"
+            "lincs-warnangle = 45\n"
+            "constraints = h-bonds\n"
+            "lincs_iter = 2\n"
+            "lincs_order = 4\n"
+            "cutoff-scheme = Verlet\n"
+            "nstlist = 40\n"
+            "vdwtype = cut-off\n"
+            "vdw-modifier = potential-switch\n"
+            f"rvdw = {nonbonded_cutoff}\n"
+            f"rvdw-switch = {switch_distance}\n"
+            "coulombtype = PME\n"
+            f"rcoulomb = {nonbonded_cutoff}\n"
+            "pme_order = 4\n"
+            "fourierspacing = 0.16\n"
+            "pbc = xyz\n"
+            "DispCorr = EnerPres\n"
         )
 
-    # Create position restrints file for backbone atoms
+    # Create position restraints file for backbone atoms
     restr = subprocess.Popen(
         [
             gmx_executable,
@@ -954,6 +1003,8 @@ def minimize_gmx(
             solvated_pdb_file,
             "-o",
             f"{setup_prefix}_posre.itp",
+            "-fc",
+            str(restraint_energy_constant),
         ],
         stdin=subprocess.PIPE,
     )
@@ -972,6 +1023,10 @@ def minimize_gmx(
             parametrized_system,
             "-c",
             solvated_pdb_file,
+            "-r",
+            solvated_pdb_file,
+            "-maxwarn",
+            f"{1}",
             "-o",
             out_prefix,
         ]
