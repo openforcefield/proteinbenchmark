@@ -566,7 +566,9 @@ class ProteinBenchmarkSystem:
         ):
             print(f"Computing scalar couplings for system {self.system_name}")
 
-            experimental_observables = target_observables["scalar_couplings"]["observable_path"]
+            experimental_observables = target_observables["scalar_couplings"][
+                "observable_path"
+            ]
 
             compute_scalar_couplings(
                 observable_path=experimental_observables,

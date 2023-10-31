@@ -537,6 +537,7 @@ benchmark_targets = {
                 "observable_path": Path(
                     observable_directory, "hewl", "hewl-scalar-couplings.dat"
                 ),
+            },
             "backbone_S2": "buck_biochem_1995",
         },
     },

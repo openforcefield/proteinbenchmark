@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import TypedDict
 
 import numpy
-from openff.units import unit
 import pandas
+from openff.units import unit
 
 from proteinbenchmark.utilities import package_data_directory
 
@@ -756,7 +756,6 @@ for karplus_parameters in [
     PEREZ_KARPLUS_PARAMETERS,
     CHOU_KARPLUS_PARAMETERS,
 ]:
-
     for observable, observable_karplus in karplus_parameters.items():
         if observable == "3j_hn_ca":
             continue
@@ -776,4 +775,3 @@ for karplus_parameters in [
 
         else:
             get_karplus_extrema(observable_karplus)
-

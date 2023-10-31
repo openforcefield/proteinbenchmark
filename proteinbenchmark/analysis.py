@@ -15,7 +15,6 @@ from proteinbenchmark.utilities import list_of_dicts_to_csv
 
 
 def get_timeseries_mean(correlated_timeseries: numpy.ndarray):
-
     # Get burn-in time, statistical inefficiency, and maximum number of
     # uncorrelated samples from pymbar.timeseries
     t0, g, Neff_max = timeseries.detect_equilibration(correlated_timeseries)
