@@ -230,6 +230,8 @@ HENNIG_KARPLUS_PARAMETERS = {
 
 # Karplus parameters for backbone scalar couplings from
 # Vogeli B, Ying J, Grishaev A, Bax A. (2007). J. Am. Chem. Soc. 129, 9377-9385.
+# 3J_CO_CO and 3J_HA_CO parameters from
+# Hu JS, Bax A (1997). J. Am. Chem. Soc. 119, 6360-6368.
 VOGELI_KARPLUS_PARAMETERS = {
     "3j_co_co": {
         "dihedral": "phi",
@@ -481,6 +483,9 @@ PEREZ_KARPLUS_RESIDUE_MAP = {
         "TYR",
     ]
 }
+PEREZ_KARPLUS_RESIDUE_MAP["ALA"] = "ALA"
+PEREZ_KARPLUS_RESIDUE_MAP["CYS"] = "CYS"
+PEREZ_KARPLUS_RESIDUE_MAP["CYX"] = "CYS"
 PEREZ_KARPLUS_RESIDUE_MAP["ILE"] = "ILE,VAL"
 PEREZ_KARPLUS_RESIDUE_MAP["SER"] = "SER"
 PEREZ_KARPLUS_RESIDUE_MAP["THR"] = "THR"
@@ -506,11 +511,25 @@ PEREZ_KARPLUS_PARAMETERS = {
     },
     "3j_ha_hb2": {
         "dihedral": "chi1",
+        "ALA": {
+            "delta": -120.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 3.01 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
         "ARG,ASN,ASP,GLN,GLU,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR": {
             "delta": -120.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 2.40 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "CYS": {
+            "delta": -120.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 1.71 / unit.second,
             "sigma": 0.40 / unit.second,
         },
         "SER": {
@@ -531,7 +550,7 @@ PEREZ_KARPLUS_PARAMETERS = {
             "sigma": 0.40 / unit.second,
         },
         "SER": {
-            "delta": -120.0,
+            "delta": 0.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 1.42 / unit.second,
