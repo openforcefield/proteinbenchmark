@@ -673,9 +673,9 @@ def assign_dihedral_clusters(
 def compute_scalar_couplings(
     observable_path: str,
     dihedrals_path: str,
-    time_series_output_path: str,
     output_path: str,
     karplus: str = "vogeli",
+    time_series_output_path: str = None,
 ):
     """
     Compute NMR scalar couplings using a Karplus model.
@@ -751,7 +751,8 @@ def compute_scalar_couplings(
     observable_df.reset_index(drop=True, inplace=True)
 
     # Compute observables
-    observable_timeseries = list()
+    if time_series_output_path is not None:
+        observable_timeseries = list()
     computed_observables = list()
 
     for index, row in observable_df.iterrows():
@@ -830,10 +831,6 @@ def compute_scalar_couplings(
                 + observable_parameters["C"]
             ).m_as(unit.second**-1)
 
-        # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
-        # for computed scalar coupling
-        computed_coupling_mean = get_timeseries_mean(computed_coupling)
-
         # Get experimental uncertainty from Karplus model
         experiment_uncertainty = observable_parameters["sigma"].m_as(unit.second**-1)
 
@@ -844,20 +841,33 @@ def compute_scalar_couplings(
             observable_parameters["maximum"],
         ).m_as(unit.second**-1)
 
-        # Write time series of observable
-        observable_timeseries.append(
-            {
-                "Frame": karplus_df["Frame"],
-                "Time (ns)": karplus_df["Time (ns)"],
-                "Observable": observable,
-                "Resid": observable_resid,
-                "Resname": row["Resname"],
-                "Experiment": row["Experiment"],
-                "Experiment Uncertainty": experiment_uncertainty,
-                "Truncated Experiment": truncated_experimental_coupling,
-                "Computed": computed_coupling,
+        if time_series_output_path is not None:
+            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
+            # for computed scalar coupling
+            computed_coupling_mean = get_timeseries_mean(computed_coupling)
+
+            # Write time series of observable
+            observable_timeseries.append(
+                {
+                    "Frame": karplus_df["Frame"],
+                    "Time (ns)": karplus_df["Time (ns)"],
+                    "Observable": observable,
+                    "Resid": observable_resid,
+                    "Resname": row["Resname"],
+                    "Experiment": row["Experiment"],
+                    "Experiment Uncertainty": experiment_uncertainty,
+                    "Truncated Experiment": truncated_experimental_coupling,
+                    "Computed": computed_coupling,
+                }
+            )
+
+        else:
+            computed_coupling_mean = {
+                "Correlated Mean": computed_coupling.mean(),
+                "Correlated SEM": (
+                    computed_coupling.std(ddof=1) / numpy.sqrt(computed_coupling.size)
+                ),
             }
-        )
 
         # Write computed means of observable
         computed_observables.append(
@@ -868,10 +878,11 @@ def compute_scalar_couplings(
             }
         )
 
-    observable_timeseries_df = pandas.concat(
-        [pandas.DataFrame(df) for df in observable_timeseries]
-    ).reset_index(drop=True)
-    observable_timeseries_df.to_csv(time_series_output_path)
+    if time_series_output_path is not None:
+        observable_timeseries_df = pandas.concat(
+            [pandas.DataFrame(df) for df in observable_timeseries]
+        ).reset_index(drop=True)
+        observable_timeseries_df.to_csv(time_series_output_path)
 
     scalar_coupling_df = pandas.concat(
         [observable_df, pandas.DataFrame(computed_observables)], axis=1
