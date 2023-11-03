@@ -178,6 +178,38 @@ benchmark_targets = {
             },
         },
     },
+    "ala6": {
+        "target_type": "peptide",
+        "aa_sequence": "AAAAAA",
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 300.0 * unit.kelvin,
+        "ph": 2.0,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["graf_jacs_2007"],
+                "observable_path": Path(
+                    observable_directory, "ala6", "ala6-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
+    "ala7": {
+        "target_type": "peptide",
+        "aa_sequence": "AAAAAAA",
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 300.0 * unit.kelvin,
+        "ph": 2.0,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["graf_jacs_2007"],
+                "observable_path": Path(
+                    observable_directory, "ala7", "ala7-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
     "asyn": {
         "target_type": "disordered",
         "aa_sequence": (
