@@ -575,6 +575,7 @@ class ProteinBenchmarkSystem:
                 if time_series_analysis
                 else None
             )
+
             compute_scalar_couplings(
                 observable_path=experimental_observables,
                 dihedrals_path=dihedrals,
@@ -594,12 +595,21 @@ class ProteinBenchmarkSystem:
                 f"{self.system_name}"
             )
 
-            data = target_observables["h_bond_scalar_couplings"]["observable_path"]
+            experimental_observables = target_observables["h_bond_scalar_couplings"][
+                "observable_path"
+            ]
+
+            time_series_output_path = (
+                f"{analysis_prefix}-h-bond-scalar-couplings-time-series.dat"
+                if time_series_analysis
+                else None
+            )
 
             compute_h_bond_scalar_couplings(
-                observable_path=data,
+                observable_path=experimental_observables,
                 h_bond_geometries_path=h_bond_geometries,
                 output_path=h_bond_scalar_couplings,
+                time_series_output_path=time_series_output_path,
             )
 
         # Fraction helix
