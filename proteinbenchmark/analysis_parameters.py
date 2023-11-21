@@ -1,10 +1,24 @@
 """Default parameter values for analysis of trajectories."""
 from pathlib import Path
+from typing import TypedDict
 
+import numpy
 import pandas
 from openff.units import unit
 
 from proteinbenchmark.utilities import package_data_directory
+
+
+class KarplusDict(TypedDict, total=False):
+    dihedral: str
+    delta: float
+    A: unit.Quantity
+    B: unit.Quantity
+    C: unit.Quantity
+    sigma: unit.Quantity
+    minimum: unit.Quantity
+    maximum: unit.Quantity
+
 
 DCD_TIME_TO_PICOSECONDS = 0.04888821 * unit.picosecond
 
@@ -195,6 +209,7 @@ DING_KARPLUS_PARAMETERS = {
 # Karplus parameters for backbone scalar couplings from
 # Hennig M, Bermel W, Schwalbe H, Griesinger C. (2000). J. Am. Chem. Soc. 122,
 #     6268-6277.
+# Extrema of 3j_hn_ca Karplus curve from numerical optimization
 HENNIG_KARPLUS_PARAMETERS = {
     "3j_hn_ca": {
         "dihedral": "phi,prev_psi",
@@ -208,11 +223,15 @@ HENNIG_KARPLUS_PARAMETERS = {
         "sin_phi_sin_psi": -0.14 / unit.second,
         "C": 0.54 / unit.second,
         "sigma": 0.10 / unit.second,
+        "minimum": 0.0329976 / unit.second,
+        "maximum": 1.08915 / unit.second,
     },
 }
 
 # Karplus parameters for backbone scalar couplings from
 # Vogeli B, Ying J, Grishaev A, Bax A. (2007). J. Am. Chem. Soc. 129, 9377-9385.
+# 3J_CO_CO and 3J_HA_CO parameters from
+# Hu JS, Bax A (1997). J. Am. Chem. Soc. 119, 6360-6368.
 VOGELI_KARPLUS_PARAMETERS = {
     "3j_co_co": {
         "dihedral": "phi",
@@ -464,6 +483,9 @@ PEREZ_KARPLUS_RESIDUE_MAP = {
         "TYR",
     ]
 }
+PEREZ_KARPLUS_RESIDUE_MAP["ALA"] = "ALA"
+PEREZ_KARPLUS_RESIDUE_MAP["CYS"] = "CYS"
+PEREZ_KARPLUS_RESIDUE_MAP["CYX"] = "CYS"
 PEREZ_KARPLUS_RESIDUE_MAP["ILE"] = "ILE,VAL"
 PEREZ_KARPLUS_RESIDUE_MAP["SER"] = "SER"
 PEREZ_KARPLUS_RESIDUE_MAP["THR"] = "THR"
@@ -489,11 +511,25 @@ PEREZ_KARPLUS_PARAMETERS = {
     },
     "3j_ha_hb2": {
         "dihedral": "chi1",
+        "ALA": {
+            "delta": -120.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 3.01 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
         "ARG,ASN,ASP,GLN,GLU,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR": {
             "delta": -120.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 2.40 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "CYS": {
+            "delta": -120.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 1.71 / unit.second,
             "sigma": 0.40 / unit.second,
         },
         "SER": {
@@ -514,7 +550,7 @@ PEREZ_KARPLUS_PARAMETERS = {
             "sigma": 0.40 / unit.second,
         },
         "SER": {
-            "delta": -120.0,
+            "delta": 0.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 1.42 / unit.second,
@@ -679,3 +715,63 @@ BARFIELD_KARPLUS_PARAMETERS = {
         "sigma": 0.12 / unit.second,
     },
 }
+
+
+def get_karplus_extrema(karplus_dict: KarplusDict):
+    """
+    Get extrema of a Karplus curve J(phi) = A cos^2(phi) + B cos(phi) + C.
+    """
+
+    karplus_A = karplus_dict["A"]
+    karplus_B = karplus_dict["B"]
+    karplus_C = karplus_dict["C"]
+
+    # Get extrema of Karplus curve at
+    # J(0) = A + B + C
+    # J(pi) = A - B + C
+    # J(+/- arccos(-B / 2 A)) = -B^2 / (4 A) + C
+    potential_extrema = [
+        karplus_A + karplus_B + karplus_C,
+        karplus_A - karplus_B + karplus_C,
+    ]
+
+    if numpy.abs(karplus_B / karplus_A) <= 2:
+        potential_extrema.append(
+            -karplus_B * karplus_B / karplus_A / 4 + karplus_C,
+        )
+
+    karplus_dict["minimum"] = min(potential_extrema)
+    karplus_dict["maximum"] = max(potential_extrema)
+
+
+# Get extrema of Karplus parameters
+for karplus_parameters in [
+    VOGELI_KARPLUS_PARAMETERS,
+    SCHMIDT_KARPLUS_PARAMETERS,
+    HU_KARPLUS_PARAMETERS,
+    CASE_DFT1_KARPLUS_PARAMETERS,
+    CASE_DFT2_KARPLUS_PARAMETERS,
+    WIRMER_KARPLUS_PARAMETERS,
+    DING_KARPLUS_PARAMETERS,
+    PEREZ_KARPLUS_PARAMETERS,
+    CHOU_KARPLUS_PARAMETERS,
+]:
+    for observable, observable_karplus in karplus_parameters.items():
+        if observable == "3j_hn_ca":
+            continue
+
+        elif observable in {
+            "3j_n_cg1",
+            "3j_n_cg2",
+            "3j_co_cg1",
+            "3j_co_cg2",
+            "3j_ha_hb",
+            "3j_ha_hb2",
+            "3j_ha_hb3",
+        }:
+            for key, karplus_dict in observable_karplus.items():
+                if key != "dihedral":
+                    get_karplus_extrema(karplus_dict)
+
+        else:
+            get_karplus_extrema(observable_karplus)

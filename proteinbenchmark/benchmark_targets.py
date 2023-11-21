@@ -178,6 +178,38 @@ benchmark_targets = {
             },
         },
     },
+    "ala6": {
+        "target_type": "peptide",
+        "aa_sequence": "AAAAAA",
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 300.0 * unit.kelvin,
+        "ph": 2.0,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["graf_jacs_2007"],
+                "observable_path": Path(
+                    observable_directory, "ala6", "ala6-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
+    "ala7": {
+        "target_type": "peptide",
+        "aa_sequence": "AAAAAAA",
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 300.0 * unit.kelvin,
+        "ph": 2.0,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["graf_jacs_2007"],
+                "observable_path": Path(
+                    observable_directory, "ala7", "ala7-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
     "asyn": {
         "target_type": "disordered",
         "aa_sequence": (
@@ -224,11 +256,11 @@ benchmark_targets = {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
         "pressure": 1.0 * unit.atmosphere,
-        "temperature": 313.0 * unit.kelvin,
-        "ph": 5.1,
-        "ionic_strength": 0.125 * unit.molar,
+        "temperature": 309.0 * unit.kelvin,
+        "ph": 3.5,
+        "ionic_strength": 0.0 * unit.molar,
         "observables": {
-            "3j-hn-ha": "balasubramanian_jmr_1994",
+            "3j_hn_ha": "pardi_jmb_1984",
         },
     },
     "bpti-3j-ha-hb": {
@@ -239,7 +271,27 @@ benchmark_targets = {
         "ph": 4.6,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
-            "3j_ha_hb": "berndt_jmb_1992",
+            "scalar_couplings": {
+                "experimental_datasets": [
+                    "pardi_jmb_1984",
+                    "berndt_jmb_1992",
+                    "lindorff-larsen_prot_2010",
+                ],
+                "observable_path": Path(
+                    observable_directory, "bpti", "bpti-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
+    "bpti-t1-relaxation": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 313.0 * unit.kelvin,
+        "ph": 5.1,
+        "ionic_strength": 0.125 * unit.molar,
+        "observables": {
+            "t1_relaxation": "balasubramanian_jmr_1994",
         },
     },
     "cln025": {
@@ -512,8 +564,12 @@ benchmark_targets = {
         "ph": 3.8,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
-            "3j_co_hb": "schwalbe_prosci_2001",
-            "3j_ha_hb": "schwalbe_prosci_2001",
+            "scalar_couplings": {
+                "experimental_datasets": ["schwalbe_prosci_2001"],
+                "observable_path": Path(
+                    observable_directory, "hewl", "hewl-scalar-couplings.dat"
+                ),
+            },
             "backbone_S2": "buck_biochem_1995",
         },
     },
@@ -551,9 +607,17 @@ benchmark_targets = {
                 "experimental_datasets": [
                     "wang_jacs_1996",
                     "hu_jacs_1997",
+                    "chou_jacs_2003",
+                    "lindorff-larsen_prot_2010",
                 ],
                 "observable_path": Path(
                     observable_directory, "ubq", "ubq-scalar-couplings.dat"
+                ),
+            },
+            "h_bond_scalar_couplings": {
+                "experimental_datasets": ["cordier_jacs_1999"],
+                "observable_path": Path(
+                    observable_directory, "ubq", "ubq-3j-n-co-cordier.dat"
                 ),
             },
         },
@@ -581,6 +645,9 @@ benchmark_targets = {
         "observables": {
             "h_bond_scalar_couplings": {
                 "experimental_datasets": ["cordier_jacs_1999"],
+                "observable_path": Path(
+                    observable_directory, "ubq", "ubq-3j-n-co-cordier.dat"
+                ),
             },
         },
     },
@@ -593,7 +660,10 @@ benchmark_targets = {
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
             "h_bond_scalar_couplings": {
-                "experimental_datasets": ["cornilescu_jacs_1999"],
+                "experimental_datasets": ["cornilescu_jacs_1999_a"],
+                "observable_path": Path(
+                    observable_directory, "ubq", "ubq-3j-n-co-cornilescu.dat"
+                ),
             },
         },
     },
@@ -783,6 +853,11 @@ experimental_datasets = {
     "ottinger_jacs_1998": {
         "references": [
             "Ottinger M, Bax A. (1998). J. Am. Chem. Soc. 120, 12334-12341.",
+        ],
+    },
+    "pardi_jmb_1984": {
+        "references": [
+            "Pardi A, Billeter M, Wuthrich K. (1984). J. Mol. Biol. 180, 741-751.",
         ],
     },
     "rao_jmb_2009": {

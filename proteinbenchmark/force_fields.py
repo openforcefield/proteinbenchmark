@@ -8,9 +8,25 @@ ff_directory = Path(package_data_directory, "force-fields")
 # List of force fields with force field XML file, water model, and water model
 # XML file
 force_fields = {
+    "espaloma-0.3.2-opc": {
+        "force_field_file": Path(ff_directory, "espaloma-0.3.2.pt"),
+        "water_model": "opc",
+    },
+    "espaloma-0.3.2-opc3": {
+        "force_field_file": Path(ff_directory, "espaloma-0.3.2.pt"),
+        "water_model": "opc3",
+    },
     "espaloma-0.3.2-tip3p": {
         "force_field_file": Path(ff_directory, "espaloma-0.3.2.pt"),
         "water_model": "tip3p",
+    },
+    "espaloma-0.3.2-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "espaloma-0.3.2.pt"),
+        "water_model": "tip3p-fb",
+    },
+    "espaloma-0.3.2-tip4p-fb": {
+        "force_field_file": Path(ff_directory, "espaloma-0.3.2.pt"),
+        "water_model": "tip4p-fb",
     },
     "ff14sb-opc": {
         "force_field_file": Path(
@@ -87,13 +103,6 @@ force_fields = {
         "water_model": "tip3p-fb",
         "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
     },
-    "null-0.0.2-nmr-1.259-tip3p-fb": {
-        "force_field_file": Path(
-            ff_directory, "Protein-Null-0.0.2-TIP3P-FB-1.259.offxml"
-        ),
-        "water_model": "tip3p-fb",
-        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
-    },
     "null-0.0.2-opc": {
         "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-NH2.offxml"),
         "water_model": "opc",
@@ -146,13 +155,6 @@ force_fields = {
     },
     "specific-0.0.2-nmr-opc3": {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-OPC3.offxml"),
-        "water_model": "opc3",
-        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
-    },
-    "specific-0.0.2-nmr-1.259-opc3": {
-        "force_field_file": Path(
-            ff_directory, "Protein-Specific-0.0.2-OPC3-1.259.offxml"
-        ),
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },

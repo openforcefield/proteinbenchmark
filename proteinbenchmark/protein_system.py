@@ -471,7 +471,7 @@ class ProteinBenchmarkSystem:
             # Resume from a previous production checkpoint
             production_simulation.resume_from_checkpoint()
 
-    def analyze_observables(self, replica: int = 1):
+    def analyze_observables(self, replica: int = 1, time_series_analysis: bool = False):
         """Process trajectories and estimate observables."""
 
         analysis_dir = Path(self.base_path, "analysis")
@@ -566,12 +566,21 @@ class ProteinBenchmarkSystem:
         ):
             print(f"Computing scalar couplings for system {self.system_name}")
 
-            data = target_observables["scalar_couplings"]["observable_path"]
+            experimental_observables = target_observables["scalar_couplings"][
+                "observable_path"
+            ]
+
+            time_series_output_path = (
+                f"{analysis_prefix}-scalar-couplings-time-series.dat"
+                if time_series_analysis
+                else None
+            )
 
             compute_scalar_couplings(
-                observable_path=data,
+                observable_path=experimental_observables,
                 dihedrals_path=dihedrals,
                 output_path=scalar_couplings,
+                time_series_output_path=time_series_output_path,
             )
 
         # Hydrogen bond interresidue scalar couplings
@@ -586,12 +595,21 @@ class ProteinBenchmarkSystem:
                 f"{self.system_name}"
             )
 
-            data = target_observables["h_bond_scalar_couplings"]["observable_path"]
+            experimental_observables = target_observables["h_bond_scalar_couplings"][
+                "observable_path"
+            ]
+
+            time_series_output_path = (
+                f"{analysis_prefix}-h-bond-scalar-couplings-time-series.dat"
+                if time_series_analysis
+                else None
+            )
 
             compute_h_bond_scalar_couplings(
-                observable_path=data,
+                observable_path=experimental_observables,
                 h_bond_geometries_path=h_bond_geometries,
                 output_path=h_bond_scalar_couplings,
+                time_series_output_path=time_series_output_path,
             )
 
         # Fraction helix

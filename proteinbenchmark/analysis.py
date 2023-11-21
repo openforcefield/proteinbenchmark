@@ -7,10 +7,49 @@ import pandas
 from loos.pyloos import Trajectory
 from openff.toolkit import Molecule
 from openff.units import unit
+from pymbar import timeseries
 
 from proteinbenchmark.analysis_parameters import *
 from proteinbenchmark.benchmark_targets import benchmark_targets, experimental_datasets
 from proteinbenchmark.utilities import list_of_dicts_to_csv
+
+
+def get_timeseries_mean(correlated_timeseries: numpy.ndarray):
+    # Get burn-in time, statistical inefficiency, and maximum number of
+    # uncorrelated samples from pymbar.timeseries
+    t0, g, Neff_max = timeseries.detect_equilibration(correlated_timeseries, nskip=10)
+
+    # Get an uncorrelated sample from the correlated timeseries
+    truncated_timeseries = correlated_timeseries[t0:]
+    uncorrelated_sample_indices = timeseries.subsample_correlated_data(
+        truncated_timeseries, g=g
+    )
+    uncorrelated_timeseries = truncated_timeseries[uncorrelated_sample_indices]
+
+    # Get mean and standard error of the mean for the correlated, truncated, and
+    # uncorrelated timeseries
+    N_correlated = correlated_timeseries.size
+    correlated_mean = correlated_timeseries.mean()
+    correlated_sem = correlated_timeseries.std(ddof=1) / numpy.sqrt(N_correlated)
+    N_truncated = truncated_timeseries.size
+    truncated_mean = truncated_timeseries.mean()
+    truncated_sem = truncated_timeseries.std(ddof=1) / numpy.sqrt(N_truncated)
+    N_uncorrelated = uncorrelated_timeseries.size
+    uncorrelated_mean = uncorrelated_timeseries.mean()
+    uncorrelated_sem = uncorrelated_timeseries.std(ddof=1) / numpy.sqrt(N_uncorrelated)
+
+    return {
+        "Statistical Inefficiency": g,
+        "Correlated Mean": correlated_mean,
+        "Correlated SEM": correlated_sem,
+        "Correlated N": N_correlated,
+        "Truncated Mean": truncated_mean,
+        "Truncated SEM": truncated_sem,
+        "Truncated N": N_truncated,
+        "Uncorrelated Mean": uncorrelated_mean,
+        "Uncorrelated SEM": uncorrelated_sem,
+        "Uncorrelated N": N_uncorrelated,
+    }
 
 
 def align_trajectory(
@@ -636,9 +675,10 @@ def compute_scalar_couplings(
     dihedrals_path: str,
     output_path: str,
     karplus: str = "vogeli",
+    time_series_output_path: str = None,
 ):
     """
-    Compute NMR scalar couplings and chi^2 with respect to experimental values.
+    Compute NMR scalar couplings using a Karplus model.
 
     Parameters
     ---------
@@ -647,12 +687,14 @@ def compute_scalar_couplings(
     dihedrals_path
         The path to the time series of dihedrals.
     output_path
-        The path to write the computed scalar couplings and chi^2 values.
+        The path to write the computed mean scalar couplings.
     karplus
         The name of the set of Karplus parameters to use.
+    time_series_output_path
+        The path to write the time series of computed scalar couplings.
     """
 
-    # Check Karplus parameters
+    # Get Karplus parameters for scalar couplings associated with phi
     karplus = karplus.lower()
 
     if karplus == "vogeli":
@@ -672,9 +714,12 @@ def compute_scalar_couplings(
             "\n    case_dft1\n    case_dft2"
         )
 
+    # Get Karplus parameters for scalar couplings associated with psi
     karplus_parameters.update(WIRMER_KARPLUS_PARAMETERS)
     karplus_parameters.update(DING_KARPLUS_PARAMETERS)
     karplus_parameters.update(HENNIG_KARPLUS_PARAMETERS)
+
+    # Get Karplus parameters for scalar couplings associated with chi1
     karplus_parameters.update(PEREZ_KARPLUS_PARAMETERS)
 
     if karplus != "schmidt":
@@ -708,6 +753,8 @@ def compute_scalar_couplings(
     observable_df.reset_index(drop=True, inplace=True)
 
     # Compute observables
+    if time_series_output_path is not None:
+        observable_timeseries = list()
     computed_observables = list()
 
     for index, row in observable_df.iterrows():
@@ -718,19 +765,17 @@ def compute_scalar_couplings(
         if observable == "3j_hn_ca":
             # Compute sine and cosine of phi and psi
             # Reset indices for products, e.g. cos phi * cos psi
-            phi = numpy.deg2rad(
-                dihedral_df[
-                    (dihedral_df["Dihedral Name"] == "phi")
-                    & (dihedral_df["Resid"] == observable_resid)
-                ]["Dihedral (deg)"].values
-            )
+            karplus_df = dihedral_df[
+                (dihedral_df["Dihedral Name"] == "phi")
+                & (dihedral_df["Resid"] == observable_resid)
+            ]
+            phi = numpy.deg2rad(karplus_df["Dihedral (deg)"].values)
 
-            prev_psi = numpy.deg2rad(
-                dihedral_df[
-                    (dihedral_df["Dihedral Name"] == "psi")
-                    & (dihedral_df["Resid"] == observable_resid - 1)
-                ]["Dihedral (deg)"].values
-            )
+            karplus_df = dihedral_df[
+                (dihedral_df["Dihedral Name"] == "psi")
+                & (dihedral_df["Resid"] == observable_resid - 1)
+            ]
+            prev_psi = numpy.deg2rad(karplus_df["Dihedral (deg)"].values)
 
             cos_phi = numpy.cos(phi)
             sin_phi = numpy.sin(phi)
@@ -738,7 +783,7 @@ def compute_scalar_couplings(
             sin_psi = numpy.sin(prev_psi)
 
             # Compute estimate for scalar coupling
-            computed_coupling = numpy.mean(
+            computed_coupling = (
                 observable_parameters["cos_phi"] * cos_phi
                 + observable_parameters["sin_phi"] * sin_phi
                 + observable_parameters["cos_psi"] * cos_psi
@@ -748,10 +793,7 @@ def compute_scalar_couplings(
                 + observable_parameters["sin_phi_cos_psi"] * sin_phi * cos_psi
                 + observable_parameters["sin_phi_sin_psi"] * sin_phi * sin_psi
                 + observable_parameters["C"]
-            )
-
-            # Extrema of 3j_hn_ca Karplus curve from numerical optimization
-            karplus_extrema = [0.0329976 / unit.second, 1.08915 / unit.second]
+            ).m_as(unit.second**-1)
 
         else:
             # Get relevant dihedral angle
@@ -777,68 +819,76 @@ def compute_scalar_couplings(
                 dihedral_resname = PEREZ_KARPLUS_RESIDUE_MAP[row["Resname"]]
                 observable_parameters = observable_parameters[dihedral_resname]
 
-            # Compute cos(theta + delta) and cos^2(theta + delta)
+            # Compute cos(theta + delta)
             karplus_angle = numpy.deg2rad(
                 observable_parameters["delta"] + karplus_df["Dihedral (deg)"].values
             )
-
             cos_angle = numpy.cos(karplus_angle)
-            cos_sq_angle = numpy.square(cos_angle)
 
             # Compute estimate for scalar coupling
             # <J> = A <cos^2(theta)> + B <cos(theta)> + C
-            karplus_A = observable_parameters["A"]
-            karplus_B = observable_parameters["B"]
-            karplus_C = observable_parameters["C"]
+            computed_coupling = (
+                observable_parameters["A"] * numpy.square(cos_angle)
+                + observable_parameters["B"] * cos_angle
+                + observable_parameters["C"]
+            ).m_as(unit.second**-1)
 
-            computed_coupling = numpy.mean(
-                karplus_A * cos_sq_angle + karplus_B * cos_angle + karplus_C
-            )
-
-            # Get extrema of Karplus curve at
-            # J(0) = A + B + C
-            # J(pi) = A - B + C
-            # J(+/- arccos(-B / 2 A)) = -B^2 / (4 A) + C
-            karplus_extrema = [
-                karplus_A + karplus_B + karplus_C,
-                karplus_A - karplus_B + karplus_C,
-            ]
-
-            if numpy.abs(karplus_B / karplus_A) <= 2:
-                karplus_extrema.append(
-                    -karplus_B * karplus_B / karplus_A / 4 + karplus_C,
-                )
-
-        # Compute contribution to chi^2
-        experimental_coupling = row["Experiment"] / unit.second
-        uncertainty = observable_parameters["sigma"]
-        chi_sq = numpy.square((computed_coupling - experimental_coupling) / uncertainty)
+        # Get experimental uncertainty from Karplus model
+        experiment_uncertainty = observable_parameters["sigma"].m_as(unit.second**-1)
 
         # Truncate experimental coupling to Karplus extrema
+        experimental_coupling = row["Experiment"] / unit.second
         truncated_experimental_coupling = min(
-            max(experimental_coupling, min(karplus_extrema)),
-            max(karplus_extrema),
-        )
-        truncated_chi_sq = numpy.square(
-            (computed_coupling - truncated_experimental_coupling) / uncertainty
-        )
+            max(experimental_coupling, observable_parameters["minimum"]),
+            observable_parameters["maximum"],
+        ).m_as(unit.second**-1)
 
+        if time_series_output_path is not None:
+            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
+            # for computed scalar coupling
+            computed_coupling_mean = get_timeseries_mean(computed_coupling)
+
+            # Write time series of observable
+            observable_timeseries.append(
+                {
+                    "Frame": karplus_df["Frame"],
+                    "Time (ns)": karplus_df["Time (ns)"],
+                    "Observable": observable,
+                    "Resid": observable_resid,
+                    "Resname": row["Resname"],
+                    "Experiment": row["Experiment"],
+                    "Experiment Uncertainty": experiment_uncertainty,
+                    "Truncated Experiment": truncated_experimental_coupling,
+                    "Computed": computed_coupling,
+                }
+            )
+
+        else:
+            computed_coupling_mean = {
+                "Correlated Mean": computed_coupling.mean(),
+                "Correlated SEM": (
+                    computed_coupling.std(ddof=1) / numpy.sqrt(computed_coupling.size)
+                ),
+            }
+
+        # Write computed means of observable
         computed_observables.append(
             {
-                "Uncertainty": uncertainty.m_as(unit.second**-1),
-                "Computed": computed_coupling.m_as(unit.second**-1),
-                "Chi^2": chi_sq,
-                "Truncated Experiment": (
-                    truncated_experimental_coupling.m_as(unit.second**-1)
-                ),
-                "Truncated Chi^2": truncated_chi_sq,
+                "Experiment Uncertainty": experiment_uncertainty,
+                "Truncated Experiment": truncated_experimental_coupling,
+                **computed_coupling_mean,
             }
         )
+
+    if time_series_output_path is not None:
+        observable_timeseries_df = pandas.concat(
+            [pandas.DataFrame(df) for df in observable_timeseries]
+        ).reset_index(drop=True)
+        observable_timeseries_df.to_csv(time_series_output_path)
 
     scalar_coupling_df = pandas.concat(
         [observable_df, pandas.DataFrame(computed_observables)], axis=1
     )
-
     scalar_coupling_df.to_csv(output_path)
 
 
@@ -847,6 +897,7 @@ def compute_h_bond_scalar_couplings(
     h_bond_geometries_path: str,
     output_path: str,
     karplus: str = "barfield",
+    time_series_output_path: str = None,
 ):
     """
     Compute NMR 3J_N_CO scalar couplings and chi^2 with respect to experimental
@@ -862,6 +913,8 @@ def compute_h_bond_scalar_couplings(
         The path to write the computed scalar couplings and chi^2 values.
     karplus
         The name of the set of Karplus parameters to use.
+    time_series_output_path
+        The path to write the time series of computed scalar couplings.
     """
 
     # Check Karplus parameters
@@ -921,6 +974,8 @@ def compute_h_bond_scalar_couplings(
     h_bond_df = pandas.read_csv(h_bond_geometries_path, index_col=0)
 
     # Compute observables
+    if time_series_output_path is not None:
+        observable_timeseries = list()
     computed_observables = list()
 
     for index, row in observable_df.iterrows():
@@ -950,7 +1005,7 @@ def compute_h_bond_scalar_couplings(
         # 3J(R, theta, phi) = (
         #     (exp(a R_0) A cos^2 phi + exp(a R_0) B cos phi + exp(a R_0) C)
         #     * sin^2 theta + exp(a R_0) D cos^2 theta) * exp(-a R)
-        computed_coupling = numpy.mean(
+        computed_coupling = (
             (
                 (
                     karplus_sin_sq_cos_sq * cos_sq_HOCN_dihedral
@@ -961,20 +1016,53 @@ def compute_h_bond_scalar_couplings(
                 + karplus_cos_sq * cos_sq_HOC_angle
             )
             * exp_HO_distance
-        )
+        ).m_as(unit.second**-1)
 
-        # Compute contribution to chi^2
-        experimental_coupling = row["Experiment"] / unit.second
-        uncertainty = karplus_parameters["sigma"]
-        chi_sq = numpy.square((computed_coupling - experimental_coupling) / uncertainty)
+        # Get experimental uncertainty from Karplus model
+        experiment_uncertainty = karplus_parameters["sigma"].m_as(unit.second**-1)
 
+        if time_series_output_path is not None:
+            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
+            # for computed scalar coupling
+            computed_coupling_mean = get_timeseries_mean(computed_coupling)
+
+            # Write time series of observable
+            observable_timeseries.append(
+                {
+                    "Frame": geometry_df["Frame"],
+                    "Time (ns)": geometry_df["Time (ns)"],
+                    "Observable": observable,
+                    "Resid N": observable_resid_n,
+                    "Resname N": row["Resname N"],
+                    "Resid CO": observable_resid_co,
+                    "Resname CO": row["Resname CO"],
+                    "Experiment": row["Experiment"],
+                    "Experiment Uncertainty": experiment_uncertainty,
+                    "Computed": computed_coupling,
+                }
+            )
+
+        else:
+            computed_coupling_mean = {
+                "Correlated Mean": computed_coupling.mean(),
+                "Correlated SEM": (
+                    computed_coupling.std(ddof=1) / numpy.sqrt(computed_coupling.size)
+                ),
+            }
+
+        # Write computed means of observable
         computed_observables.append(
             {
-                "Uncertainty": uncertainty.m_as(unit.second**-1),
-                "Computed": computed_coupling.m_as(unit.second**-1),
-                "Chi^2": chi_sq,
+                "Experiment Uncertainty": experiment_uncertainty,
+                **computed_coupling_mean,
             }
         )
+
+    if time_series_output_path is not None:
+        observable_timeseries_df = pandas.concat(
+            [pandas.DataFrame(df) for df in observable_timeseries]
+        ).reset_index(drop=True)
+        observable_timeseries_df.to_csv(time_series_output_path)
 
     scalar_coupling_df = pandas.concat(
         [observable_df, pandas.DataFrame(computed_observables)], axis=1
