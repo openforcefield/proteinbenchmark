@@ -63,7 +63,7 @@ def build_initial_coordinates(
             f'"pdb" with initial_pdb\n    {initial_pdb}'
         )
 
-    elif build_method in {"extended", "helical"}:
+    elif build_method in {"alpha", "beta", "extended", "PII"}:
         if aa_sequence is None:
             raise ValueError(
                 'aa_sequence must be set to use build_method "extended" or ' "helical"
@@ -78,11 +78,23 @@ def build_initial_coordinates(
         chain = pmx.Chain().create(aa_sequence)
 
         # Set backbone dihedrals
-        if build_method == "helical":
+        if build_method == "alpha":
             # Alpha helix values from
             # Hollingsworth SA, Karplus PA. (2010). BioMol Concepts 1, 271-283.
             build_phi = -63
             build_psi = -43
+
+        elif build_method == "beta":
+            # Beta strand values from
+            # Hollingsworth SA, Karplus PA. (2010). BioMol Concepts 1, 271-283.
+            build_phi = -120
+            build_psi = 130
+
+        elif build_method == "PII":
+            # P_II spiral values from
+            # Hollingsworth SA, Karplus PA. (2010). BioMol Concepts 1, 271-283.
+            build_phi = -65
+            build_psi = 145
 
         else:
             # Extended conformation with all backbone dihedrals at -180 deg

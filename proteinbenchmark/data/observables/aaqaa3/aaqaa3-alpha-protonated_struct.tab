@@ -1,0 +1,50 @@
+REMARK SPARTA+ Structural Parameters Table derived from input PDB cooridnates
+REMARK  
+REMARK  PHI_R1 PSI_R1 CHI1_R1 and CHI2_R1 are the backbone and sidechain 
+REMARK  torsion angles of the first residue in a triplet.
+REMARK  
+REMARK  PHI_R2 PSI_R2 CHI1_R2 and CHI2_R2 are the backbone and sidechain 
+REMARK  torsion angles of the second (central) residue in a triplet.
+REMARK  
+REMARK  PHI_R3 PSI_R3 CHI1_R3 and CHI2_R3 are the backbone and sidechain 
+REMARK  torsion angles of the third residue in a triplet.
+REMARK  
+REMARK  H-Bond Distances are given in Angstroms:
+REMARK  
+REMARK  HN_HB_DIST_R2 H-bond distance for the HN atom in the central residue.
+REMARK  HA_HB_DIST_R2 H-bond distance for the HA atom in the central residue.
+REMARK  CO_HB_DIST_R2 H-bond distance for the CO atom in the central residue.
+REMARK  
+REMARK  HN_S2_R2 is the Bruschweiler structure-based HN order parameter of 
+REMARK           the central residue. Reference: Zhang FL, Bruschweiler R
+REMARK           JACS 124, 12654-12655 (2002)
+REMARK  
+REMARK Reference:
+REMARK  Y. Shen and A. Bax: SPARTA+: a modest improvement in empirical NMR
+REMARK  chemical shift prediction by means of an artificial neural network.
+REMARK  J. Biomol. NMR 48, 13-22 (2010).
+
+DATA SOURCE aaqaa3-alpha-protonated
+
+DATA FIRST_RESID 0
+
+DATA SEQUENCE ?AAQAAAAQA AAAQAA?
+
+VARS   RESID_R1 RESNAME_R1 PHI_R1 PSI_R1 CHI1_R1 CHI2_R1 RESID_R2 RESNAME_R2 PHI_R2 PSI_R2 CHI1_R2 CHI2_R2 RESID_R3 RESNAME_R3 PHI_R3 PSI_R3 CHI1_R3 CHI2_R3 HN_HB_DIST_R2 HA_HB_DIST_R2 CO_HB_DIST_R2 HN_S2_R2 
+FORMAT %4d %s %8.3f %8.3f %8.3f %8.3f %4d %s %8.3f %8.3f %8.3f %8.3f %4d %s %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f
+
+   0 ? 9999.000 9999.000 9999.000 9999.000    1 A -139.022  -42.983 9999.000 9999.000    2 A  -63.008  -43.003 9999.000 9999.000    0.000    0.000    1.920    0.362
+   1 A -139.022  -42.983 9999.000 9999.000    2 A  -63.008  -43.003 9999.000 9999.000    3 Q  -63.001  -43.024 -175.411  177.936    0.000    0.000    2.056    0.711
+   2 A  -63.008  -43.003 9999.000 9999.000    3 Q  -63.001  -43.024 -175.411  177.936    4 A  -62.993  -43.050 9999.000 9999.000    0.000    0.000    2.160    0.788
+   3 Q  -63.001  -43.024 -175.411  177.936    4 A  -62.993  -43.050 9999.000 9999.000    5 A  -62.944  -43.020 9999.000 9999.000    0.000    0.000    2.159    0.841
+   4 A  -62.993  -43.050 9999.000 9999.000    5 A  -62.944  -43.020 9999.000 9999.000    6 A  -63.029  -43.014 9999.000 9999.000    1.920    0.000    2.064    0.878
+   5 A  -62.944  -43.020 9999.000 9999.000    6 A  -63.029  -43.014 9999.000 9999.000    7 A  -62.923  -43.099 9999.000 9999.000    2.056    0.000    1.921    0.876
+   6 A  -63.029  -43.014 9999.000 9999.000    7 A  -62.923  -43.099 9999.000 9999.000    8 Q  -62.990  -43.011 -175.432  177.946    2.160    0.000    2.056    0.878
+   7 A  -62.923  -43.099 9999.000 9999.000    8 Q  -62.990  -43.011 -175.432  177.946    9 A  -62.943  -42.977 9999.000 9999.000    2.159    0.000    2.160    0.874
+   8 Q  -62.990  -43.011 -175.432  177.946    9 A  -62.943  -42.977 9999.000 9999.000   10 A  -63.016  -43.014 9999.000 9999.000    2.064    0.000    2.159    0.876
+   9 A  -62.943  -42.977 9999.000 9999.000   10 A  -63.016  -43.014 9999.000 9999.000   11 A  -63.036  -43.029 9999.000 9999.000    1.921    0.000    2.064    0.880
+  10 A  -63.016  -43.014 9999.000 9999.000   11 A  -63.036  -43.029 9999.000 9999.000   12 A  -63.005  -42.998 9999.000 9999.000    2.056    0.000    1.919    0.876
+  11 A  -63.036  -43.029 9999.000 9999.000   12 A  -63.005  -42.998 9999.000 9999.000   13 Q  -62.970  -43.046 -175.424  177.901    2.160    0.000    0.000    0.877
+  12 A  -63.005  -42.998 9999.000 9999.000   13 Q  -62.970  -43.046 -175.424  177.901   14 A  -62.945  -43.010 9999.000 9999.000    2.159    4.520    0.000    0.862
+  13 Q  -62.970  -43.046 -175.424  177.901   14 A  -62.945  -43.010 9999.000 9999.000   15 A  -63.030  135.039 9999.000 9999.000    2.064    0.000    0.000    0.838
+  14 A  -62.945  -43.010 9999.000 9999.000   15 A  -63.030  135.039 9999.000 9999.000   16 ? 9999.000 9999.000 9999.000 9999.000    1.919    0.000    4.520    0.806

@@ -47,7 +47,7 @@ benchmark_targets = {
     },
     "aaqaa3-helix": {
         "target_type": "disordered",
-        "build_method": "helical",
+        "build_method": "alpha",
         "aa_sequence": "AAQAAAAQAAAAQAA",
         "nterm_cap": "ace",
         "cterm_cap": "nh2",

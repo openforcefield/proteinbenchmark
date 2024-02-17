@@ -3,6 +3,7 @@ from pathlib import Path
 from proteinbenchmark.analysis import (
     align_trajectory,
     assign_dihedral_clusters,
+    compute_chemical_shifts_sparta_plus,
     compute_fraction_helix,
     compute_h_bond_scalar_couplings,
     compute_scalar_couplings,
@@ -482,6 +483,21 @@ class ProteinBenchmarkSystem:
         reimaged_topology = f"{analysis_prefix}-reimaged.pdb"
         reimaged_trajectory = f"{analysis_prefix}-reimaged.dcd"
 
+        if "traj_length" in self.target_parameters:
+            traj_length = self.target_parameters["traj_length"]
+        elif self.target_parameters["target_type"] == "peptide":
+            traj_length = PEPTIDE_TRAJ_LENGTH
+        elif self.target_parameters["target_type"] == "folded":
+            traj_length = FOLDED_TRAJ_LENGTH
+        elif self.target_parameters["target_type"] == "disordered":
+            traj_length = DISORDERED_TRAJ_LENGTH
+        else:
+            raise ValueError(
+                f"benchmark_targets for target {self.target_name} must "
+                f'contain "traj_length" or "target_type" must be one of '
+                '"peptide", "folded", or "disordered".'
+            )
+
         if "frame_length" in self.target_parameters:
             frame_length = self.target_parameters["frame_length"]
         else:
@@ -531,7 +547,7 @@ class ProteinBenchmarkSystem:
 
         if not exists_and_not_empty(h_bond_geometries):
             print(
-                "Measuring hydrogen bond geometries for system " f"{self.system_name}"
+                f"Measuring hydrogen bond geometries for system {self.system_name}"
             )
 
             fragment_index = measure_h_bond_geometries(
@@ -543,6 +559,25 @@ class ProteinBenchmarkSystem:
 
             if fragment_index > 0:
                 merge_csvs(h_bond_geometries)
+
+        # Compute chemical shifts
+        chemical_shifts = f"{analysis_prefix}-chemical-shifts.dat"
+
+        if not exists_and_not_empty(chemical_shifts):
+            print(f"Computing chemical shifts for system {self.system_name}")
+
+            #fragment_index = compute_chemical_shifts_shiftx2(
+            fragment_index = compute_chemical_shifts_sparta_plus(
+                topology_path=reimaged_topology,
+                trajectory_path=reimaged_trajectory,
+                frame_length=frame_length,
+                output_path=chemical_shifts,
+            #    ph=self.target_parameters["ph"],
+            #    temperature=self.target_parameters["temperature"],
+            )
+
+            if fragment_index > 0:
+                merge_csvs(chemical_shifts)
 
         # Dihedral cluster assignments
         dihedral_clusters = f"{analysis_prefix}-dihedral-clusters.dat"
@@ -626,5 +661,6 @@ class ProteinBenchmarkSystem:
                 observable_path=data,
                 dihedral_clusters_path=dihedral_clusters,
                 h_bond_geometries_path=h_bond_geometries,
+                chemical_shifts_path=chemical_shifts,
                 output_path=fraction_helix,
             )
