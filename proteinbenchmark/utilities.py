@@ -1,4 +1,5 @@
 """Utilities for file input and output."""
+
 from pathlib import Path
 
 import openmm
@@ -6,6 +7,37 @@ import pandas
 from openmm import app
 
 package_data_directory = Path(Path(__file__).parent.absolute(), "data")
+
+
+def copy_internal_coords(ra, rb, rc, rd, ta, tb, tc):
+    """
+    Given four reference atoms and three target atoms, return the coordinates of
+    a fourth target atom so that it has the same distance, angle, and dihedral
+    as the reference atoms.
+    """
+
+    distance = rd.coords().distance(rc.coords())
+    angle = numpy.deg2rad(loos.angle(rd, rc, rb))
+    dihedral = numpy.deg2rad(loos.torsion(rd, rc, rb, ra))
+    r_cb = tb.coords() - tc.coords()
+    r_cb /= r_cb.length()
+    r_ba = ta.coords() - tb.coords()
+    r_ba /= r_ba.length()
+    ba_cross_cb = r_ba.cross(r_cb)
+    ba_cross_cb /= ba_cross_cb.length()
+    z = r_cb
+    y = z.cross(ba_cross_cb)
+    y /= y.length()
+    x = y.cross(z)
+    x /= x.length()
+    dx = distance * numpy.sin(angle) * numpy.sin(dihedral)
+    dy = distance * numpy.sin(angle) * numpy.cos(dihedral)
+    dz = distance * numpy.cos(angle)
+    r_cd = numpy.dot(
+        numpy.array([[x[0], y[0], z[0]], [x[1], y[1], z[1]], [x[2], y[2], z[2]]]),
+        numpy.array([dx, dy, dz]),
+    )
+    return numpy.array([tc.coords()[0], tc.coords()[1], tc.coords()[2]]) + r_cd
 
 
 def exists_and_not_empty(file_name):

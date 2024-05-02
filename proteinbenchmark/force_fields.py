@@ -1,4 +1,5 @@
 """List of force fields and water models."""
+
 from pathlib import Path
 
 from proteinbenchmark.utilities import package_data_directory
@@ -78,6 +79,36 @@ force_fields = {
         ),
         "water_model": "tip4p-fb",
     },
+    "ff14sbonlysc-opc": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff14sbonlysc_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "opc",
+    },
+    "ff14sbonlysc-opc3": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff14sbonlysc_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "opc3",
+    },
+    "ff14sbonlysc-tip3p": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff14sbonlysc_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "tip3p",
+    },
+    "ff14sbonlysc-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff14sbonlysc_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "tip3p-fb",
+    },
+    "ff14sbonlysc-tip4p-fb": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff14sbonlysc_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "tip4p-fb",
+    },
     "null-0.0.1-tip3p": {
         "force_field_file": Path(ff_directory, "Protein-Null-0.0.1.offxml"),
         "water_model": "tip3p",
@@ -93,13 +124,35 @@ force_fields = {
         "water_model": "tip3p",
         "water_model_file": None,
     },
+    "null-0.0.2-nmr-ala5-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-Ala5-OPC3.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.2-nmr-ala5-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.2-Ala5-TIP3P-FB.offxml"
+        ),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
     "null-0.0.2-nmr-opc3": {
         "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-OPC3.offxml"),
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },
+    "null-0.0.2-nmr-2-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-OPC3-2.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
     "null-0.0.2-nmr-tip3p-fb": {
         "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-TIP3P-FB.offxml"),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "null-0.0.2-nmr-2-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.2-TIP3P-FB-2.offxml"),
         "water_model": "tip3p-fb",
         "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
     },
@@ -138,6 +191,176 @@ force_fields = {
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
+    "null-0.0.3-ai-dw-opc": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-abinitio-default-weights.offxml"
+        ),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "null-0.0.3-ai-dw-opc3": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-abinitio-default-weights.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-ai-dw-tip3p": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-abinitio-default-weights.offxml"
+        ),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "null-0.0.3-ai-dw-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-abinitio-default-weights.offxml"
+        ),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "null-0.0.3-ai-dw-tip4p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-abinitio-default-weights.offxml"
+        ),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "null-0.0.3-ai-opc": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-abinitio.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "null-0.0.3-ai-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-abinitio.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-ai-tip3p": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-abinitio.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "null-0.0.3-ai-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-abinitio.offxml"),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "null-0.0.3-ai-tip4p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-abinitio.offxml"),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "null-0.0.3-dw-opc": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "null-0.0.3-dw-opc3": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-dw-tip3p": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "null-0.0.3-dw-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "null-0.0.3-dw-tip4p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Null-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "null-0.0.3-nbamber-opc": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-NBAmber.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "null-0.0.3-nbamber-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-NBAmber.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-nbamber-tip3p": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-NBAmber.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "null-0.0.3-nbamber-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-NBAmber.offxml"),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "null-0.0.3-nbamber-tip4p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-NBAmber.offxml"),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "null-0.0.3-opc": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "null-0.0.3-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-qamber-opc": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-QAmber.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "null-0.0.3-qamber-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-QAmber.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-qamber-tip3p": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-QAmber.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "null-0.0.3-qamber-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-QAmber.offxml"),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "null-0.0.3-qamber-tip4p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-QAmber.offxml"),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "null-0.0.3-tip3p": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "null-0.0.3-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3.offxml"),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "null-0.0.3-tip4p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3.offxml"),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
     "specific-0.0.1-tip3p": {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.1.offxml"),
         "water_model": "tip3p",
@@ -153,10 +376,36 @@ force_fields = {
         "water_model": "tip3p",
         "water_model_file": None,
     },
+    "specific-0.0.2-nmr-ala5-opc3": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.2-Ala5-OPC3.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "specific-0.0.2-nmr-ala5-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.2-Ala5-TIP3P-FB.offxml"
+        ),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
     "specific-0.0.2-nmr-opc3": {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-OPC3.offxml"),
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "specific-0.0.2-nmr-2-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-OPC3-2.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "specific-0.0.2-nmr-2-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.2-TIP3P-FB-2.offxml"
+        ),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
     },
     "specific-0.0.2-nmr-tip3p-fb": {
         "force_field_file": Path(
@@ -197,6 +446,101 @@ force_fields = {
     },
     "specific-0.0.2-tip4p-fb": {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-NH2.offxml"),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "specific-0.0.3-ai-opc": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-abinitio.offxml"
+        ),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "specific-0.0.3-ai-opc3": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-abinitio.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "specific-0.0.3-ai-tip3p": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-abinitio.offxml"
+        ),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "specific-0.0.3-ai-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-abinitio.offxml"
+        ),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "specific-0.0.3-ai-tip4p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-abinitio.offxml"
+        ),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "specific-0.0.3-dw-opc": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "specific-0.0.3-dw-opc3": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "specific-0.0.3-dw-tip3p": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "specific-0.0.3-dw-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "specific-0.0.3-dw-tip4p-fb": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-default-weights.offxml"
+        ),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "specific-0.0.3-opc": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "specific-0.0.3-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "specific-0.0.3-tip3p": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "specific-0.0.3-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3.offxml"),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "specific-0.0.3-tip4p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3.offxml"),
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
