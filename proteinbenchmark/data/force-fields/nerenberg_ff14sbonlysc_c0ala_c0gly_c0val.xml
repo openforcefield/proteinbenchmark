@@ -1,0 +1,94 @@
+<ForceField>
+  <Info>
+    <DateGenerated>2022-12-13</DateGenerated>
+    <Source>Chapin Cavender</Source>
+    <Reference>Nerenberg, P.S. and Head-Gordon, T. (2011). Optimizing Protein-Solvent Force Fields to Reproduce Intrinsic Conformational Preferences of Model Peptides. J. Chem. Theory Comput. 7, 4, 1220-1230.</Reference>
+  </Info>
+  <Include file="amber/protein.ff14SBonlysc.xml"/>
+  <Residues>
+    <Residue name="C0ALA">
+      <Atom name="N" type="protein-N" charge="-0.4397"/>
+      <Atom name="H" type="protein-H" charge="0.2611"/>
+      <Atom name="CA" type="protein-CX" charge="0.0606"/>
+      <Atom name="HA" type="protein-H1" charge="0.0879"/>
+      <Atom name="CB" type="protein-CT" charge="-0.1078"/>
+      <Atom name="HB1" type="protein-HC" charge="0.0418"/>
+      <Atom name="HB2" type="protein-HC" charge="0.0418"/>
+      <Atom name="HB3" type="protein-HC" charge="0.0418"/>
+      <Atom name="C" type="protein-C" charge="0.8329"/>
+      <Atom name="O" type="protein-O" charge="-0.6074"/>
+      <Atom name="OXT" type="protein-OH" charge="-0.6632"/>
+      <Atom name="HXT" type="protein-HO" charge="0.4502"/>
+      <Bond atomName1="N" atomName2="H"/>
+      <Bond atomName1="N" atomName2="CA"/>
+      <Bond atomName1="CA" atomName2="HA"/>
+      <Bond atomName1="CA" atomName2="CB"/>
+      <Bond atomName1="CA" atomName2="C"/>
+      <Bond atomName1="CB" atomName2="HB1"/>
+      <Bond atomName1="CB" atomName2="HB2"/>
+      <Bond atomName1="CB" atomName2="HB3"/>
+      <Bond atomName1="C" atomName2="O"/>
+      <Bond atomName1="C" atomName2="OXT"/>
+      <Bond atomName1="OXT" atomName2="HXT"/>
+      <ExternalBond atomName="N"/>
+    </Residue>
+    <Residue name="C0GLY">
+      <Atom name="N" type="protein-N" charge="-0.3718"/>
+      <Atom name="H" type="protein-H" charge="0.2581"/>
+      <Atom name="CA" type="protein-CX" charge="-0.1137"/>
+      <Atom name="HA2" type="protein-H1" charge="0.0927"/>
+      <Atom name="HA3" type="protein-H1" charge="0.0927"/>
+      <Atom name="C" type="protein-C" charge="0.8796"/>
+      <Atom name="O" type="protein-O" charge="-0.6174"/>
+      <Atom name="OXT" type="protein-OH" charge="-0.6655"/>
+      <Atom name="HXT" type="protein-HO" charge="0.4453"/>
+      <Bond atomName1="N" atomName2="H"/>
+      <Bond atomName1="N" atomName2="CA"/>
+      <Bond atomName1="CA" atomName2="HA2"/>
+      <Bond atomName1="CA" atomName2="HA3"/>
+      <Bond atomName1="CA" atomName2="C"/>
+      <Bond atomName1="C" atomName2="O"/>
+      <Bond atomName1="C" atomName2="OXT"/>
+      <Bond atomName1="OXT" atomName2="HXT"/>
+      <ExternalBond atomName="N"/>
+    </Residue>
+    <Residue name="C0VAL">
+      <Atom name="N" type="protein-N" charge="-0.3385"/>
+      <Atom name="H" type="protein-H" charge="0.2297"/>
+      <Atom name="CA" type="protein-CX" charge="-0.0910"/>
+      <Atom name="HA" type="protein-H1" charge="0.1034"/>
+      <Atom name="CB" type="protein-3C" charge="0.2017"/>
+      <Atom name="HB" type="protein-HC" charge="-0.0038"/>
+      <Atom name="CG1" type="protein-CT" charge="-0.1979"/>
+      <Atom name="HG11" type="protein-HC" charge="0.0471"/>
+      <Atom name="HG12" type="protein-HC" charge="0.0471"/>
+      <Atom name="HG13" type="protein-HC" charge="0.0471"/>
+      <Atom name="CG2" type="protein-CT" charge="-0.1979"/>
+      <Atom name="HG21" type="protein-HC" charge="0.0471"/>
+      <Atom name="HG22" type="protein-HC" charge="0.0471"/>
+      <Atom name="HG23" type="protein-HC" charge="0.0471"/>
+      <Atom name="C" type="protein-C" charge="0.8315"/>
+      <Atom name="O" type="protein-O" charge="-0.6071"/>
+      <Atom name="OXT" type="protein-OH" charge="-0.6631"/>
+      <Atom name="HXT" type="protein-HO" charge="0.4504"/>
+      <Bond atomName1="N" atomName2="H"/>
+      <Bond atomName1="N" atomName2="CA"/>
+      <Bond atomName1="CA" atomName2="HA"/>
+      <Bond atomName1="CA" atomName2="CB"/>
+      <Bond atomName1="CA" atomName2="C"/>
+      <Bond atomName1="CB" atomName2="HB"/>
+      <Bond atomName1="CB" atomName2="CG1"/>
+      <Bond atomName1="CB" atomName2="CG2"/>
+      <Bond atomName1="CG1" atomName2="HG11"/>
+      <Bond atomName1="CG1" atomName2="HG12"/>
+      <Bond atomName1="CG1" atomName2="HG13"/>
+      <Bond atomName1="CG2" atomName2="HG21"/>
+      <Bond atomName1="CG2" atomName2="HG22"/>
+      <Bond atomName1="CG2" atomName2="HG23"/>
+      <Bond atomName1="C" atomName2="O"/>
+      <Bond atomName1="C" atomName2="OXT"/>
+      <Bond atomName1="OXT" atomName2="HXT"/>
+      <ExternalBond atomName="N"/>
+    </Residue>
+  </Residues>
+</ForceField>

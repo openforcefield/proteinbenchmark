@@ -18,11 +18,11 @@ dependencies:
   # MM calculations
   - ambertools
   - cudatoolkit
-  - openeye-toolkits
+  - openeye-toolkits=2022.1.1
   - openff-forcefields
   - openff-toolkit>=0.13.0
   - openff-units
-  - openmm>=8.0.0
+  - openmm>=8.1.1
   - openmmforcefields>=0.12.0
   - openmmtools
 

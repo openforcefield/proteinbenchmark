@@ -1,4 +1,6 @@
 from pathlib import Path
+import shutil
+import subprocess
 from typing import List
 
 import loos
@@ -256,7 +258,7 @@ def measure_dihedrals(
 
         # Write dihedrals to file every 10 000 frames to avoid pandas
         # out-of-memory
-        if frame_index % 10000 == 0 and frame_index > 0:
+        if frame_index % 10000 == 9999 and frame_index > 0:
             list_of_dicts_to_csv(dihedrals, f"{output_path}-{fragment_index}")
             fragment_index += 1
             dihedrals = list()
@@ -505,6 +507,7 @@ def measure_h_bond_geometries(
     fragment_index = 0
     h_bond_geometries = list()
 
+    # Load one frame into memory at a time
     for frame in trajectory:
         frame_time += frame_length
 
@@ -513,7 +516,7 @@ def measure_h_bond_geometries(
 
         # Write hydrogen bond geomtries to file every 10 000 frames to avoid
         # pandas out-of-memory
-        if frame_index % 10000 == 0 and frame_index > 0:
+        if frame_index % 10000 == 9999 and frame_index > 0:
             list_of_dicts_to_csv(h_bond_geometries, f"{output_path}-{fragment_index}")
             fragment_index += 1
             h_bond_geometries = list()
@@ -559,6 +562,337 @@ def measure_h_bond_geometries(
 
     else:
         list_of_dicts_to_csv(h_bond_geometries, f"{output_path}-{fragment_index}")
+
+    return fragment_index
+
+
+def compute_chemical_shifts_shiftx2(
+    topology_path: str,
+    trajectory_path: str,
+    frame_length: unit.Quantity,
+    output_path: str,
+    ph: float,
+    temperature: unit.Quantity,
+    shiftx2_output_dir: str = None,
+    shiftx2_install_dir: str = None,
+    python2_path: str = None,
+):
+    """
+    Compute the chemical shifts of protein atoms using ShiftX2.
+
+    Parameters
+    ---------
+    topology_path
+        The path to the system topology, e.g. a PDB file.
+    trajectory_path
+        The path to the trajectory.
+    frame_length
+       The amount of simulation time between frames in the trajectory.
+    output_path
+        The path to write the computed chemical shifts.
+    ph
+        The pH of the benchmark target.
+    temperature
+        The temperature of the benchmark target.
+    shiftx2_output_dir
+        The directory to write output from ShiftX2.
+    shiftx2_install_dir
+        The root directory for the installation of ShiftX2.
+    python2_path
+        The path to the python2 executable to pass to subprocess.
+    """
+
+    # ShiftX2 v1.13 has a few quirks that make it unwieldy for analyzing MD
+    # trajectories. The ShiftX2 estimate is a combination of the sequence-based
+    # ShiftY+ estimator and the structure-based ShiftX+ estimator. ShiftX2 has
+    # an NMR mode that will extract models from a PDB file into single-model PDB
+    # files, run ShiftX+ on each model PDB, average them, then run ShiftY+ once
+    # and combine it with the average ShiftX+ prediction. We want the combined
+    # ShiftX+ and ShiftY+ estimates for each frame. Additionally, the main
+    # ShiftX2 script calls the shell `python` through `os.system()` but expects
+    # python2, making it fail in environments that default to python3. To solve
+    # this, we are going to call ShiftY+ once on the topology, extract frames to
+    # temporary PDBs, call ShiftX+ on each frame PDB in batch mode, then combine
+    # the ShiftX+ and ShiftY+ estimates for each frame. We will use `python2`
+    # explicitly in calls to `subprocess.run()`.
+
+    # Get python2 executable
+    if python2_path is None:
+        python2_path = shutil.which("python2")
+
+    # Get ShiftX2 installation directory
+    if shiftx2_install_dir is None:
+        shiftx2_install_dir = Path(shutil.which("shiftx2.py")).parent
+
+    # Set up directory to store shiftx2 output
+    if shiftx2_output_dir is None:
+        shiftx2_output_dir = Path(Path(output_path).parent, "shiftx2")
+    else:
+        shiftx2_output_dir = Path(shiftx2_output_dir)
+
+    shiftx2_output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Load topology
+    topology = loos.createSystem(topology_path)
+
+    resname_by_resid = {
+        residue[0].resid(): residue[0].resname()
+        for residue in topology.splitByResidue()
+    }
+
+    # Set up trajectory
+    trajectory = Trajectory(trajectory_path, topology)
+
+    # Write each frame to temporary PDB
+    tmp_pdb_prefix = Path(shiftx2_output_dir, Path(trajectory_path).stem)
+    for frame_index, frame in enumerate(trajectory):
+        frame_pdb_path = f"{tmp_pdb_prefix}-{frame_index}.pdb"
+        with open(frame_pdb_path, "w") as pdb_file:
+            pdb_file.write(str(loos.PDB.fromAtomicGroup(frame)))
+
+    # Compute sequence-based estimate of chemical shifts by runnnig ShiftY+ on
+    # the topology PDB
+    shifty_output_path = Path(
+        shiftx2_output_dir,
+        f"{Path(topology_path).stem}.shifty",
+    )
+    shifty_sequence_similarity_cutoff = "40"
+    shifty_return_value = subprocess.run(
+        [
+            python2_path,
+            "shifty3.py",
+            "-i",
+            Path(topology_path).resolve(),
+            "-o",
+            shifty_output_path.resolve(),
+            "-c",
+            shifty_sequence_similarity_cutoff,
+            "-t",
+            shiftx2_output_dir.resolve(),
+        ],
+        cwd=Path(shiftx2_install_dir, "shifty3"),
+    )
+
+    # Compute structure-based estimate of chemical shifts by running ShiftX+
+    # on the temporary frame PDBs
+    shiftxp_output_path = f"{str(frame_pdb_path)}.sxp"
+    shiftxp_bin_dir = Path(shiftx2_install_dir, "bin")
+    shiftxp_lib_jar = Path(shiftx2_install_dir, "lib", "weka.jar")
+    shiftxp_return_value = subprocess.run(
+        [
+            "java",
+            "-Xmx1900m",
+            "-cp",
+            f"{shiftxp_bin_dir}:{shiftxp_lib_jar}",
+            "ShiftXp",
+            "-b",
+            f"{tmp_pdb_prefix}-*.pdb",
+            "-atoms",
+            "ALL",
+            "-ph",
+            str(ph),
+            "-temp",
+            str(temperature.m_as(unit.kelvin)),
+            "-dir",
+            shiftx2_install_dir,
+        ]
+    )
+
+    # Set up ShiftX2 combine options
+    shiftx2_combine_path = Path(shiftx2_install_dir, "script", "combine_cs.py")
+    shiftx2_combine_csv_format = "1"
+    shiftx2_combine_all_atoms = "1"
+
+    # Set up list of dicts to store chemical shifts
+    frame_time = 0.0 * unit.picosecond
+    fragment_index = 0
+    chemical_shifts = list()
+
+    N_frames = frame_index + 1
+    for frame_index in range(N_frames):
+        frame_time += frame_length
+        frame_time_ns = frame_time.m_as(unit.nanosecond)
+
+        # Write chemical shifts to file every 10 000 frames to avoid pandas
+        # out-of-memory
+        if frame_index % 10000 == 9999 and frame_index > 0:
+            list_of_dicts_to_csv(
+                chemical_shifts,
+                f"{output_path}-{fragment_index}",
+            )
+            fragment_index += 1
+            chemical_shifts = list()
+
+        # Compute the ShiftX2 estimate of chemical shifts by combining the
+        # SHIFTX+ and SHIFTY+ estimates
+        shiftxp_output_path = f"{tmp_pdb_prefix}-{frame_index}.pdb.sxp"
+        shiftx2_combine_output_path = f"{tmp_pdb_prefix}-{frame_index}.cs"
+        shiftx2_combine_return_value = subprocess.run(
+            [
+                python2_path,
+                shiftx2_combine_path,
+                shiftxp_output_path,
+                shifty_output_path,
+                shiftx2_combine_output_path,
+                shiftx2_combine_csv_format,
+                shiftx2_combine_all_atoms,
+            ]
+        )
+
+        # Read ShiftX2 estimate
+        for index, row in pandas.read_csv(shiftx2_combine_output_path).iterrows():
+            resid = row["NUM"]
+            chemical_shifts.append(
+                {
+                    "Frame": frame_index,
+                    "Time (ns)": frame_time_ns,
+                    "Resid": resid,
+                    "Resname": resname_by_resid[resid],
+                    "Atom": row["ATOMNAME"],
+                    "Chemical Shift": row["SHIFT"],
+                }
+            )
+
+    if fragment_index == 0:
+        list_of_dicts_to_csv(chemical_shifts, output_path)
+
+    else:
+        list_of_dicts_to_csv(chemical_shifts, f"{output_path}-{fragment_index}")
+
+    # Remove temporary files
+    shutil.rmtree(shiftx2_output_dir)
+
+    return fragment_index
+
+
+def compute_chemical_shifts_sparta_plus(
+    topology_path: str,
+    trajectory_path: str,
+    frame_length: unit.Quantity,
+    output_path: str,
+    spartap_output_dir: str = None,
+):
+    """
+    Compute the chemical shifts of protein atoms using SPARTA+.
+
+    Parameters
+    ---------
+    topology_path
+        The path to the system topology, e.g. a PDB file.
+    trajectory_path
+        The path to the trajectory.
+    frame_length
+       The amount of simulation time between frames in the trajectory.
+    output_path
+        The path to write the computed chemical shifts.
+    shiftx2_output_dir
+        The directory to write output from SPARTA+.
+    """
+
+    # Set up directory to store SPARTA+ output
+    if spartap_output_dir is None:
+        spartap_output_dir = Path(Path(output_path).parent, "spartap")
+    else:
+        spartap_output_dir = Path(spartap_output_dir)
+
+    spartap_output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load topology
+    topology = loos.createSystem(topology_path)
+
+    resname_by_resid = {
+        residue[0].resid(): residue[0].resname()
+        for residue in topology.splitByResidue()
+    }
+
+    # Set up trajectory
+    trajectory = Trajectory(trajectory_path, topology)
+
+    # Write each frame to temporary PDB
+    pdb_filename_prefix = Path(trajectory_path).stem
+    tmp_pdb_prefix = Path(spartap_output_dir, pdb_filename_prefix)
+    for frame_index, frame in enumerate(trajectory):
+        pass
+        frame_pdb_path = f"{tmp_pdb_prefix}-{frame_index}.pdb"
+        with open(frame_pdb_path, "w") as pdb_file:
+            pdb_file.write(str(loos.PDB.fromAtomicGroup(frame)))
+
+        # Estimate chemical shifts by running SPARTA+ on the temporary frame
+        # PDBs every 2000 frames to avoid shell error "argument list too long"
+        if frame_index % 2000 == 1999 and frame_index > 0:
+            spartap_return_value = subprocess.run(
+                [
+                    "sparta+",
+                    "-in",
+                    f"{pdb_filename_prefix}-*.pdb",
+                ],
+                cwd=spartap_output_dir,
+            )
+            for tmp_file in Path(spartap_output_dir).glob(f"{pdb_filename_prefix}-*.pdb"):
+                tmp_file.unlink()
+
+    spartap_return_value = subprocess.run(
+        [
+            "sparta+",
+            "-in",
+            f"{pdb_filename_prefix}-*.pdb",
+        ],
+        cwd=spartap_output_dir,
+    )
+
+    # Set up list of dicts to store chemical shifts
+    frame_time = 0.0 * unit.picosecond
+    fragment_index = 0
+    chemical_shifts = list()
+
+    N_frames = frame_index + 1
+    for frame_index in range(N_frames):
+        frame_time += frame_length
+        frame_time_ns = frame_time.m_as(unit.nanosecond)
+
+        # Write chemical shifts to file every 10 000 frames to avoid pandas
+        # out-of-memory
+        if frame_index % 10000 == 9999 and frame_index > 0:
+            list_of_dicts_to_csv(
+                chemical_shifts,
+                f"{output_path}-{fragment_index}",
+            )
+            fragment_index += 1
+            chemical_shifts = list()
+
+        # Read SPARTA+ estimate
+        first_data_line = numpy.infty
+        with open(f"{tmp_pdb_prefix}-{frame_index}_pred.tab", "r") as spartap_file:
+            for line_index, line in enumerate(spartap_file):
+                fields = line.split()
+                if line_index >= first_data_line and fields[4] != "9999.000":
+                    resid = int(fields[0])
+                    chemical_shifts.append(
+                        {
+                            "Frame": frame_index,
+                            "Time (ns)": frame_time_ns,
+                            "Resid": resid,
+                            "Resname": resname_by_resid[resid],
+                            "Atom": fields[2],
+                            "Chemical Shift": float(fields[4]),
+                            "Secondary Shift": float(fields[3]),
+                            "Random Coil Shift": float(fields[5]),
+                            "Ring Current Shift": float(fields[6]),
+                            "Electric Field Shift": float(fields[7]),
+                            "Shift Uncertainty": float(fields[8]),
+                        }
+                    )
+                elif fields and fields[0] == "FORMAT":
+                    first_data_line = line_index + 2
+
+    if fragment_index == 0:
+        list_of_dicts_to_csv(chemical_shifts, output_path)
+
+    else:
+        list_of_dicts_to_csv(chemical_shifts, f"{output_path}-{fragment_index}")
+
+    # Remove temporary files
+    shutil.rmtree(spartap_output_dir)
 
     return fragment_index
 
@@ -1075,6 +1409,7 @@ def compute_fraction_helix(
     observable_path: str,
     dihedral_clusters_path: str,
     h_bond_geometries_path: str,
+    chemical_shifts_path: str,
     output_path: str,
     h_bond_distance_cutoff: unit.Quantity = 3.5 * unit.angstrom,
     h_bond_angle_cutoff: float = 30,
@@ -1090,6 +1425,8 @@ def compute_fraction_helix(
         The path to the time series of dihedral cluster assignments.
     h_bond_geometries_path
         The path to the time series of hydrogen bond geometries.
+    chemical_shifts_path
+        The path to the time series of chemical shifts.
     output_path
         The path to write the computed helical fractions.
     h_bond_distance_cutoff
@@ -1108,14 +1445,41 @@ def compute_fraction_helix(
         observable_path,
         sep="\s+",
         skiprows=1,
-        names=["Resid", "Resname", "Experiment"],
+        names=[
+            "Resid", "Resname", "Experiment", "Shift Coil", "Delta Shift",
+            "Delta Shift Residue", "SPARTA+ Alpha", "SPARTA+ PII",
+            "ShiftX2 Alpha", "ShiftX2 PII",
+        ],
     )
+
+    chunk_size = 1E6
 
     # Read time series of dihedral cluster assignments
     dihedral_df = pandas.read_csv(dihedral_clusters_path, index_col=0)
 
-    # Read time series of hydrogen bond geometries
-    h_bond_df = pandas.read_csv(h_bond_geometries_path, index_col=0)
+    # Read time series of hydrogen bond geometries for backbone amide H bonds
+    h_bond_df = pandas.concat(
+        [
+            chunk[
+                (chunk["Donor Name"] == "N")
+                & (chunk["Hydrogen Name"] == "H")
+                & (chunk["Acceptor Name"] == "O")
+            ]
+            for chunk in pandas.read_csv(
+                h_bond_geometries_path, index_col=0, chunksize=chunk_size,
+            )
+        ]
+    )
+
+    # Read time series of chemical shifts for backbone carbonyl carbons
+    chemical_shift_df = pandas.concat(
+        [
+            chunk[chunk["Atom"] == "C"]
+            for chunk in pandas.read_csv(
+                chemical_shifts_path, index_col=0, chunksize=chunk_size,
+            )
+        ]
+    )
 
     # Compute observables
     computed_observables = list()
@@ -1123,9 +1487,10 @@ def compute_fraction_helix(
     for index, row in observable_df.iterrows():
         observable_resid = row["Resid"]
 
-        # Dihedral clusters resid is offset by 1 due to aaqaa3 initial structure
-        dihedral_resid = observable_resid + 1
-        residue_dihedral_df = dihedral_df[dihedral_df["Resid"] == dihedral_resid]
+        # observable_resid is 0-based, but some measured properties use 1-based
+        # residue indices due to the capped initial structure
+        capped_resid = observable_resid + 1
+        residue_dihedral_df = dihedral_df[dihedral_df["Resid"] == capped_resid]
 
         # Get frames where (phi, psi) is closer than 30 deg to ideal alpha helix
         # at (-63, -43)
@@ -1134,43 +1499,72 @@ def compute_fraction_helix(
             + (residue_dihedral_df["psi (deg)"] + 43) ** 2
         ) < 900
 
-        computed_dihedral_fraction_helix = helical_dihedrals.mean()
+        computed_dihedral_fraction_helix = numpy.mean(helical_dihedrals)
         helical_dihedral_frames = residue_dihedral_df[helical_dihedrals]["Frame"]
 
         # Get hydrogen bonds to i-4 and i+4 residues
         residue_h_bond_df = h_bond_df[
             (
-                (
-                    (h_bond_df["Donor Resid"] == observable_resid)
-                    & (h_bond_df["Acceptor Resid"] == observable_resid - 4)
-                )
-                | (
-                    (h_bond_df["Donor Resid"] == observable_resid + 4)
-                    & (h_bond_df["Acceptor Resid"] == observable_resid)
-                )
+                (h_bond_df["Donor Resid"] == observable_resid)
+                & (h_bond_df["Acceptor Resid"] == observable_resid - 4)
             )
-            & (h_bond_df["Donor Name"] == "N")
-            & (h_bond_df["Hydrogen Name"] == "H")
-            & (h_bond_df["Acceptor Name"] == "O")
+            | (
+                (h_bond_df["Donor Resid"] == observable_resid + 4)
+                & (h_bond_df["Acceptor Resid"] == observable_resid)
+            )
         ]
 
         if len(residue_h_bond_df) > 0:
-            computed_h_bond_fraction_helix = (
+            computed_h_bond_fraction_helix = numpy.mean(
                 (
                     residue_h_bond_df["DA Distance (Angstrom)"]
                     < h_bond_distance_threshold
                 )
                 & (residue_h_bond_df["DHA Angle (deg)"] > h_bond_angle_threshold)
                 & (residue_h_bond_df["Frame"].isin(helical_dihedral_frames))
-            ).mean()
+            )
 
         else:
             computed_h_bond_fraction_helix = 0.0
+
+        # Get mean chemical shift of backbone carbonyl carbon
+        residue_chemical_shift_df = chemical_shift_df[
+            chemical_shift_df["Resid"] == capped_resid
+        ]
+        carbonyl_chemical_shift = numpy.mean(
+            residue_chemical_shift_df["Chemical Shift"]
+        )
+
+        # Compute fraction helix from carbonyl chemical shift using experimental
+        # reference values for helix and coil
+        coil_chemical_shift = row["Shift Coil"]
+        delta_helix_coil_shift = row["Delta Shift Residue"]
+        computed_chemical_shift_fraction_helix = (
+            carbonyl_chemical_shift - coil_chemical_shift
+        ) / delta_helix_coil_shift
+        computed_chemical_shift_fraction_helix = numpy.clip(
+            computed_chemical_shift_fraction_helix, 0.0, 1.0,
+        )
+
+        # Compute fraction helix from carbonyl chemical shift using ShiftX2
+        # reference values for helix and coil
+        #coil_chemical_shift = row["ShiftX2 PII"]
+        #delta_helix_coil_shift = row["ShiftX2 Alpha"] - row["ShiftX2 PII"]
+        coil_chemical_shift = row["SPARTA+ PII"]
+        delta_helix_coil_shift = row["SPARTA+ Alpha"] - row["SPARTA+ PII"]
+        computed_spartap_fraction_helix = (
+            carbonyl_chemical_shift - coil_chemical_shift
+        ) / delta_helix_coil_shift
+        computed_spartap_fraction_helix = numpy.clip(
+            computed_spartap_fraction_helix, 0.0, 1.0,
+        )
 
         computed_observables.append(
             {
                 "Computed Dihedrals": computed_dihedral_fraction_helix,
                 "Computed H Bonds": computed_h_bond_fraction_helix,
+                "Computed Chemical Shifts": computed_chemical_shift_fraction_helix,
+                "Computed SPARTA+": computed_spartap_fraction_helix,
             }
         )
 

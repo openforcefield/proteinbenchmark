@@ -1,0 +1,80 @@
+REMARK SPARTA+ Structural Parameters Table derived from input PDB cooridnates
+REMARK  
+REMARK  PHI_R1 PSI_R1 CHI1_R1 and CHI2_R1 are the backbone and sidechain 
+REMARK  torsion angles of the first residue in a triplet.
+REMARK  
+REMARK  PHI_R2 PSI_R2 CHI1_R2 and CHI2_R2 are the backbone and sidechain 
+REMARK  torsion angles of the second (central) residue in a triplet.
+REMARK  
+REMARK  PHI_R3 PSI_R3 CHI1_R3 and CHI2_R3 are the backbone and sidechain 
+REMARK  torsion angles of the third residue in a triplet.
+REMARK  
+REMARK  H-Bond Distances are given in Angstroms:
+REMARK  
+REMARK  HN_HB_DIST_R2 H-bond distance for the HN atom in the central residue.
+REMARK  HA_HB_DIST_R2 H-bond distance for the HA atom in the central residue.
+REMARK  CO_HB_DIST_R2 H-bond distance for the CO atom in the central residue.
+REMARK  
+REMARK  HN_S2_R2 is the Bruschweiler structure-based HN order parameter of 
+REMARK           the central residue. Reference: Zhang FL, Bruschweiler R
+REMARK           JACS 124, 12654-12655 (2002)
+REMARK  
+REMARK Reference:
+REMARK  Y. Shen and A. Bax: SPARTA+: a modest improvement in empirical NMR
+REMARK  chemical shift prediction by means of an artificial neural network.
+REMARK  J. Biomol. NMR 48, 13-22 (2010).
+REMARK SPARTA+ Structural Parameters Table derived from input PDB cooridnates
+REMARK  
+REMARK  PHI_R1 PSI_R1 CHI1_R1 and CHI2_R1 are the backbone and sidechain 
+REMARK  torsion angles of the first residue in a triplet.
+REMARK  
+REMARK  PHI_R2 PSI_R2 CHI1_R2 and CHI2_R2 are the backbone and sidechain 
+REMARK  torsion angles of the second (central) residue in a triplet.
+REMARK  
+REMARK  PHI_R3 PSI_R3 CHI1_R3 and CHI2_R3 are the backbone and sidechain 
+REMARK  torsion angles of the third residue in a triplet.
+REMARK  
+REMARK  H-Bond Distances are given in Angstroms:
+REMARK  
+REMARK  HN_HB_DIST_R2 H-bond distance for the HN atom in the central residue.
+REMARK  HA_HB_DIST_R2 H-bond distance for the HA atom in the central residue.
+REMARK  CO_HB_DIST_R2 H-bond distance for the CO atom in the central residue.
+REMARK  
+REMARK  HN_S2_R2 is the Bruschweiler structure-based HN order parameter of 
+REMARK           the central residue. Reference: Zhang FL, Bruschweiler R
+REMARK           JACS 124, 12654-12655 (2002)
+REMARK  
+REMARK Reference:
+REMARK  Y. Shen and A. Bax: SPARTA+: a modest improvement in empirical NMR
+REMARK  chemical shift prediction by means of an artificial neural network.
+REMARK  J. Biomol. NMR 48, 13-22 (2010).
+
+DATA SOURCE aaqaa3-alpha-protonated
+
+DATA FIRST_RESID 0
+
+DATA SEQUENCE ?AAQAAAAQA AAAQAA?
+DATA SOURCE aaqaa3-beta-protonated
+
+DATA FIRST_RESID 0
+
+DATA SEQUENCE ?AAQAAAAQA AAAQAA?
+
+VARS   RESID_R1 RESNAME_R1 PHI_R1 PSI_R1 CHI1_R1 CHI2_R1 RESID_R2 RESNAME_R2 PHI_R2 PSI_R2 CHI1_R2 CHI2_R2 RESID_R3 RESNAME_R3 PHI_R3 PSI_R3 CHI1_R3 CHI2_R3 HN_HB_DIST_R2 HA_HB_DIST_R2 CO_HB_DIST_R2 HN_S2_R2 
+FORMAT %4d %s %8.3f %8.3f %8.3f %8.3f %4d %s %8.3f %8.3f %8.3f %8.3f %4d %s %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f
+
+   0 ? 9999.000 9999.000 9999.000 9999.000    1 A -139.015  129.942 9999.000 9999.000    2 A -119.942  130.012 9999.000 9999.000    0.000    0.000    3.941    0.028
+   1 A -139.015  129.942 9999.000 9999.000    2 A -119.942  130.012 9999.000 9999.000    3 Q -120.011  129.953 -175.404  177.919    4.503    0.000    3.951    0.135
+   2 A -119.942  130.012 9999.000 9999.000    3 Q -120.011  129.953 -175.404  177.919    4 A -119.978  130.029 9999.000 9999.000    3.941    0.000    3.945    0.213
+   3 Q -120.011  129.953 -175.404  177.919    4 A -119.978  130.029 9999.000 9999.000    5 A -120.041  130.009 9999.000 9999.000    3.951    0.000    3.937    0.220
+   4 A -119.978  130.029 9999.000 9999.000    5 A -120.041  130.009 9999.000 9999.000    6 A -120.020  129.940 9999.000 9999.000    3.945    0.000    3.935    0.253
+   5 A -120.041  130.009 9999.000 9999.000    6 A -120.020  129.940 9999.000 9999.000    7 A -119.968  130.001 9999.000 9999.000    3.937    0.000    3.941    0.215
+   6 A -120.020  129.940 9999.000 9999.000    7 A -119.968  130.001 9999.000 9999.000    8 Q -119.993  129.963 -175.387  177.928    3.935    0.000    3.950    0.219
+   7 A -119.968  130.001 9999.000 9999.000    8 Q -119.993  129.963 -175.387  177.928    9 A -119.949  130.016 9999.000 9999.000    3.941    0.000    3.945    0.217
+   8 Q -119.993  129.963 -175.387  177.928    9 A -119.949  130.016 9999.000 9999.000   10 A -120.048  130.058 9999.000 9999.000    3.950    0.000    3.938    0.221
+   9 A -119.949  130.016 9999.000 9999.000   10 A -120.048  130.058 9999.000 9999.000   11 A -120.036  130.061 9999.000 9999.000    3.945    0.000    3.937    0.253
+  10 A -120.048  130.058 9999.000 9999.000   11 A -120.036  130.061 9999.000 9999.000   12 A -120.048  129.934 9999.000 9999.000    3.938    0.000    3.939    0.215
+  11 A -120.036  130.061 9999.000 9999.000   12 A -120.048  129.934 9999.000 9999.000   13 Q -119.949  129.989 -175.403  177.957    3.937    0.000    3.951    0.219
+  12 A -120.048  129.934 9999.000 9999.000   13 Q -119.949  129.989 -175.403  177.957   14 A -120.000  130.018 9999.000 9999.000    3.939    0.000    3.945    0.217
+  13 Q -119.949  129.989 -175.403  177.957   14 A -120.000  130.018 9999.000 9999.000   15 A -119.998  135.011 9999.000 9999.000    3.951    0.000    0.000    0.219
+  14 A -120.000  130.018 9999.000 9999.000   15 A -119.998  135.011 9999.000 9999.000   16 ? 9999.000 9999.000 9999.000 9999.000    3.945    0.000    0.000    0.203
