@@ -1304,8 +1304,20 @@ def compute_h_bond_scalar_couplings(
     observable_df.drop(indices_to_drop, inplace=True)
     observable_df.reset_index(drop=True, inplace=True)
 
-    # Read time series of hydrogen bond geometries
-    h_bond_df = pandas.read_csv(h_bond_geometries_path, index_col=0)
+    # Read time series of hydrogen bond geometries for backbone amide H bonds
+    chunk_size = 1E6
+    h_bond_df = pandas.concat(
+        [
+            chunk[
+                (chunk["Donor Name"] == "N")
+                & (chunk["Hydrogen Name"] == "H")
+                & (chunk["Acceptor Name"] == "O")
+            ]
+            for chunk in pandas.read_csv(
+                h_bond_geometries_path, index_col=0, chunksize=chunk_size,
+            )
+        ]
+    )
 
     # Compute observables
     if time_series_output_path is not None:
@@ -1321,9 +1333,6 @@ def compute_h_bond_scalar_couplings(
         geometry_df = h_bond_df[
             (h_bond_df["Donor Resid"] == observable_resid_n)
             & (h_bond_df["Acceptor Resid"] == observable_resid_co)
-            & (h_bond_df["Donor Name"] == "N")
-            & (h_bond_df["Hydrogen Name"] == "H")
-            & (h_bond_df["Acceptor Name"] == "O")
         ]
 
         HO_distance = geometry_df["HA Distance (Angstrom)"].values * unit.angstrom
