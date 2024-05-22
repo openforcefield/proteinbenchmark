@@ -381,7 +381,7 @@ def solvate(
     # N+ = V_w C_eff + (|Q| - Q) / 2
     # N- = V_w C_eff + (|Q| + Q) / 2
     # N+ + N- = 2 V_w C_0 sqrt(1 + Q^2 / (2 V_w C_0)^2) = 2 V_w C_eff + |Q|
-    # C_eff = C_0 sqrt(1 + Q^2 / (2 V_w C_0)^2) - |Q| / (2 V_w C_0))
+    # C_eff = C_0 (sqrt(1 + Q^2 / (2 V_w C_0)^2) - |Q| / (2 V_w C_0))
 
     # If ionic strength is zero, then Q / (2 V_w C_0) is undefined
     if ionic_strength.m_as(unit.molar) > 0:
@@ -396,10 +396,10 @@ def solvate(
 
         # Compute number of ions expected for neutral solute and for SLTCAP
         n_cation_expected_neutral = int(
-            numpy.round(solvent_volume * ionic_strength - total_charge / 2)
+            numpy.round(solvent_volume * ionic_strength + (charge_magnitude - total_charge) / 2)
         )
         n_anion_expected_neutral = int(
-            numpy.round(solvent_volume * ionic_strength + total_charge / 2)
+            numpy.round(solvent_volume * ionic_strength + (charge_magnitude + total_charge) / 2)
         )
         n_cation_expected_sltcap = int(
             numpy.round(
