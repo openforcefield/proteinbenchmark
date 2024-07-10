@@ -333,9 +333,15 @@ def measure_h_bond_geometries(
     max_resid = topology.maxResid()
 
     # Select OFF atoms that can participate in hydrogen bonds
-    offmol = Molecule.from_polymer_pdb(topology_path)
-    putative_donors = offmol.chemical_environment_matches("[#7,#8,#16:1]-[#1:2]")
-    putative_acceptors = offmol.chemical_environment_matches("[#7,#8,#16:1]")
+    offtop = Topology.from_pdb(topology_path).molecule(0)
+    putative_donors = [
+        match.topology_atom_indices
+        for match in offtop.chemical_environment_matches("[#7,#8,#16:1]-[#1:2]")
+    ]
+    putative_acceptors = [
+        match.topology_atom_indices
+        for match in offtop.chemical_environment_matches("[#7,#8,#16:1]")
+    ]
 
     # Construct a list of [donor, hydrogen, acceptor] LOOS atom selections
     putative_h_bonds = list()
@@ -345,14 +351,14 @@ def measure_h_bond_geometries(
         # Non-hydrogen atoms bonded to donor
         donor_bonded_atoms = [
             atom
-            for atom in offmol.atoms[donor_index].bonded_atoms
+            for atom in offtop.atom(donor_index).bonded_atoms
             if atom.atomic_number == 1
         ]
 
         # Get LOOS atom selections for donor and hydrogen
         if donor_index not in atom_selections:
-            donor_resid = offmol.atoms[donor_index].metadata["residue_number"]
-            donor_name = offmol.atoms[donor_index].name
+            donor_resid = offtop.atom(donor_index).metadata["residue_number"]
+            donor_name = offtop.atom(donor_index).name
 
             atom_selection = loos.selectAtoms(
                 topology, f'resid == {donor_resid} && name == "{donor_name}"'
@@ -366,8 +372,8 @@ def measure_h_bond_geometries(
             atom_selections[donor_index] = atom_selection[0]
 
         if hydrogen_index not in atom_selections:
-            hydrogen_resid = offmol.atoms[hydrogen_index].metadata["residue_number"]
-            hydrogen_name = offmol.atoms[hydrogen_index].name
+            hydrogen_resid = offtop.atom(hydrogen_index).metadata["residue_number"]
+            hydrogen_name = offtop.atom(hydrogen_index).name
 
             atom_selection = loos.selectAtoms(
                 topology, f'resid == {hydrogen_resid} && name == "{hydrogen_name}"'
@@ -390,7 +396,7 @@ def measure_h_bond_geometries(
             if acceptor_index == donor_index or any(
                 [
                     acceptor_index == bonded_atom.molecule_atom_index
-                    or offmol.atoms[acceptor_index].is_bonded_to(bonded_atom)
+                    or offtop.atom(acceptor_index).is_bonded_to(bonded_atom)
                     for bonded_atom in donor_bonded_atoms
                 ]
             ):
@@ -398,8 +404,8 @@ def measure_h_bond_geometries(
 
             # Get LOOS atom selection for acceptor
             if acceptor_index not in atom_selections:
-                acceptor_resid = offmol.atoms[acceptor_index].metadata["residue_number"]
-                acceptor_name = offmol.atoms[acceptor_index].name
+                acceptor_resid = offtop.atom(acceptor_index).metadata["residue_number"]
+                acceptor_name = offtop.atom(acceptor_index).name
 
                 atom_selection = loos.selectAtoms(
                     topology, f'resid == {acceptor_resid} && name == "{acceptor_name}"'
