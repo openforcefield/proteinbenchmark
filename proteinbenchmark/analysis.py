@@ -7,7 +7,7 @@ import loos
 import numpy
 import pandas
 from loos.pyloos import Trajectory
-from openff.toolkit import Molecule
+from openff.toolkit import Topology
 from openff.units import unit
 from pymbar import timeseries
 
@@ -333,7 +333,7 @@ def measure_h_bond_geometries(
     max_resid = topology.maxResid()
 
     # Select OFF atoms that can participate in hydrogen bonds
-    offtop = Topology.from_pdb(topology_path).molecule(0)
+    offtop = Topology.from_pdb(topology_path)
     putative_donors = [
         match.topology_atom_indices
         for match in offtop.chemical_environment_matches("[#7,#8,#16:1]-[#1:2]")
