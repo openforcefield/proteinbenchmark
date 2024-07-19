@@ -604,6 +604,31 @@ force_fields = {
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
+    "specific-0.0.3-sage-pair-opc": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3-Sage-Pairwise-NAGL.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "specific-0.0.3-sage-pair-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3-Sage-Pairwise-NAGL.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "specific-0.0.3-sage-pair-tip3p": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3-Sage-Pairwise-NAGL.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "specific-0.0.3-sage-pair-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3-Sage-Pairwise-NAGL.offxml"),
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "specific-0.0.3-sage-pair-tip4p-fb": {
+        "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3-Sage-Pairwise-NAGL.offxml"),
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
     "specific-0.0.3-tip3p": {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3.offxml"),
         "water_model": "tip3p",
