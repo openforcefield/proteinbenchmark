@@ -22,7 +22,7 @@ dependencies:
   - openmmtools
 
   # Analysis
-  - loos =4
+  - loos ==4.1
   - pandas
   - pymol-open-source
   - seaborn
