@@ -2,11 +2,7 @@ name: openff-proteinbenchmark
 channels:
   - conda-forge
   - openeye
-  - defaults
 dependencies:
-  - black
-  - click
-  - isort
   - pip
   - python
     
@@ -17,8 +13,7 @@ dependencies:
 
   # MM calculations
   - ambertools
-  - cudatoolkit
-  - openeye-toolkits=2022.1.1
+  - openeye-toolkits
   - openff-forcefields
   - openff-toolkit>=0.13.0
   - openff-units
@@ -27,7 +22,7 @@ dependencies:
   - openmmtools
 
   # Analysis
-  - loos
+  - loos ==4.1
   - pandas
   - pymol-open-source
   - seaborn
