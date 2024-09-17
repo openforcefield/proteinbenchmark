@@ -13,7 +13,7 @@ dependencies:
 
   # MM calculations
   - ambertools
-  - openeye-toolkits=2022.1.1
+  - openeye-toolkits
   - openff-forcefields
   - openff-toolkit>=0.13.0
   - openff-units
