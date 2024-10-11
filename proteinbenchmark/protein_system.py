@@ -505,7 +505,7 @@ class ProteinBenchmarkSystem:
 
         # Align production trajectory
         if not exists_and_not_empty(reimaged_topology):
-            print(f"Aligning production trajectory for system {self.system_name}")
+            print(f"Aligning production trajectory for system {self.system_name} {replica}")
 
             replica_dir = Path(self.base_path, f"replica-{replica:d}")
             replica_prefix = Path(replica_dir, self.system_name)
@@ -530,7 +530,7 @@ class ProteinBenchmarkSystem:
         dihedrals = f"{analysis_prefix}-dihedrals.dat"
 
         if not exists_and_not_empty(dihedrals):
-            print(f"Measuring dihedrals for system {self.system_name}")
+            print(f"Measuring dihedrals for system {self.system_name} {replica}")
 
             fragment_index = measure_dihedrals(
                 topology_path=reimaged_topology,
@@ -547,7 +547,7 @@ class ProteinBenchmarkSystem:
 
         if not exists_and_not_empty(h_bond_geometries):
             print(
-                f"Measuring hydrogen bond geometries for system {self.system_name}"
+                f"Measuring hydrogen bond geometries for system {self.system_name} {replica}"
             )
 
             fragment_index = measure_h_bond_geometries(
@@ -564,7 +564,7 @@ class ProteinBenchmarkSystem:
         chemical_shifts = f"{analysis_prefix}-chemical-shifts.dat"
 
         if not exists_and_not_empty(chemical_shifts):
-            print(f"Computing chemical shifts for system {self.system_name}")
+            print(f"Computing chemical shifts for system {self.system_name} {replica}")
 
             #fragment_index = compute_chemical_shifts_shiftx2(
             fragment_index = compute_chemical_shifts_sparta_plus(
@@ -583,7 +583,7 @@ class ProteinBenchmarkSystem:
         dihedral_clusters = f"{analysis_prefix}-dihedral-clusters.dat"
 
         if not exists_and_not_empty(dihedral_clusters):
-            print(f"Assigning dihedral clusters for system {self.system_name}")
+            print(f"Assigning dihedral clusters for system {self.system_name} {replica}")
 
             assign_dihedral_clusters(
                 dihedrals_path=dihedrals,
@@ -599,7 +599,7 @@ class ProteinBenchmarkSystem:
         if "scalar_couplings" in target_observables and not exists_and_not_empty(
             scalar_couplings
         ):
-            print(f"Computing scalar couplings for system {self.system_name}")
+            print(f"Computing scalar couplings for system {self.system_name} {replica}")
 
             experimental_observables = target_observables["scalar_couplings"][
                 "observable_path"
@@ -627,7 +627,7 @@ class ProteinBenchmarkSystem:
         ):
             print(
                 "Computing hydrogen bond scalar couplings for system "
-                f"{self.system_name}"
+                f"{self.system_name} {replica}"
             )
 
             experimental_observables = target_observables["h_bond_scalar_couplings"][
@@ -653,7 +653,7 @@ class ProteinBenchmarkSystem:
         if "fraction_helix" in target_observables and not exists_and_not_empty(
             fraction_helix
         ):
-            print(f"Computing fraction helix for system {self.system_name}")
+            print(f"Computing fraction helix for system {self.system_name} {replica}")
 
             data = target_observables["fraction_helix"]["observable_path"]
 

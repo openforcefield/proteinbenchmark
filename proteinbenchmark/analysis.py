@@ -1016,6 +1016,7 @@ def compute_scalar_couplings(
     output_path: str,
     karplus: str = "vogeli",
     time_series_output_path: str = None,
+    subsample_time_series: bool = False,
 ):
     """
     Compute NMR scalar couplings using a Karplus model.
@@ -1032,6 +1033,8 @@ def compute_scalar_couplings(
         The name of the set of Karplus parameters to use.
     time_series_output_path
         The path to write the time series of computed scalar couplings.
+    subsample_time_series
+        Whether to use pymbar.timeseries to subsample correlated time series.
     """
 
     # Get Karplus parameters for scalar couplings associated with phi
@@ -1184,10 +1187,6 @@ def compute_scalar_couplings(
         ).m_as(unit.second**-1)
 
         if time_series_output_path is not None:
-            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
-            # for computed scalar coupling
-            computed_coupling_mean = get_timeseries_mean(computed_coupling)
-
             # Write time series of observable
             observable_timeseries.append(
                 {
@@ -1202,6 +1201,11 @@ def compute_scalar_couplings(
                     "Computed": computed_coupling,
                 }
             )
+
+        if subsample_time_series:
+            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
+            # for computed scalar coupling
+            computed_coupling_mean = get_timeseries_mean(computed_coupling)
 
         else:
             computed_coupling_mean = {
