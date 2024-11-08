@@ -65,6 +65,18 @@ DIHEDRAL_ATOMS = {
     ]
 }
 
+for resname in DIHEDRAL_ATOMS:
+    if resname == "GLY":
+        continue
+    DIHEDRAL_ATOMS[resname]["phi'"] = {
+        "atom_names": ["C", "N", "CA", "CB"],
+        "resid_offsets": [-1, 0, 0, 0],
+    }
+    DIHEDRAL_ATOMS[resname]["psi'"] = {
+        "atom_names": ["CB", "CA", "C", "N"],
+        "resid_offsets": [0, 0, 0, 1],
+    }
+
 DIHEDRAL_ATOMS["ARG"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
 DIHEDRAL_ATOMS["ASN"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
 DIHEDRAL_ATOMS["ASP"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}

@@ -185,10 +185,10 @@ def measure_dihedrals(
         residue_dihedrals = dict()
 
         for dihedral, dihedral_atom_dict in DIHEDRAL_ATOMS[resname].items():
-            if resid == min_resid and dihedral == "phi":
+            if resid == min_resid and dihedral in {"phi", "phi'"}:
                 continue
 
-            if resid == max_resid and dihedral in {"psi", "omega"}:
+            if resid == max_resid and dihedral in {"psi", "psi'", "omega"}:
                 continue
 
             if (
