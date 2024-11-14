@@ -1,12 +1,9 @@
 from pathlib import Path
 import shutil
 import subprocess
-from typing import List
 
-import loos
 import numpy
 import pandas
-from loos.pyloos import Trajectory
 from openff.toolkit import Topology
 from openff.units import unit
 from pymbar import timeseries
@@ -88,6 +85,9 @@ def align_trajectory(
         structure. Default is align selection.
     """
 
+    import loos
+    from loos.pyloos import Trajectory
+
     # Load topology and trajectory
     topology = loos.createSystem(topology_path)
     trajectory = Trajectory(trajectory_path, topology)
@@ -164,6 +164,9 @@ def measure_dihedrals(
     output_path
         The path to write the time series of dihedrals.
     """
+
+    import loos
+    from loos.pyloos import Trajectory
 
     # Load topology
     topology = loos.createSystem(topology_path)
@@ -326,6 +329,9 @@ def measure_h_bond_geometries(
         Fraction of frames in which a putative hydrogen bond must be occupied to
         be considered observed and be measured.
     """
+
+    import loos
+    from loos.pyloos import Trajectory
 
     # Load topology
     topology = loos.createSystem(topology_path)
@@ -608,6 +614,9 @@ def compute_chemical_shifts_shiftx2(
         The path to the python2 executable to pass to subprocess.
     """
 
+    import loos
+    from loos.pyloos import Trajectory
+
     # ShiftX2 v1.13 has a few quirks that make it unwieldy for analyzing MD
     # trajectories. The ShiftX2 estimate is a combination of the sequence-based
     # ShiftY+ estimator and the structure-based ShiftX+ estimator. ShiftX2 has
@@ -794,6 +803,9 @@ def compute_chemical_shifts_sparta_plus(
     shiftx2_output_dir
         The directory to write output from SPARTA+.
     """
+
+    import loos
+    from loos.pyloos import Trajectory
 
     # Set up directory to store SPARTA+ output
     if spartap_output_dir is None:
