@@ -406,6 +406,16 @@ force_fields = {
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },
+    "null-0.0.3-pair-nmr-0.8-1e4-3-0.7-1e3-opc3": {
+        "force_field_file": Path(ff_directory, "null-0.0.3-pair-nmr-0.8-1e4-3-0.7-1e3-opc3-NAGL.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-pair-nmr-0.8-1e4-3-0.7-1e4-opc3": {
+        "force_field_file": Path(ff_directory, "null-0.0.3-pair-nmr-0.8-1e4-3-0.7-1e4-opc3-NAGL.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
     "null-0.0.3-pair-nmr-0.8-1e4-3-opc3": {
         "force_field_file": Path(ff_directory, "null-0.0.3-pair-nmr-0.8-1e4-3-opc3-NAGL.offxml"),
         "water_model": "opc3",
@@ -413,6 +423,11 @@ force_fields = {
     },
     "null-0.0.3-pair-nmr-0.8-1e4-4-opc3": {
         "force_field_file": Path(ff_directory, "null-0.0.3-pair-nmr-0.8-1e4-4-opc3-NAGL.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-pair-nmr-0.8-1e4-5-opc3": {
+        "force_field_file": Path(ff_directory, "null-0.0.3-pair-nmr-0.8-1e4-5-opc3-NAGL.offxml"),
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },
