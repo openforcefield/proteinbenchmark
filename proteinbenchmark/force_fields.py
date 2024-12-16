@@ -774,6 +774,26 @@ force_fields = {
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
+    "amber-ff-default-weight-tip3p": {
+        "force_field_file": Path(ff_directory, "amber-ff-default-weight.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": "tip3p-1.0.1.offxml",
+    },
+    "amber-ff-default-weight-opc": {
+        "force_field_file": Path(ff_directory, "amber-ff-default-weight.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "amber-ff-equal-weights-tip3p": {
+        "force_field_file": Path(ff_directory, "amber-ff-equal-weights.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": "tip3p-1.0.1.offxml",
+    },
+    "amber-ff-equal-weights-opc": {
+        "force_field_file": Path(ff_directory, "amber-ff-equal-weights.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
 }
 
 # Add implicit water model files
