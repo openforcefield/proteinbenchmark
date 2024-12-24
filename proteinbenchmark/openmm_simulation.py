@@ -6,23 +6,6 @@ from openmm import app, unit
 
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml
 
-class MyCheckpointReporter(app.CheckpointReporter):
-
-    def __init__(self, file, reportInterval, n_to_keep: int = 100):
-        super().__init__(file, reportInterval,)
-        self._filenames = []
-        self._n_to_keep = n_to_keep
-
-
-    def report(self, simulation, state):
-        # Save the current state with current step
-        filename = self._file.rsplit(".", 1)[0] + f"_{simulation.currentStep}.chk"
-        simulation.saveCheckpoint(filename)
-        simulation.saveCheckpoint(self._file)
-        self._filenames.append(filename)
-        if len(self._filenames) > self._n_to_keep:
-            # Remove the oldest checkpoint
-            Path(self._filenames.pop(0)).unlink()
 
 class OpenMMSimulation:
     """A class representing a simulation in OpenMM."""
@@ -378,7 +361,7 @@ class OpenMMSimulation:
             separator=" ",
             append=append,
         )
-        checkpoint_reporter = MyCheckpointReporter(
+        checkpoint_reporter = app.CheckpointReporter(
             self.checkpoint_file, self.checkpoint_frequency
         )
 
