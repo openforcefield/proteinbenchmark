@@ -794,22 +794,22 @@ force_fields = {
         "water_model": "opc",
         "water_model_file": "opc-1.0.0.offxml",
     },
-    "specific-model-proteinonly-equal-weight-tip3p": {
+    "specific-model-proteinonly-equal-weights-tip3p": {
         "force_field_file": Path(ff_directory, "specific-model-proteinonly-equal-weights.offxml"),
         "water_model": "tip3p",
         "water_model_file": "tip3p-1.0.1.offxml",
     },
-    "specific-model-proteinonly-equal-weight-opc": {
+    "specific-model-proteinonly-equal-weights-opc": {
         "force_field_file": Path(ff_directory, "specific-model-proteinonly-equal-weights.offxml"),
         "water_model": "opc",
         "water_model_file": "opc-1.0.0.offxml",
     },
-    "null-model-proteinonly-equal-weight-tip3p": {
+    "null-model-proteinonly-equal-weights-tip3p": {
         "force_field_file": Path(ff_directory, "null-model-proteinonly-equal-weights.offxml"),
         "water_model": "tip3p",
         "water_model_file": "tip3p-1.0.1.offxml",
     },
-    "null-model-proteinonly-equal-weight-opc": {
+    "null-model-proteinonly-equal-weights-opc": {
         "force_field_file": Path(ff_directory, "null-model-proteinonly-equal-weights.offxml"),
         "water_model": "opc",
         "water_model_file": "opc-1.0.0.offxml",
