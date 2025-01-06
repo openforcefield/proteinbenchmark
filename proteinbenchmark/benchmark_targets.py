@@ -444,8 +444,8 @@ benchmark_targets = {
             "backbone_rdc": "ulmer_jacs_2003",
         },
         "traj_length": 5 * unit.microsecond,
-        "checkpoint_length": 100 * unit.femtosecond,
-        "save_state_length": 1 * unit.picosecond,
+        "checkpoint_length": 4.0 * unit.femtosecond,
+        "save_state_length": 4.0 * unit.femtosecond,
     },
     "gb3-3j-ha-hb": {
         "target_type": "folded",

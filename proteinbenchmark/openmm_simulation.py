@@ -153,12 +153,19 @@ class OpenMMSimulation:
             )
 
         # Create simulation
+        # only use cuda if available
+        try:
+            platform = openmm.Platform.getPlatformByName("CUDA")
+            platform_properties = {"Precision": "mixed"}
+        except Exception:
+            platform = openmm.Platform.getPlatformByName("Reference")
+            platform_properties = None
         simulation = app.Simulation(
             initial_pdb.topology,
             openmm_system,
             integrator,
-            openmm.Platform.getPlatformByName("CUDA"),
-            {"Precision": "mixed"},
+            platform,
+            platform_properties
         )
 
         if return_pdb:
@@ -369,16 +376,25 @@ class OpenMMSimulation:
 
         # Get current index of serialized simulation state files
         save_state_index = 0
+        current_saved_states = []
         if append:
             save_state_dir = Path(self.save_state_prefix).parent
             glob_prefix = Path(self.save_state_prefix).name
 
             for save_state_file in save_state_dir.glob(f"{glob_prefix}-*.xml"):
+                current_saved_states.append(save_state_file)
                 file_index = int(save_state_file.stem.split("-")[-1])
                 if file_index > save_state_index:
                     save_state_index = file_index
 
         # Run dynamics until the desired number of steps is reached
+        n_saved_states = 200
+        # sort saved states files
+        current_saved_states.sort(key=lambda x: int(x.stem.split("-")[-1]))
+        if len(current_saved_states) > n_saved_states:
+            for save_state_file in current_saved_states[:-n_saved_states]:
+                save_state_file.unlink()
+
         while simulation.currentStep < self.n_steps:
             steps_remaining = self.n_steps - simulation.currentStep
             steps_to_take = min(self.save_state_frequency, steps_remaining)
@@ -388,5 +404,8 @@ class OpenMMSimulation:
 
             # Write serialized simulation state
             save_state_index += 1
-            save_state_file = f"{self.save_state_prefix}-{save_state_index}.xml"
+            save_state_file = f"{self.save_state_prefix}-{save_state_index:05d}.xml"
             simulation.saveState(save_state_file)
+            
+            if save_state_index > n_saved_states:
+                current_saved_states.pop(0).unlink()
