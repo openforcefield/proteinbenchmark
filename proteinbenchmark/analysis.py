@@ -1170,7 +1170,7 @@ def compute_scalar_couplings(
                 dihedral_resname = row["Resname"]
                 observable_parameters = observable_parameters[dihedral_resname]
 
-            elif observable in {"3j_ha_hb2", "3j_ha_hb3"}:
+            elif observable in {"3j_ha_hb", "3j_ha_hb2", "3j_ha_hb3"}:
                 dihedral_resname = PEREZ_KARPLUS_RESIDUE_MAP[row["Resname"]]
                 observable_parameters = observable_parameters[dihedral_resname]
 

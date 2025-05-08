@@ -245,28 +245,6 @@ benchmark_targets = {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
         "pressure": 1.0 * unit.atmosphere,
-        "temperature": 305.0 * unit.kelvin,
-        "ph": 6.2,
-        "ionic_strength": 0.0 * unit.molar,
-        "observables": {
-            "backbone_rdc": "moglich_jbnmr_2002",
-        },
-    },
-    "bpti-3j-hn-ha": {
-        "target_type": "folded",
-        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
-        "pressure": 1.0 * unit.atmosphere,
-        "temperature": 309.0 * unit.kelvin,
-        "ph": 3.5,
-        "ionic_strength": 0.0 * unit.molar,
-        "observables": {
-            "3j_hn_ha": "pardi_jmb_1984",
-        },
-    },
-    "bpti-3j-ha-hb": {
-        "target_type": "folded",
-        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
-        "pressure": 1.0 * unit.atmosphere,
         "temperature": 309.0 * unit.kelvin,
         "ph": 4.6,
         "ionic_strength": 0.0 * unit.molar,
@@ -281,6 +259,28 @@ benchmark_targets = {
                     observable_directory, "bpti", "bpti-scalar-couplings.dat"
                 ),
             },
+        },
+    },
+    "bpti-3j-hn-ha": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 309.0 * unit.kelvin,
+        "ph": 3.5,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "3j_hn_ha": "pardi_jmb_1984",
+        },
+    },
+    "bpti-backbone-rdc": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 305.0 * unit.kelvin,
+        "ph": 6.2,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "backbone_rdc": "moglich_jbnmr_2002",
         },
     },
     "bpti-t1-relaxation": {
