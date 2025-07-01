@@ -1253,7 +1253,8 @@ def compute_h_bond_scalar_couplings(
     h_bond_geometries_path: str,
     output_path: str,
     karplus: str = "barfield",
-    time_series_output_path: str = None,
+    time_series_output_path: str=None,
+    subsample_time_series: bool=False,
 ):
     """
     Compute NMR 3J_N_CO scalar couplings and chi^2 with respect to experimental
@@ -1271,6 +1272,8 @@ def compute_h_bond_scalar_couplings(
         The name of the set of Karplus parameters to use.
     time_series_output_path
         The path to write the time series of computed scalar couplings.
+    subsample_time_series
+        Whether to use pymbar.timeseries to subsample correlated time series.
     """
 
     # Check Karplus parameters
@@ -1387,10 +1390,6 @@ def compute_h_bond_scalar_couplings(
         experiment_uncertainty = karplus_parameters["sigma"].m_as(unit.second**-1)
 
         if time_series_output_path is not None:
-            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
-            # for computed scalar coupling
-            computed_coupling_mean = get_timeseries_mean(computed_coupling)
-
             # Write time series of observable
             observable_timeseries.append(
                 {
@@ -1406,6 +1405,11 @@ def compute_h_bond_scalar_couplings(
                     "Computed": computed_coupling,
                 }
             )
+
+        if subsample_time_series:
+            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
+            # for computed scalar coupling
+            computed_coupling_mean = get_timeseries_mean(computed_coupling)
 
         else:
             computed_coupling_mean = {
