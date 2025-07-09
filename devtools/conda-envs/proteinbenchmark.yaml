@@ -1,4 +1,4 @@
-name: tmp-proteinbenchmark
+name: openff-proteinbenchmark
 channels:
   - conda-forge
   - openeye

@@ -11,11 +11,13 @@ This repository contains datasets of experimental observables and code for prepa
 ## Installation
 
 This repository is still under development and should not be used for production results.
-To install the development version, clone this repository and then run
-`conda env create -f devtools/conda-envs/proteinbenchmark.yaml`
-`conda activate proteinbenchmark`
-`pip install -e .`
-in the top level directory.
+To install the development version, clone this repository and then run the following in the top level directory.
+
+```
+conda env create -f devtools/conda-envs/proteinbenchmark.yaml
+conda activate openff-proteinbenchmark
+pip install -e
+``` 
 
 
 ## Usage
@@ -53,11 +55,11 @@ This function will:
 The output of the `setup()` function will be written to `{result_directory}/{target_name}-{force_field_name}/setup`.
 
 If the system setup finished correctly, run equilibration and production simulations for by calling `benchmark_system.run_simulations()`.
-Additional replicas can be run by passing an integer to the `replica` keyword argument, e.g. `benchmark_system.run_simulations(replica=2).
+Additional replicas can be run by passing an integer to the `replica` keyword argument, e.g. `benchmark_system.run_simulations(replica=2)`.
 The output of the `run_simulations()` function will be written to `{result_directory}/{target_name}-{force_field_name}/replica-{replica}`.
 If the job running this command is interrupted, it will resume from a binary checkpoint file written by default every 10 ns.
 
-After the production simulations are finished, analyze the trajectories by calling `benchmark_system.analyze_observables(replica={replica}).
+After the production simulations are finished, analyze the trajectories by calling `benchmark_system.analyze_observables(replica={replica})`.
 This function will always:
 - Produce a new trajectory with solvent atoms stripped and solute atoms aligned to the initial coordinates
 - Measure backbone dihedrals, sidechain dihedrals, and tau angles for each residue
