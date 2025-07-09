@@ -1,14 +1,10 @@
-name: openff-proteinbenchmark
+name: tmp-proteinbenchmark
 channels:
   - conda-forge
   - openeye
-  - defaults
 dependencies:
-  - black
-  - click
-  - isort
   - pip
-  - python
+  - python<3.12
     
   # System setup
   - pip:
@@ -17,17 +13,16 @@ dependencies:
 
   # MM calculations
   - ambertools
-  - cudatoolkit
-  - openeye-toolkits=2022.1.1
+  - openeye-toolkits
   - openff-forcefields
-  - openff-toolkit>=0.13.0
+  - openff-toolkit>=0.16.0
   - openff-units
   - openmm>=8.1.1
   - openmmforcefields>=0.12.0
   - openmmtools
 
   # Analysis
-  - loos
+  - loos==4.1
   - pandas
   - pymol-open-source
   - seaborn

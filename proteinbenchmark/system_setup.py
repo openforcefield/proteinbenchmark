@@ -381,7 +381,7 @@ def solvate(
     # N+ = V_w C_eff + (|Q| - Q) / 2
     # N- = V_w C_eff + (|Q| + Q) / 2
     # N+ + N- = 2 V_w C_0 sqrt(1 + Q^2 / (2 V_w C_0)^2) = 2 V_w C_eff + |Q|
-    # C_eff = C_0 sqrt(1 + Q^2 / (2 V_w C_0)^2) - |Q| / (2 V_w C_0))
+    # C_eff = C_0 (sqrt(1 + Q^2 / (2 V_w C_0)^2) - |Q| / (2 V_w C_0))
 
     # If ionic strength is zero, then Q / (2 V_w C_0) is undefined
     if ionic_strength.m_as(unit.molar) > 0:
@@ -396,10 +396,10 @@ def solvate(
 
         # Compute number of ions expected for neutral solute and for SLTCAP
         n_cation_expected_neutral = int(
-            numpy.round(solvent_volume * ionic_strength - total_charge / 2)
+            numpy.round(solvent_volume * ionic_strength + (charge_magnitude - total_charge) / 2)
         )
         n_anion_expected_neutral = int(
-            numpy.round(solvent_volume * ionic_strength + total_charge / 2)
+            numpy.round(solvent_volume * ionic_strength + (charge_magnitude + total_charge) / 2)
         )
         n_cation_expected_sltcap = int(
             numpy.round(
@@ -544,7 +544,11 @@ def assign_parameters(
 
     # Set up force field
     ff_extension = Path(force_field_file).suffix
-    if ff_extension == ".offxml":
+    if str(force_field_file).endswith("NAGL.offxml"):
+        ff_type = "nagl"
+        ff_class = ForceField
+
+    elif ff_extension == ".offxml":
         ff_type = "smirnoff"
         ff_class = ForceField
 
@@ -574,12 +578,12 @@ def assign_parameters(
         )
 
     # Create the parametrized system from the solvated topology
-    if ff_type in {"smirnoff", "espaloma"}:
+    if ff_type in {"smirnoff", "nagl", "espaloma"}:
         # Get list of OpenFF Molecules in solute OpenMM topology
         openff_solute_topology = Topology.from_pdb(protonated_pdb_file)
         openff_solute_molecules = openff_solute_topology.unique_molecules
 
-    if ff_type == "smirnoff":
+    if ff_type in {"smirnoff", "nagl"}:
         # Get unique molecules (solute, water, sodium ion, chloride ion) needed
         # for openff.toolkit.topology.Topology.from_openmm()
         unique_molecules = [
@@ -633,7 +637,18 @@ def assign_parameters(
                 unique_molecules=unique_molecules,
             )
 
-        openmm_system = force_field.create_openmm_system(openff_topology)
+        if ff_type == "nagl":
+            from openff.toolkit import ToolkitRegistry, RDKitToolkitWrapper
+            from openff.toolkit.utils import toolkit_registry_manager
+            from openff.toolkit.utils.nagl_wrapper import NAGLToolkitWrapper
+
+            with toolkit_registry_manager(
+                ToolkitRegistry([RDKitToolkitWrapper, NAGLToolkitWrapper])
+            ):
+                openmm_system = force_field.create_openmm_system(openff_topology)
+
+        else:
+            openmm_system = force_field.create_openmm_system(openff_topology)
 
         # Repartition hydrogen mass to bonded heavy atom
         if simulation_platform == "openmm":

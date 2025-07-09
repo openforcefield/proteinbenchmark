@@ -1,13 +1,10 @@
 from pathlib import Path
 import shutil
 import subprocess
-from typing import List
 
-import loos
 import numpy
 import pandas
-from loos.pyloos import Trajectory
-from openff.toolkit import Molecule
+from openff.toolkit import Topology
 from openff.units import unit
 from pymbar import timeseries
 
@@ -88,6 +85,9 @@ def align_trajectory(
         structure. Default is align selection.
     """
 
+    import loos
+    from loos.pyloos import Trajectory
+
     # Load topology and trajectory
     topology = loos.createSystem(topology_path)
     trajectory = Trajectory(trajectory_path, topology)
@@ -165,6 +165,9 @@ def measure_dihedrals(
         The path to write the time series of dihedrals.
     """
 
+    import loos
+    from loos.pyloos import Trajectory
+
     # Load topology
     topology = loos.createSystem(topology_path)
     min_resid = topology.minResid()
@@ -185,10 +188,10 @@ def measure_dihedrals(
         residue_dihedrals = dict()
 
         for dihedral, dihedral_atom_dict in DIHEDRAL_ATOMS[resname].items():
-            if resid == min_resid and dihedral == "phi":
+            if resid == min_resid and dihedral in {"phi", "phi'"}:
                 continue
 
-            if resid == max_resid and dihedral in {"psi", "omega"}:
+            if resid == max_resid and dihedral in {"psi", "psi'", "omega"}:
                 continue
 
             if (
@@ -327,15 +330,24 @@ def measure_h_bond_geometries(
         be considered observed and be measured.
     """
 
+    import loos
+    from loos.pyloos import Trajectory
+
     # Load topology
     topology = loos.createSystem(topology_path)
     min_resid = topology.minResid()
     max_resid = topology.maxResid()
 
     # Select OFF atoms that can participate in hydrogen bonds
-    offmol = Molecule.from_polymer_pdb(topology_path)
-    putative_donors = offmol.chemical_environment_matches("[#7,#8,#16:1]-[#1:2]")
-    putative_acceptors = offmol.chemical_environment_matches("[#7,#8,#16:1]")
+    offtop = Topology.from_pdb(topology_path)
+    putative_donors = [
+        match.topology_atom_indices
+        for match in offtop.chemical_environment_matches("[#7,#8,#16:1]-[#1:2]")
+    ]
+    putative_acceptors = [
+        match.topology_atom_indices
+        for match in offtop.chemical_environment_matches("[#7,#8,#16:1]")
+    ]
 
     # Construct a list of [donor, hydrogen, acceptor] LOOS atom selections
     putative_h_bonds = list()
@@ -345,14 +357,14 @@ def measure_h_bond_geometries(
         # Non-hydrogen atoms bonded to donor
         donor_bonded_atoms = [
             atom
-            for atom in offmol.atoms[donor_index].bonded_atoms
+            for atom in offtop.atom(donor_index).bonded_atoms
             if atom.atomic_number == 1
         ]
 
         # Get LOOS atom selections for donor and hydrogen
         if donor_index not in atom_selections:
-            donor_resid = offmol.atoms[donor_index].metadata["residue_number"]
-            donor_name = offmol.atoms[donor_index].name
+            donor_resid = offtop.atom(donor_index).metadata["residue_number"]
+            donor_name = offtop.atom(donor_index).name
 
             atom_selection = loos.selectAtoms(
                 topology, f'resid == {donor_resid} && name == "{donor_name}"'
@@ -366,8 +378,8 @@ def measure_h_bond_geometries(
             atom_selections[donor_index] = atom_selection[0]
 
         if hydrogen_index not in atom_selections:
-            hydrogen_resid = offmol.atoms[hydrogen_index].metadata["residue_number"]
-            hydrogen_name = offmol.atoms[hydrogen_index].name
+            hydrogen_resid = offtop.atom(hydrogen_index).metadata["residue_number"]
+            hydrogen_name = offtop.atom(hydrogen_index).name
 
             atom_selection = loos.selectAtoms(
                 topology, f'resid == {hydrogen_resid} && name == "{hydrogen_name}"'
@@ -390,7 +402,7 @@ def measure_h_bond_geometries(
             if acceptor_index == donor_index or any(
                 [
                     acceptor_index == bonded_atom.molecule_atom_index
-                    or offmol.atoms[acceptor_index].is_bonded_to(bonded_atom)
+                    or offtop.atom(acceptor_index).is_bonded_to(bonded_atom)
                     for bonded_atom in donor_bonded_atoms
                 ]
             ):
@@ -398,8 +410,8 @@ def measure_h_bond_geometries(
 
             # Get LOOS atom selection for acceptor
             if acceptor_index not in atom_selections:
-                acceptor_resid = offmol.atoms[acceptor_index].metadata["residue_number"]
-                acceptor_name = offmol.atoms[acceptor_index].name
+                acceptor_resid = offtop.atom(acceptor_index).metadata["residue_number"]
+                acceptor_name = offtop.atom(acceptor_index).name
 
                 atom_selection = loos.selectAtoms(
                     topology, f'resid == {acceptor_resid} && name == "{acceptor_name}"'
@@ -602,6 +614,9 @@ def compute_chemical_shifts_shiftx2(
         The path to the python2 executable to pass to subprocess.
     """
 
+    import loos
+    from loos.pyloos import Trajectory
+
     # ShiftX2 v1.13 has a few quirks that make it unwieldy for analyzing MD
     # trajectories. The ShiftX2 estimate is a combination of the sequence-based
     # ShiftY+ estimator and the structure-based ShiftX+ estimator. ShiftX2 has
@@ -788,6 +803,9 @@ def compute_chemical_shifts_sparta_plus(
     shiftx2_output_dir
         The directory to write output from SPARTA+.
     """
+
+    import loos
+    from loos.pyloos import Trajectory
 
     # Set up directory to store SPARTA+ output
     if spartap_output_dir is None:
@@ -1010,6 +1028,7 @@ def compute_scalar_couplings(
     output_path: str,
     karplus: str = "vogeli",
     time_series_output_path: str = None,
+    subsample_time_series: bool = False,
 ):
     """
     Compute NMR scalar couplings using a Karplus model.
@@ -1026,6 +1045,8 @@ def compute_scalar_couplings(
         The name of the set of Karplus parameters to use.
     time_series_output_path
         The path to write the time series of computed scalar couplings.
+    subsample_time_series
+        Whether to use pymbar.timeseries to subsample correlated time series.
     """
 
     # Get Karplus parameters for scalar couplings associated with phi
@@ -1149,7 +1170,7 @@ def compute_scalar_couplings(
                 dihedral_resname = row["Resname"]
                 observable_parameters = observable_parameters[dihedral_resname]
 
-            elif observable in {"3j_ha_hb2", "3j_ha_hb3"}:
+            elif observable in {"3j_ha_hb", "3j_ha_hb2", "3j_ha_hb3"}:
                 dihedral_resname = PEREZ_KARPLUS_RESIDUE_MAP[row["Resname"]]
                 observable_parameters = observable_parameters[dihedral_resname]
 
@@ -1178,10 +1199,6 @@ def compute_scalar_couplings(
         ).m_as(unit.second**-1)
 
         if time_series_output_path is not None:
-            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
-            # for computed scalar coupling
-            computed_coupling_mean = get_timeseries_mean(computed_coupling)
-
             # Write time series of observable
             observable_timeseries.append(
                 {
@@ -1196,6 +1213,11 @@ def compute_scalar_couplings(
                     "Computed": computed_coupling,
                 }
             )
+
+        if subsample_time_series:
+            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
+            # for computed scalar coupling
+            computed_coupling_mean = get_timeseries_mean(computed_coupling)
 
         else:
             computed_coupling_mean = {
@@ -1231,7 +1253,8 @@ def compute_h_bond_scalar_couplings(
     h_bond_geometries_path: str,
     output_path: str,
     karplus: str = "barfield",
-    time_series_output_path: str = None,
+    time_series_output_path: str=None,
+    subsample_time_series: bool=False,
 ):
     """
     Compute NMR 3J_N_CO scalar couplings and chi^2 with respect to experimental
@@ -1249,6 +1272,8 @@ def compute_h_bond_scalar_couplings(
         The name of the set of Karplus parameters to use.
     time_series_output_path
         The path to write the time series of computed scalar couplings.
+    subsample_time_series
+        Whether to use pymbar.timeseries to subsample correlated time series.
     """
 
     # Check Karplus parameters
@@ -1304,8 +1329,20 @@ def compute_h_bond_scalar_couplings(
     observable_df.drop(indices_to_drop, inplace=True)
     observable_df.reset_index(drop=True, inplace=True)
 
-    # Read time series of hydrogen bond geometries
-    h_bond_df = pandas.read_csv(h_bond_geometries_path, index_col=0)
+    # Read time series of hydrogen bond geometries for backbone amide H bonds
+    chunk_size = 1E6
+    h_bond_df = pandas.concat(
+        [
+            chunk[
+                (chunk["Donor Name"] == "N")
+                & (chunk["Hydrogen Name"] == "H")
+                & (chunk["Acceptor Name"] == "O")
+            ]
+            for chunk in pandas.read_csv(
+                h_bond_geometries_path, index_col=0, chunksize=chunk_size,
+            )
+        ]
+    )
 
     # Compute observables
     if time_series_output_path is not None:
@@ -1321,9 +1358,6 @@ def compute_h_bond_scalar_couplings(
         geometry_df = h_bond_df[
             (h_bond_df["Donor Resid"] == observable_resid_n)
             & (h_bond_df["Acceptor Resid"] == observable_resid_co)
-            & (h_bond_df["Donor Name"] == "N")
-            & (h_bond_df["Hydrogen Name"] == "H")
-            & (h_bond_df["Acceptor Name"] == "O")
         ]
 
         HO_distance = geometry_df["HA Distance (Angstrom)"].values * unit.angstrom
@@ -1356,10 +1390,6 @@ def compute_h_bond_scalar_couplings(
         experiment_uncertainty = karplus_parameters["sigma"].m_as(unit.second**-1)
 
         if time_series_output_path is not None:
-            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
-            # for computed scalar coupling
-            computed_coupling_mean = get_timeseries_mean(computed_coupling)
-
             # Write time series of observable
             observable_timeseries.append(
                 {
@@ -1375,6 +1405,11 @@ def compute_h_bond_scalar_couplings(
                     "Computed": computed_coupling,
                 }
             )
+
+        if subsample_time_series:
+            # Get mean and SEM of correlated, truncated, and uncorrelated timeseries
+            # for computed scalar coupling
+            computed_coupling_mean = get_timeseries_mean(computed_coupling)
 
         else:
             computed_coupling_mean = {

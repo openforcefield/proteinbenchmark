@@ -66,6 +66,20 @@ benchmark_targets = {
             },
         },
     },
+    "ab40": {
+        "target_type": "disordered",
+        "aa_sequence": (
+            "DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVV"
+        ),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 277.0 * unit.kelvin,
+        "ph": 7.0,
+        "ionic_strength": 0.050 * unit.molar,
+        "observables": {
+            "3j_co_co": "roche_biochem_2016",
+            "3j_hn_ha": "roche_biochem_2016",
+        },
+    },
     "ala3": {
         "target_type": "peptide",
         "aa_sequence": "AAA",
@@ -219,13 +233,14 @@ benchmark_targets = {
         ),
         "pressure": 1.0 * unit.atmosphere,
         "temperature": 288.0 * unit.kelvin,
-        "ph": 7.4,
-        "ionic_strength": 0.075 * unit.molar,
+        "ph": 6.0,
+        "ionic_strength": 0.050 * unit.molar,
         "observables": {
-            "chemical_shifts": "rao_jmb_2009",
+            "3j_co_co": "lee_jacs_2015",
+            "3j_ha_hb": "lee_jacs_2015",
         },
     },
-    "asyn-3j": {
+    "asyn-cs": {
         "target_type": "disordered",
         "aa_sequence": (
             "MDVFMKGLSKAKEGVVAAAEKTKQGVAEAAGKTKEGVLYVGSKTKEGVVH"
@@ -234,36 +249,13 @@ benchmark_targets = {
         ),
         "pressure": 1.0 * unit.atmosphere,
         "temperature": 288.0 * unit.kelvin,
-        "ph": 6.0,
-        "ionic_strength": 0.050 * unit.molar,
+        "ph": 7.4,
+        "ionic_strength": 0.075 * unit.molar,
         "observables": {
-            "3j_co_co": "lee_jacs_2015",
-            "3j_ha_hb": "lee_jacs_2015",
+            "chemical_shifts": "rao_jmb_2009",
         },
     },
     "bpti": {
-        "target_type": "folded",
-        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
-        "pressure": 1.0 * unit.atmosphere,
-        "temperature": 305.0 * unit.kelvin,
-        "ph": 6.2,
-        "ionic_strength": 0.0 * unit.molar,
-        "observables": {
-            "backbone_rdc": "moglich_jbnmr_2002",
-        },
-    },
-    "bpti-3j-hn-ha": {
-        "target_type": "folded",
-        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
-        "pressure": 1.0 * unit.atmosphere,
-        "temperature": 309.0 * unit.kelvin,
-        "ph": 3.5,
-        "ionic_strength": 0.0 * unit.molar,
-        "observables": {
-            "3j_hn_ha": "pardi_jmb_1984",
-        },
-    },
-    "bpti-3j-ha-hb": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
         "pressure": 1.0 * unit.atmosphere,
@@ -283,6 +275,28 @@ benchmark_targets = {
             },
         },
     },
+    "bpti-3j-hn-ha": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 309.0 * unit.kelvin,
+        "ph": 3.5,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "3j_hn_ha": "pardi_jmb_1984",
+        },
+    },
+    "bpti-backbone-rdc": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 305.0 * unit.kelvin,
+        "ph": 6.2,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "backbone_rdc": "moglich_jbnmr_2002",
+        },
+    },
     "bpti-t1-relaxation": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "bpti-1PIT-model-1.pdb"),
@@ -293,6 +307,14 @@ benchmark_targets = {
         "observables": {
             "t1_relaxation": "balasubramanian_jmr_1994",
         },
+    },
+    "ccr55": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "ccr55-2JQN-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 293.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.100 * unit.molar,
     },
     "cln025": {
         "target_type": "peptide",
@@ -312,6 +334,38 @@ benchmark_targets = {
                 ),
             },
         },
+    },
+    "ctr148a": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "ctr148a-2KO1-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 298.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.225 * unit.molar,
+    },
+    "dhr29b": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "dhr29b-2KPU-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 293.0 * unit.kelvin,
+        "ph": 4.5,
+        "ionic_strength": 0.230 * unit.molar,
+    },
+    "dhr8c": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "dhr8c-2KYI-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 293.0 * unit.kelvin,
+        "ph": 4.5,
+        "ionic_strength": 0.200 * unit.molar,
+    },
+    "er382a": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "er382a-2JN0-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 293.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.100 * unit.molar,
     },
     "gag": {
         "target_type": "peptide",
@@ -595,6 +649,46 @@ benchmark_targets = {
             "backbone_rdc": "schwalbe_prosci_2001",
         },
     },
+    "mrr110b": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "mrr110b-2K5V-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 298.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.100 * unit.molar,
+    },
+    "psr293": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "psr293-2KFP-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 293.0 * unit.kelvin,
+        "ph": 4.5,
+        "ionic_strength": 0.100 * unit.molar,
+    },
+    "sr478": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "sr478-2JS1-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 298.0 * unit.kelvin,
+        "ph": 4.5,
+        "ionic_strength": 0.100 * unit.molar,
+    },
+    "srr115c": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "srr115c-2KCV-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 298.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.0 * unit.molar,
+    },
+    "str65": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "str65-2JN8-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 293.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.100 * unit.molar,
+    },
     "ubq": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "ubq-1D3Z-model-1.pdb"),
@@ -749,6 +843,14 @@ benchmark_targets = {
                 ),
             },
         },
+    },
+    "xcr50": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "xcr50-1XPV-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 298.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.100 * unit.molar,
     },
 }
 

@@ -50,7 +50,7 @@ DIHEDRAL_ATOMS = {
         "GLN",
         "GLU",
         "GLY",
-        "HIE",
+        "HIS",
         "ILE",
         "LEU",
         "LYS",
@@ -65,13 +65,25 @@ DIHEDRAL_ATOMS = {
     ]
 }
 
+for resname in DIHEDRAL_ATOMS:
+    if resname == "GLY":
+        continue
+    DIHEDRAL_ATOMS[resname]["phi'"] = {
+        "atom_names": ["C", "N", "CA", "CB"],
+        "resid_offsets": [-1, 0, 0, 0],
+    }
+    DIHEDRAL_ATOMS[resname]["psi'"] = {
+        "atom_names": ["CB", "CA", "C", "N"],
+        "resid_offsets": [0, 0, 0, 1],
+    }
+
 DIHEDRAL_ATOMS["ARG"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
 DIHEDRAL_ATOMS["ASN"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
 DIHEDRAL_ATOMS["ASP"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
 DIHEDRAL_ATOMS["CYS"]["chi1"] = {"atom_names": ["N", "CA", "CB", "SG"]}
 DIHEDRAL_ATOMS["GLN"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
 DIHEDRAL_ATOMS["GLU"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
-DIHEDRAL_ATOMS["HIE"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
+DIHEDRAL_ATOMS["HIS"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
 DIHEDRAL_ATOMS["ILE"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG1"]}
 DIHEDRAL_ATOMS["LEU"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
 DIHEDRAL_ATOMS["LYS"]["chi1"] = {"atom_names": ["N", "CA", "CB", "CG"]}
@@ -88,7 +100,7 @@ DIHEDRAL_ATOMS["ASN"]["chi2"] = {"atom_names": ["CA", "CB", "CG", "OD1"]}
 DIHEDRAL_ATOMS["ASP"]["chi2"] = {"atom_names": ["CA", "CB", "CG", "OD1"]}
 DIHEDRAL_ATOMS["GLN"]["chi2"] = {"atom_names": ["CA", "CB", "CG", "CD"]}
 DIHEDRAL_ATOMS["GLU"]["chi2"] = {"atom_names": ["CA", "CB", "CG", "CD"]}
-DIHEDRAL_ATOMS["HIE"]["chi2"] = {"atom_names": ["CA", "CB", "CG", "ND1"]}
+DIHEDRAL_ATOMS["HIS"]["chi2"] = {"atom_names": ["CA", "CB", "CG", "ND1"]}
 DIHEDRAL_ATOMS["ILE"]["chi2"] = {"atom_names": ["CA", "CB", "CG1", "CD1"]}
 DIHEDRAL_ATOMS["LEU"]["chi2"] = {"atom_names": ["CA", "CB", "CG", "CD1"]}
 DIHEDRAL_ATOMS["LYS"]["chi2"] = {"atom_names": ["CA", "CB", "CG", "CD"]}
@@ -109,8 +121,9 @@ DIHEDRAL_ATOMS["ARG"]["chi5"] = {"atom_names": ["CD", "NE", "CZ", "NH1"]}
 DIHEDRAL_ATOMS["ASH"] = DIHEDRAL_ATOMS["ASP"]
 DIHEDRAL_ATOMS["CYX"] = DIHEDRAL_ATOMS["CYS"]
 DIHEDRAL_ATOMS["GLH"] = DIHEDRAL_ATOMS["GLU"]
-DIHEDRAL_ATOMS["HID"] = DIHEDRAL_ATOMS["HIE"]
-DIHEDRAL_ATOMS["HIP"] = DIHEDRAL_ATOMS["HIE"]
+DIHEDRAL_ATOMS["HIE"] = DIHEDRAL_ATOMS["HIS"]
+DIHEDRAL_ATOMS["HID"] = DIHEDRAL_ATOMS["HIS"]
+DIHEDRAL_ATOMS["HIP"] = DIHEDRAL_ATOMS["HIS"]
 DIHEDRAL_ATOMS["LYN"] = DIHEDRAL_ATOMS["LYS"]
 
 DIHEDRAL_ATOMS["ACE"] = {
@@ -473,6 +486,7 @@ PEREZ_KARPLUS_RESIDUE_MAP = {
         "HID",
         "HIE",
         "HIP",
+        "HIS",
         "LEU",
         "LYN",
         "LYS",
@@ -542,11 +556,25 @@ PEREZ_KARPLUS_PARAMETERS = {
     },
     "3j_ha_hb3": {
         "dihedral": "chi1",
+        "ALA": {
+            "delta": 0.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 3.01 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
         "ARG,ASN,ASP,GLN,GLU,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR": {
             "delta": 0.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 2.40 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "CYS": {
+            "delta": 0.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 1.71 / unit.second,
             "sigma": 0.40 / unit.second,
         },
         "SER": {
@@ -713,6 +741,8 @@ BARFIELD_KARPLUS_PARAMETERS = {
         "C": 0.14 / unit.second,
         "D": -1.31 / unit.second,
         "sigma": 0.12 / unit.second,
+        "minimum": -1.68 / unit.second,
+        "maximum": 0.0 / unit.second,
     },
 }
 

@@ -1,0 +1,17 @@
+name: tmp-proteinbenchmark-simulation
+channels:
+  - conda-forge
+  - openeye
+dependencies:
+  - python
+    
+  # MM calculations
+  - ambertools
+  - openeye-toolkits
+  - openff-forcefields
+  - openff-toolkit>=0.16.0
+  - openff-units
+  - openmm>=8.1.1
+  - openmmforcefields>=0.12.0
+  - openmmtools
+
