@@ -653,14 +653,26 @@ class ProteinBenchmarkSystem:
         if "fraction_helix" in target_observables and not exists_and_not_empty(
             fraction_helix
         ):
-            print(f"Computing fraction helix for system {self.system_name} {replica}")
+            print(
+                f"Computing fraction helix for system {self.system_name} "
+                f"{replica}"
+            )
 
-            data = target_observables["fraction_helix"]["observable_path"]
+            experimental_observables = target_observables["fraction_helix"][
+                "observable_path"
+            ]
+
+            time_series_output_path = (
+                f"{analysis_prefix}-fraction-helix-time-series.dat"
+                if time_series_analysis
+                else None
+            )
 
             compute_fraction_helix(
-                observable_path=data,
+                observable_path=experimental_observables,
                 dihedral_clusters_path=dihedral_clusters,
                 h_bond_geometries_path=h_bond_geometries,
                 chemical_shifts_path=chemical_shifts,
                 output_path=fraction_helix,
+                time_series_output_path=time_series_output_path,
             )

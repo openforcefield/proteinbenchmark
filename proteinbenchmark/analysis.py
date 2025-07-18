@@ -55,10 +55,10 @@ def align_trajectory(
     topology_path: str,
     trajectory_path: str,
     output_prefix: str,
-    output_selection: str = 'chainid == "A"',
-    align_selection: str = None,
-    reference_path: str = None,
-    reference_selection: str = None,
+    output_selection: str='chainid == "A"',
+    align_selection: str | None=None,
+    reference_path: str | None=None,
+    reference_selection: str | None=None,
 ):
     """
     Center and align a subset of atoms in a trajectory.
@@ -300,9 +300,9 @@ def measure_h_bond_geometries(
     trajectory_path: str,
     frame_length: unit.Quantity,
     output_path: str,
-    h_bond_distance_cutoff: unit.Quantity = 2.5 * unit.angstrom,
-    h_bond_angle_cutoff: float = 30,
-    occupancy_threshold: float = 0.01,
+    h_bond_distance_cutoff: unit.Quantity=2.5 * unit.angstrom,
+    h_bond_angle_cutoff: float=30.0,
+    occupancy_threshold: float=0.01,
 ):
     """
     Measure the donor-acceptor distance, hydrogen-acceptor distance, and donor-
@@ -585,9 +585,9 @@ def compute_chemical_shifts_shiftx2(
     output_path: str,
     ph: float,
     temperature: unit.Quantity,
-    shiftx2_output_dir: str = None,
-    shiftx2_install_dir: str = None,
-    python2_path: str = None,
+    shiftx2_output_dir: str | None=None,
+    shiftx2_install_dir: str | None=None,
+    python2_path: str | None=None,
 ):
     """
     Compute the chemical shifts of protein atoms using ShiftX2.
@@ -785,7 +785,7 @@ def compute_chemical_shifts_sparta_plus(
     trajectory_path: str,
     frame_length: unit.Quantity,
     output_path: str,
-    spartap_output_dir: str = None,
+    spartap_output_dir: str | None=None,
 ):
     """
     Compute the chemical shifts of protein atoms using SPARTA+.
@@ -918,8 +918,8 @@ def compute_chemical_shifts_sparta_plus(
 def assign_dihedral_clusters(
     dihedrals_path: str,
     output_path: str,
-    ramachandran: str = "hollingsworth",
-    rotamer: str = "hintze",
+    ramachandran: str="hollingsworth",
+    rotamer: str="hintze",
 ):
     """
     Assign frames to Ramachandran clusters based on backbone dihedrals and to
@@ -1027,8 +1027,8 @@ def compute_scalar_couplings(
     dihedrals_path: str,
     output_path: str,
     karplus: str = "vogeli",
-    time_series_output_path: str = None,
-    subsample_time_series: bool = False,
+    time_series_output_path: str | None=None,
+    subsample_time_series: bool=False,
 ):
     """
     Compute NMR scalar couplings using a Karplus model.
@@ -1253,7 +1253,7 @@ def compute_h_bond_scalar_couplings(
     h_bond_geometries_path: str,
     output_path: str,
     karplus: str = "barfield",
-    time_series_output_path: str=None,
+    time_series_output_path: str | None=None,
     subsample_time_series: bool=False,
 ):
     """
@@ -1448,9 +1448,11 @@ def compute_fraction_helix(
     output_path: str,
     h_bond_distance_cutoff: unit.Quantity = 3.5 * unit.angstrom,
     h_bond_angle_cutoff: float = 30,
+    time_series_output_path: str | None=None,
 ):
     """
-    Compute fraction of helix by residue based on hydrogen bond occupancy.
+    Compute fraction of helix by residue based on backbone dihedral angles,
+    hydrogen bond occupancy, or backbone carbonyl chemical shifts.
 
     Parameters
     ---------
@@ -1470,6 +1472,8 @@ def compute_fraction_helix(
     h_bond_angle_cutoff
         Deviation in donor-hydrogen-acceptor angle from linear in degrees below
         which a hydrogen bond is considered to be occupied.
+    time_series_output_path
+        The path to write the time series of computed scalar couplings.
     """
 
     h_bond_distance_threshold = h_bond_distance_cutoff.m_as(unit.angstrom)
@@ -1517,6 +1521,8 @@ def compute_fraction_helix(
     )
 
     # Compute observables
+    if time_series_output_path is not None:
+        observable_timeseries = list()
     computed_observables = list()
 
     for index, row in observable_df.iterrows():
@@ -1550,7 +1556,7 @@ def compute_fraction_helix(
         ]
 
         if len(residue_h_bond_df) > 0:
-            computed_h_bond_fraction_helix = numpy.mean(
+            occupied_hydrogen_bonds = (
                 (
                     residue_h_bond_df["DA Distance (Angstrom)"]
                     < h_bond_distance_threshold
@@ -1559,49 +1565,85 @@ def compute_fraction_helix(
                 & (residue_h_bond_df["Frame"].isin(helical_dihedral_frames))
             )
 
+            # Average occupancies of i-to-(i-4) and i-to-(i+4) hydrogen bonds
+            occupied_hydrogen_bonds = pandas.DataFrame(
+                {
+                    "Frame": residue_h_bond_df["Frame"],
+                    "Occupancy": occupied_hydrogen_bonds,
+                }
+            ).groupby(["Frame"])["Occupancy"].mean().values
+            computed_h_bond_fraction_helix = numpy.mean(occupied_hydrogen_bonds)
+
         else:
+            occupied_hydrogen_bonds = 0.0
             computed_h_bond_fraction_helix = 0.0
 
         # Get mean chemical shift of backbone carbonyl carbon
-        residue_chemical_shift_df = chemical_shift_df[
+        carbonyl_chemical_shift = chemical_shift_df[
             chemical_shift_df["Resid"] == capped_resid
-        ]
-        carbonyl_chemical_shift = numpy.mean(
-            residue_chemical_shift_df["Chemical Shift"]
-        )
+        ]["Chemical Shift"]
 
-        # Compute fraction helix from carbonyl chemical shift using experimental
-        # reference values for helix and coil
-        coil_chemical_shift = row["Shift Coil"]
-        delta_helix_coil_shift = row["Delta Shift Residue"]
-        computed_chemical_shift_fraction_helix = (
-            carbonyl_chemical_shift - coil_chemical_shift
-        ) / delta_helix_coil_shift
-        computed_chemical_shift_fraction_helix = numpy.clip(
-            computed_chemical_shift_fraction_helix, 0.0, 1.0,
-        )
+        if len(carbonyl_chemical_shift) > 0:
+            # Compute fraction helix from carbonyl chemical shift using experimental
+            # reference values for helix and coil
+            coil_chemical_shift = row["Shift Coil"]
+            delta_helix_coil_shift = row["Delta Shift Residue"]
+            computed_chemical_shift_fraction_helix = (
+                carbonyl_chemical_shift - coil_chemical_shift
+            ) / delta_helix_coil_shift
+            computed_chemical_shift_fraction_helix = numpy.clip(
+                computed_chemical_shift_fraction_helix, 0.0, 1.0,
+            ).values
 
-        # Compute fraction helix from carbonyl chemical shift using ShiftX2
-        # reference values for helix and coil
-        #coil_chemical_shift = row["ShiftX2 PII"]
-        #delta_helix_coil_shift = row["ShiftX2 Alpha"] - row["ShiftX2 PII"]
-        coil_chemical_shift = row["SPARTA+ PII"]
-        delta_helix_coil_shift = row["SPARTA+ Alpha"] - row["SPARTA+ PII"]
-        computed_spartap_fraction_helix = (
-            carbonyl_chemical_shift - coil_chemical_shift
-        ) / delta_helix_coil_shift
-        computed_spartap_fraction_helix = numpy.clip(
-            computed_spartap_fraction_helix, 0.0, 1.0,
-        )
+            # Compute fraction helix from carbonyl chemical shift using ShiftX2
+            # reference values for helix and coil
+            #coil_chemical_shift = row["ShiftX2 PII"]
+            #delta_helix_coil_shift = row["ShiftX2 Alpha"] - row["ShiftX2 PII"]
+            coil_chemical_shift = row["SPARTA+ PII"]
+            delta_helix_coil_shift = row["SPARTA+ Alpha"] - row["SPARTA+ PII"]
+            computed_spartap_fraction_helix = (
+                carbonyl_chemical_shift - coil_chemical_shift
+            ) / delta_helix_coil_shift
+            computed_spartap_fraction_helix = numpy.clip(
+                computed_spartap_fraction_helix, 0.0, 1.0,
+            ).values
+
+        else:
+            computed_chemical_shift_fraction_helix = 0.0
+            computed_spartap_fraction_helix = 0.0
+
+        if time_series_output_path is not None:
+            # Write time series of observables
+            observable_timeseries.append(
+                {
+                    "Frame": residue_dihedral_df["Frame"],
+                    "Time (ns)": residue_dihedral_df["Time (ns)"],
+                    "Resid": row["Resid"],
+                    "Resname": row["Resname"],
+                    "Experiment": row["Experiment"],
+                    "Computed Dihedrals": helical_dihedrals.astype(int).values,
+                    "Computed H Bonds": occupied_hydrogen_bonds,
+                    "Computed Chemical Shifts": computed_chemical_shift_fraction_helix,
+                    "Computed SPARTA+": computed_spartap_fraction_helix,
+                }
+            )
 
         computed_observables.append(
             {
                 "Computed Dihedrals": computed_dihedral_fraction_helix,
                 "Computed H Bonds": computed_h_bond_fraction_helix,
-                "Computed Chemical Shifts": computed_chemical_shift_fraction_helix,
-                "Computed SPARTA+": computed_spartap_fraction_helix,
+                "Computed Chemical Shifts": numpy.mean(
+                    computed_chemical_shift_fraction_helix
+                ),
+                "Computed SPARTA+": numpy.mean(computed_spartap_fraction_helix),
             }
         )
+
+    if time_series_output_path is not None:
+        observable_timeseries_df = pandas.concat(
+            [pandas.DataFrame(df) for df in observable_timeseries]
+        ).reset_index(drop=True)
+        observable_timeseries_df.to_csv(time_series_output_path)
 
     helix_fraction_df = pandas.concat(
         [observable_df, pandas.DataFrame(computed_observables)], axis=1
