@@ -191,6 +191,11 @@ force_fields = {
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
+    "null-0.0.3-4-mer-aaqaa3-1e3-opc3": {
+        "force_field_file": Path(ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-opc3-NAGL.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
     "null-0.0.3-4-mer-opc": {
         "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-4-mer-NAGL.offxml"),
         "water_model": "opc",
@@ -556,6 +561,11 @@ force_fields = {
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },
+    "null-0.0.3-pair-nmr-1e4-umbrella-1e3-4-aaqaa3-1e3-2-opc3": {
+        "force_field_file": Path(ff_directory, "null-0.0.3-pair-nmr-1e4-umbrella-1e3-4-aaqaa3-1e3-2-opc3-NAGL.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
     "null-0.0.3-pair-nmr-1e4-umbrella-1e3-4-aaqaa3-1e4-opc3": {
         "force_field_file": Path(ff_directory, "null-0.0.3-pair-nmr-1e4-umbrella-1e3-4-aaqaa3-1e4-opc3-NAGL.offxml"),
         "water_model": "opc3",
@@ -818,6 +828,11 @@ force_fields = {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3-Pairwise-NAGL.offxml"),
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "specific-0.0.3-sage-4-mer-aaqaa3-1e3-opc3": {
+        "force_field_file": Path(ff_directory, "specific-0.0.3-sage-4-mer-aaqaa3-1e3-opc3-NAGL.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },
     "specific-0.0.3-sage-4-mer-opc": {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3-Sage-4-mer-NAGL.offxml"),
