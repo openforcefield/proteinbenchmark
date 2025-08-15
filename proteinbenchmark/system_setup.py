@@ -810,7 +810,7 @@ def assign_parameters(
         interchange_gmx.to_top(parametrized_system, hydrogen_mass=hydrogen_mass.m_as(unit.dalton))
         
         # Add water settles parameters
-        if water_model == 'tip3p':
+        if water_model in ['tip3p', 'tip3p-fb', 'opc3']:
             temp_file = open(f'{parametrized_system}2', 'w')
             contents_orig = open(parametrized_system, "r+").readlines()
             itp_file = f"{setup_prefix.name}_posre.itp"
@@ -819,7 +819,13 @@ def assign_parameters(
             insert_string = f'#ifdef POSRES\n#include "{itp_file}"\n#endif\n'
             match_string1 = 'HOH'
             insert_string1 = '#ifdef FLEXIBLE'
-            insert_string2 = '#else\n[ settles ]\n; i     funct   doh     dhh\n1     1   0.09572000   0.15139007\n\n#endif\n\n[ exclusions ]\n1  2  3\n2  1  3\n3  1  2\n\n' 
+            if water_model == 'tip3p':
+                insert_string2 = '#else\n[ settles ]\n; i     funct   doh     dhh\n1     1   0.09572000   0.15139007\n\n#endif\n\n[ exclusions ]\n1  2  3\n2  1  3\n3  1  2\n\n' 
+            elif water_model == 'opc3':
+                insert_string2 = '#else\n[ settles ]\n; i     funct   doh     dhh\n1     1   0.09788820   0.15985070\n\n#endif\n\n[ exclusions ]\n1  2  3\n2  1  3\n3  1  2\n\n' 
+            elif water_model == 'tip3p-fb':
+                insert_string2 = '#else\n[ settles ]\n; i     funct   doh     dhh\n1     1   0.10118108   0.16386838\n\n#endif\n\n[ exclusions ]\n1  2  3\n2  1  3\n3  1  2\n\n' 
+
             added1, added2 = False, False
             sect = None
             mol = 0
