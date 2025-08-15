@@ -796,41 +796,53 @@ def assign_parameters(
         write_xml(parametrized_system, openmm_system)
 
     elif simulation_platform == "gmx":
-        # TODO write GMX files with Interchange
         import parmed as pmd
+        from openff.interchange import Interchange
+        import os
+        import copy
+        os.environ['INTERCHANGE_EXPERIMENTAL'] = '1'
 
         # Write GROMACS files
-        struct = pmd.openmm.load_topology(
-            openmm_topology, openmm_system, xyz=solvated_pdb.positions
-        )
-        hmass = pmd.tools.HMassRepartition(struct, hydrogen_mass.m_as(unit.dalton))
-        hmass.execute()
+        box_vectors = openmm_system.getDefaultPeriodicBoxVectors()
+        interchange_gmx = Interchange.from_openmm(system = openmm_system, topology = openmm_topology, positions=solvated_pdb.positions, box_vectors=box_vectors)
 
-        struct.save(str(setup_prefix) + ".gro")
-        struct.save(parametrized_system)
+        interchange_gmx.to_gro(file_path=f"{setup_prefix}.gro")
+        interchange_gmx.to_top(parametrized_system, hydrogen_mass=hydrogen_mass.m_as(unit.dalton))
+        
+        # Add water settles parameters
+        if water_model == 'tip3p':
+            temp_file = open(f'{parametrized_system}2', 'w')
+            contents_orig = open(parametrized_system, "r+").readlines()
+            itp_file = f"{setup_prefix.name}_posre.itp"
+            setup_split = str(setup_prefix).split("/")
+            match_string = "[ moleculetype ]"
+            insert_string = f'#ifdef POSRES\n#include "{itp_file}"\n#endif\n'
+            match_string1 = 'HOH'
+            insert_string1 = '#ifdef FLEXIBLE'
+            insert_string2 = '#else\n[ settles ]\n; i     funct   doh     dhh\n1     1   0.09572000   0.15139007\n\n#endif\n\n[ exclusions ]\n1  2  3\n2  1  3\n3  1  2\n\n' 
+            added1, added2 = False, False
+            sect = None
+            mol = 0
+            for index, line in enumerate(contents_orig):
+                if 'HOH' in line:
+                    sect = 'water'
+                if match_string in line:
+                    if mol == 1 and insert_string not in contents_orig[index - 1]:
+                        temp_file.write(insert_string)
+                    else:
+                        mol = 1
+                elif match_string1 in contents_orig[index-3] and added1 is False:
+                    temp_file.write(insert_string1)
+                    added1 = True
+                elif match_string1 in contents_orig[index-19] and added2 is False:
+                    temp_file.write(insert_string2)
+                    added2 = True
+                if (not (('settles' in line or 'settles' in contents_orig[index-1] or 'exclusions' in line or 'exclusions' in contents_orig[index-1]) and sect == 'water')):
+                    temp_file.write(line)
+            os.rename(f'{parametrized_system}2', parametrized_system)
+        else:
+            raise Exception(f'Water model {water_model} not yet supported for GROMACS files')
 
-        # Add position restraints file to topology
-        itp_file = f"{setup_prefix.name}_posre.itp"
-        setup_split = str(setup_prefix).split("/")
-        match_string = "[ moleculetype ]"
-        insert_string = f'#ifdef POSRES\n#include "{itp_file}"\n#endif\n'
-
-        mol = 0
-        with open(parametrized_system, "r+") as fd:
-            contents = fd.readlines()
-            # Handle last line to prevent IndexError
-            if match_string in contents[-1]:
-                contents.append(insert_string)
-            else:
-                for index, line in enumerate(contents):
-                    if match_string in line:
-                        if mol == 1 and insert_string not in contents[index - 1]:
-                            contents.insert(index - 1, insert_string)
-                            break
-                        else:
-                            mol = 1
-            fd.seek(0)
-            fd.writelines(contents)
         print("GROMACS Files Printed")
 
 
