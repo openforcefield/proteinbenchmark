@@ -34,6 +34,7 @@ benchmark_targets = {
         "temperature": 274.0 * unit.kelvin,
         "ph": 7.0,
         "ionic_strength": 0.0 * unit.molar,
+        "traj_length": 10.0 * unit.microsecond,
         "observables": {
             "fraction_helix": {
                 "experimental_datasets": ["shalongo_jacs_1994"],
@@ -55,6 +56,7 @@ benchmark_targets = {
         "temperature": 274.0 * unit.kelvin,
         "ph": 7.0,
         "ionic_strength": 0.0 * unit.molar,
+        "traj_length": 10.0 * unit.microsecond,
         "observables": {
             "fraction_helix": {
                 "experimental_datasets": ["shalongo_jacs_1994"],
