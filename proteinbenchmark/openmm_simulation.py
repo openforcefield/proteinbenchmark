@@ -257,7 +257,7 @@ class OpenMMSimulation:
         if state_reporter_frames < expected_frame_count:
             raise ValueError(
                 f"The state data reporter file has {state_reporter_frames:d} "
-                f"frames but {expected_number_of_frames:d} were expected."
+                f"frames but {expected_frame_count:d} were expected."
             )
 
         elif state_reporter_frames > expected_frame_count:
@@ -289,7 +289,7 @@ class OpenMMSimulation:
         if dcd_frames < expected_frame_count:
             raise ValueError(
                 f"The DCD reporter file has {dcd_frames:d} frames but "
-                f"{expected_number_of_frames:d} were expected."
+                f"{expected_frame_count:d} were expected."
             )
 
         elif dcd_frames > expected_frame_count:
