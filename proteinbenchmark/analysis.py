@@ -1084,7 +1084,7 @@ def compute_scalar_couplings(
     # Take uncertainty from Karplus parameters, not from experiment
     observable_df = pandas.read_csv(
         observable_path,
-        sep="\s+",
+        sep=r"\s+",
         usecols=["Observable", "Resid", "Resname", "Experiment"],
     )
 
@@ -1299,7 +1299,7 @@ def compute_h_bond_scalar_couplings(
     # Load data for experimental observables
     observable_df = pandas.read_csv(
         observable_path,
-        sep="\s+",
+        sep=r"\s+",
         skiprows=1,
         names=[
             "Observable",
@@ -1482,7 +1482,7 @@ def compute_fraction_helix(
     # Load data for experimental observables
     observable_df = pandas.read_csv(
         observable_path,
-        sep="\s+",
+        sep=r"\s+",
         skiprows=1,
         names=[
             "Resid", "Resname", "Experiment", "Shift Coil", "Delta Shift",
