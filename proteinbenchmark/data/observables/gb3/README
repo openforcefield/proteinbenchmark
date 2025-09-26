@@ -1,0 +1,2 @@
+1D_CB_HB2 and 1D_CB_HB3 residual dipolar couplings for GB3 were reported by Miclet et al. 2005, J Biomolecular NMR, 31, 201-216 as linear combinations of the measured couplings (1J_CB_HB2 + 1J_CB_HB3), (1J_CB_HB2 - 2J_HB2_HB3), and (1J_CB_HB3 - 2J_HB2_HB3).
+Uncertainties for these RDCs were computed as the root-mean-square uncertainties for the appropriate set of three measured couplings.
