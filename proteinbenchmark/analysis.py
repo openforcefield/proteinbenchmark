@@ -294,6 +294,144 @@ def measure_dihedrals(
 
     return fragment_index
 
+def measure_internuclear_vector_geometries(
+    observable_path: str,
+    topology_path: str,
+    trajectory_path: str,
+    frame_length: unit.Quantity,
+    output_path: str,
+):
+    """
+    Measure the x, y, and z components of internuclear vectors in an aligned
+    trajectory.
+
+    Parameters
+    ---------
+    observable_path
+        The path to the experimental observables, which defines the list of
+        internuclear vectors to measure.
+    topology_path
+        The path to the system topology, e.g. a PDB file.
+    trajectory_path
+        The path to the trajectory.
+    frame_length
+       The amount of simulation time between frames in the trajectory.
+    output_path
+        The path to write the time series of internuclear geometries.
+    """
+
+    import loos
+    from loos.pyloos import Trajectory
+
+    # Load topology
+    topology = loos.createSystem(topology_path)
+
+    # Read internculear vectors for RDCs
+    observable_df = pandas.read_csv(
+        observable_path,
+        sep=r"\s+",
+    )
+
+    # Select atoms for internuclear vectors
+    internuclear_vectors = list()
+    atom_selections = dict()
+
+    for index, row in observable_df.iterrows():
+        resid_i = row["Resid_i"]
+        atom_i = row["Atom_i"]
+        resid_j = row["Resid_j"]
+        atom_j = row["Atom_j"]
+
+        atom_list = list()
+
+        for atom_name, atom_resid in [[atom_i, resid_i], [atom_j, resid_j]]:
+            atom_full_name = f"{atom_name}-{atom_resid}"
+
+            # Atom selection is slow, so only do this once for each atom
+            if atom_full_name not in atom_selections:
+                atom_selection = loos.selectAtoms(
+                    topology, f'resid == {atom_resid} && name == "{atom_name}"'
+                )
+
+                if len(atom_selection) == 0:
+                    raise ValueError(
+                        f"Unable to select atom {atom_name} with resid "
+                        f"{atom_resid} for internuclear vector {index}."
+                    )
+
+                atom_selections[atom_full_name] = atom_selection[0]
+
+            atom_list.append(atom_selections[atom_full_name])
+
+        internuclear_vectors.append(
+            {
+                "resid_i": resid_i,
+                "atom_i": atom_i,
+                "resid_j": resid_j,
+                "atom_j": atom_j,
+                "loos_atom_i": atom_list[0],
+                "loos_atom_j": atom_list[1],
+            }
+        )
+
+    # Set up trajectory
+    trajectory = Trajectory(trajectory_path, topology)
+    frame_time = 0.0 * unit.picosecond
+    fragment_index = 0
+    internuclear_vector_geometries = list()
+
+    # Load one frame into memory at a time
+    for frame in trajectory:
+        frame_time += frame_length
+
+        frame_index = trajectory.index()
+        frame_time_ns = frame_time.m_as(unit.nanosecond)
+
+        # Write dihedrals to file every 10 000 frames to avoid pandas
+        # out-of-memory
+        if frame_index % 10000 == 9999 and frame_index > 0:
+            list_of_dicts_to_csv(
+                internuclear_vector_geometries,
+                f"{output_path}-{fragment_index}",
+            )
+            fragment_index += 1
+            internuclear_vector_geometries = list()
+
+        # Measure internuclear vector geometries
+        for internuclear_dict in internuclear_vectors:
+            internuclear_vector = (
+                internuclear_dict["loos_atom_j"].coords()
+                - internuclear_dict["loos_atom_i"].coords()
+            )
+            internuclear_distance = internuclear_vector.length()
+            internuclear_vector /= internuclear_distance
+
+            internuclear_vector_geometries.append(
+                {
+                    "Frame": frame_index,
+                    "Time (ns)": frame_time_ns,
+                    "Resid_i": internuclear_dict["resid_i"],
+                    "Atom_i": internuclear_dict["atom_i"],
+                    "Resid_j": internuclear_dict["resid_j"],
+                    "Atom_j": internuclear_dict["atom_j"],
+                    "Internuclear Distance": internuclear_distance,
+                    "Internuclear Vector x": internuclear_vector.x(),
+                    "Internuclear Vector y": internuclear_vector.y(),
+                    "Internuclear Vector z": internuclear_vector.z(),
+                }
+            )
+
+    if fragment_index == 0:
+        list_of_dicts_to_csv(internuclear_vector_geometries, output_path)
+
+    else:
+        list_of_dicts_to_csv(
+            internuclear_vector_geometries,
+            f"{output_path}-{fragment_index}",
+        )
+
+    return fragment_index
+
 
 def measure_h_bond_geometries(
     topology_path: str,
@@ -1438,6 +1576,201 @@ def compute_h_bond_scalar_couplings(
     )
 
     scalar_coupling_df.to_csv(output_path)
+
+
+def compute_residual_dipolar_couplings(
+    observable_path: str,
+    internuclear_vector_geometries_path: str,
+    output_path: str,
+):
+    """
+    Compute residual dipolar couplings (RDCs) from internuclear vector
+    geometries by fitting an alignment tensor to experimental RDCs.
+
+    Parameters
+    ---------
+    observable_path
+        The path to the data for experimental observables.
+    internuclear_vector_geometries_path
+        The path to the time series of internuclear vector geometries.
+    output_path
+        The path to write the computed internuclear geometries.
+    """
+
+    # Read internculear vectors and experimental observables for RDCs
+    observable_df = pandas.read_csv(
+        observable_path,
+        sep=r"\s+",
+    )
+
+    # Read time series of internuclear vector geometries
+    internuclear_vector_geometry_df = pandas.read_csv(
+        internuclear_vector_geometries_path,
+        index_col=0,
+    )
+
+    # K = -3 mu_0 h / (16 pi^3)
+    K = -0.1875 * unit.vacuum_permeability * unit.planck_constant / unit.pi**3
+    K /= unit.angstrom**3
+
+    # Product of gyromagnetic ratios for the two nuclei involved in the RDC
+    gyromagnetic_ratio_product = {
+        "1d_n_hn": GYROMAGNETIC_RATIOS["15N"] * GYROMAGNETIC_RATIOS["1H"],
+        "1d_ca_co": GYROMAGNETIC_RATIOS["13C"] * GYROMAGNETIC_RATIOS["13C"],
+        "1d_ca_ha": GYROMAGNETIC_RATIOS["13C"] * GYROMAGNETIC_RATIOS["1H"],
+        "1d_co_n": GYROMAGNETIC_RATIOS["13C"] * GYROMAGNETIC_RATIOS["15N"],
+        "1d_cb_hb2": GYROMAGNETIC_RATIOS["13C"] * GYROMAGNETIC_RATIOS["1H"],
+        "1d_cb_hb3": GYROMAGNETIC_RATIOS["13C"] * GYROMAGNETIC_RATIOS["1H"],
+    }
+
+    # List of observables associated with backbone nuclei
+    backbone_observables = ["1d_n_hn", "1d_ca_co", "1d_ca_ha", "1d_co_n"]
+
+    # Construct the internuclear distance cubed vector and the structural matrix
+    # from the internuclear vector geometries
+    internuclear_distance_cubed = numpy.zeros(observable_df.shape[0])
+    structural_matrix = numpy.zeros((observable_df.shape[0], 5))
+
+    for index, row in observable_df.iterrows():
+        internuclear_vector_df = internuclear_vector_geometry_df[
+            (internuclear_vector_geometry_df["Resid_i"] == row["Resid_i"])
+            & (internuclear_vector_geometry_df["Atom_i"] == row["Atom_i"])
+            & (internuclear_vector_geometry_df["Resid_j"] == row["Resid_j"])
+            & (internuclear_vector_geometry_df["Atom_j"] == row["Atom_j"])
+        ]
+
+        # < R^3 > / K
+        internuclear_distance_cubed[index] = numpy.mean(
+            numpy.power(internuclear_vector_df["Internuclear Distance"], 3.0)
+        ) / (K * gyromagnetic_ratio_product[row["Observable"]]).m_as(unit.hertz)
+        #) / (K * gyromagnetic_ratio_product["1d_n_hn"]).m_as(unit.hertz)
+
+        # < cos^2 alpha_x >
+        cos_x_squared = numpy.mean(
+            numpy.square(internuclear_vector_df["Internuclear Vector x"])
+        )
+
+        # A_zz term: < cos^2 alpha_z > - < cos^2 alpha_x >
+        structural_matrix[index, 0] = (
+            numpy.mean(
+                numpy.square(internuclear_vector_df["Internuclear Vector z"])
+            )
+            - cos_x_squared
+        )
+
+        # A_yy term: < cos^2 alpha_y > - < cos^2 alpha_x >
+        structural_matrix[index, 1] = (
+            numpy.mean(
+                numpy.square(internuclear_vector_df["Internuclear Vector y"])
+            )
+            - cos_x_squared
+        )
+
+        # A_zy term: 2 < cos alpha_z cos alpha_y >
+        structural_matrix[index, 2] = 2 * numpy.mean(
+            internuclear_vector_df["Internuclear Vector z"]
+            * internuclear_vector_df["Internuclear Vector y"]
+        )
+
+        # A_zx term: 2 < cos alpha_z cos alpha_x >
+        structural_matrix[index, 3] = 2 * numpy.mean(
+            internuclear_vector_df["Internuclear Vector z"]
+            * internuclear_vector_df["Internuclear Vector x"]
+        )
+
+        # A_yx term: 2 < cos alpha_y cos alpha_x >
+        structural_matrix[index, 4] = 2 * numpy.mean(
+            internuclear_vector_df["Internuclear Vector y"]
+            * internuclear_vector_df["Internuclear Vector x"]
+        )
+
+    # For each alignment medium, estimate the alignment tensor from experimental
+    # RDCs and then calculate RDCs from the alignment tensor
+    alignment_tensor_estimation = {
+        "Observable": ["A_zz", "A_yy", "A_zy", "A_zx", "A_yx", "Q", "cond"],
+    }
+
+    for column in observable_df.columns:
+        if not column.startswith("Experiment"):
+            continue
+
+        # D_scaled = D < R^3 > / K
+        scaled_experimental_rdcs = (
+            observable_df[column].values * internuclear_distance_cubed
+        )
+
+        # Skip internuclear vectors not measured in this alignment medium
+        rows_to_calculate = ~observable_df[column].isna()
+
+        # Only use backbone couplings to estimate the alignment tensor
+        rows_to_align = (
+            rows_to_calculate
+            & observable_df["Observable"].isin(backbone_observables)
+        )
+
+        # Singular value decomposition M = U S V^T
+        U, S, VT = numpy.linalg.svd(
+            structural_matrix[rows_to_align],
+            full_matrices=False,
+        )
+
+        # Get condition number
+        if S[-1] == 0.0:
+            condition_number = numpy.inf
+        else:
+            condition_number = S[0] / S[-1]
+
+        # Get Moore-Penrose pseudoinverse
+        large_singular_values = S > 1E-15
+        S_inverse = numpy.divide(1.0, S, where=large_singular_values)
+        S_inverse[~large_singular_values] = 0.0
+        structural_matrix_pseudoinverse = VT.T * S_inverse @ U.T
+
+        # Compute elements of alignment tensor
+        alignment_tensor = (
+            structural_matrix_pseudoinverse
+            @ scaled_experimental_rdcs[rows_to_align]
+        )
+
+        #alignment_tensor = 2/3 * numpy.array([-3.9427e-4, (3.9427e-4 - 1.2954e-3) / 2, -8.6148e-4, -7.4612e-5, -1.5817e-4])
+
+        # Compute scaled RDCs from structural matrix and alignment tensor
+        scaled_computed_rdcs = (
+            structural_matrix[rows_to_calculate] @ alignment_tensor
+        )
+
+        # Compute Q factor
+        Q_factor = numpy.sqrt(
+            numpy.sum(
+                numpy.square(
+                    scaled_computed_rdcs
+                    - scaled_experimental_rdcs[rows_to_calculate]
+                )
+            )
+            / numpy.sum(
+                numpy.square(scaled_experimental_rdcs[rows_to_calculate])
+            )
+        )
+
+        print(Q_factor)
+
+        # Write computed RDCs and alignment tensor to DataFrame
+        computed_column = column.replace("Experiment", "Computed")
+        observable_df[computed_column] = numpy.NaN
+        observable_df.loc[rows_to_calculate, computed_column] = (
+            scaled_computed_rdcs
+            / internuclear_distance_cubed[rows_to_calculate]
+        )
+
+        alignment_tensor_estimation[computed_column] = numpy.concatenate(
+            [alignment_tensor, [Q_factor, condition_number]]
+        )
+
+    residual_dipolar_coupling_df = pandas.concat(
+        [observable_df, pandas.DataFrame(alignment_tensor_estimation)]
+    ).reset_index(drop=True)
+
+    residual_dipolar_coupling_df.to_csv(output_path)
 
 
 def compute_fraction_helix(

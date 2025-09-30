@@ -22,6 +22,16 @@ class KarplusDict(TypedDict, total=False):
 
 DCD_TIME_TO_PICOSECONDS = 0.04888821 * unit.picosecond
 
+# Gyromagnetic ratios gamma / (2  pi) in rad s^-1 T^-1, taken from 2001 IUPAC
+# values. Harris et al. 2001, Pure Appl Chem 73, 1795-1818.
+GYROMAGNETIC_RATIOS = {
+    "1H": 2.67522128E8 * unit.coulomb / unit.kilogram,
+    "13C": 6.728284E7 * unit.coulomb / unit.kilogram,
+    "15N": -2.71261804E7 * unit.coulomb / unit.kilogram,
+    "19F": 2.518148E8 * unit.coulomb / unit.kilogram,
+    "31P": 1.08394E8 * unit.coulomb / unit.kilogram,
+}
+
 # Lists of atoms that make up named dihedrals in protein residues
 DIHEDRAL_ATOMS = {
     resname: {
