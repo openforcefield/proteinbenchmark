@@ -396,10 +396,14 @@ def solvate(
 
         # Compute number of ions expected for neutral solute and for SLTCAP
         n_cation_expected_neutral = int(
-            numpy.round(solvent_volume * ionic_strength + (charge_magnitude - total_charge) / 2)
+            numpy.round(
+                solvent_volume * ionic_strength + (charge_magnitude - total_charge) / 2
+            )
         )
         n_anion_expected_neutral = int(
-            numpy.round(solvent_volume * ionic_strength + (charge_magnitude + total_charge) / 2)
+            numpy.round(
+                solvent_volume * ionic_strength + (charge_magnitude + total_charge) / 2
+            )
         )
         n_cation_expected_sltcap = int(
             numpy.round(
@@ -638,7 +642,7 @@ def assign_parameters(
             )
 
         if ff_type == "nagl":
-            from openff.toolkit import ToolkitRegistry, RDKitToolkitWrapper
+            from openff.toolkit import RDKitToolkitWrapper, ToolkitRegistry
             from openff.toolkit.utils import toolkit_registry_manager
             from openff.toolkit.utils.nagl_wrapper import NAGLToolkitWrapper
 
