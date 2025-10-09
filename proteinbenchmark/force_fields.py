@@ -109,6 +109,36 @@ force_fields = {
         ),
         "water_model": "tip4p-fb",
     },
+    "ff19sb-opc": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff19sb_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "opc",
+    },
+    "ff19sb-opc3": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff19sb_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "opc3",
+    },
+    "ff19sb-tip3p": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff19sb_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "tip3p",
+    },
+    "ff19sb-tip3p-fb": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff19sb_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "tip3p-fb",
+    },
+    "ff19sb-tip4p-fb": {
+        "force_field_file": Path(
+            ff_directory, "nerenberg_ff19sb_c0ala_c0gly_c0val.xml"
+        ),
+        "water_model": "tip4p-fb",
+    },
     "ff99sb-opc": {
         "force_field_file": Path(
             ff_directory, "nerenberg_ff99sb_c0ala_c0gly_c0val.xml"
