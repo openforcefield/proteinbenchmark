@@ -1,4 +1,5 @@
 """List of benchmark targets specifying observables and thermodynamic state."""
+
 from pathlib import Path
 
 from openff.units import unit
@@ -70,9 +71,7 @@ benchmark_targets = {
     },
     "ab40": {
         "target_type": "disordered",
-        "aa_sequence": (
-            "DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVV"
-        ),
+        "aa_sequence": ("DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVV"),
         "pressure": 1.0 * unit.atmosphere,
         "temperature": 277.0 * unit.kelvin,
         "ph": 7.0,
@@ -265,6 +264,14 @@ benchmark_targets = {
         "ph": 4.6,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
+            "residual_dipolar_couplings": {
+                "experimental_datasets": [
+                    "moglich_jbnmr_2002",
+                ],
+                "observable_path": Path(
+                    observable_directory, "bpti", "bpti-residual-dipolar-couplings.dat"
+                ),
+            },
             "scalar_couplings": {
                 "experimental_datasets": [
                     "pardi_jmb_1984",
@@ -405,6 +412,15 @@ benchmark_targets = {
         "ph": 6.5,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
+            "residual_dipolar_couplings": {
+                "experimental_datasets": [
+                    "ulmer_jacs_2003",
+                    "miclet_jbnmr_2005",
+                ],
+                "observable_path": Path(
+                    observable_directory, "gb3", "gb3-residual-dipolar-couplings.dat"
+                ),
+            },
             "scalar_couplings": {
                 "experimental_datasets": [
                     "chou_jacs_2003",
@@ -620,6 +636,15 @@ benchmark_targets = {
         "ph": 3.8,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
+            "residual_dipolar_couplings": {
+                "experimental_datasets": [
+                    "schwalbe_prosci_2001",
+                    "higman_jbnmr_2004",
+                ],
+                "observable_path": Path(
+                    observable_directory, "hewl", "hewl-residual-dipolar-couplings.dat"
+                ),
+            },
             "scalar_couplings": {
                 "experimental_datasets": ["schwalbe_prosci_2001"],
                 "observable_path": Path(
@@ -640,7 +665,7 @@ benchmark_targets = {
             "sidechain_S2": "moorman_prosci_2012",
         },
     },
-    "hewl-rdc": {
+    "hewl-backbone-rdc": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "hewl-1E8L-model-1.pdb"),
         "pressure": 1.0 * unit.atmosphere,
@@ -649,6 +674,17 @@ benchmark_targets = {
         "ionic_strength": 0.010 * unit.molar,
         "observables": {
             "backbone_rdc": "schwalbe_prosci_2001",
+        },
+    },
+    "hewl-sidechain-rdc": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "hewl-1E8L-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 308.0 * unit.kelvin,
+        "ph": 3.5,
+        "ionic_strength": 0.050 * unit.molar,
+        "observables": {
+            "sidechain_rdc": "higman_jbnmr_2004",
         },
     },
     "mrr110b": {
@@ -699,6 +735,15 @@ benchmark_targets = {
         "ph": 4.7,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
+            "residual_dipolar_couplings": {
+                "experimental_datasets": [
+                    "ottinger_jacs_1998",
+                    "hus_jacs_2003",
+                ],
+                "observable_path": Path(
+                    observable_directory, "ubq", "ubq-residual-dipolar-couplings.dat"
+                ),
+            },
             "scalar_couplings": {
                 "experimental_datasets": [
                     "wang_jacs_1996",
@@ -785,20 +830,7 @@ benchmark_targets = {
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
             "backbone_rdc": {
-                "experimental_datasets": ["hus_jacs_2003"],
-            },
-        },
-    },
-    "ubq-rdc-sidechain": {
-        "target_type": "folded",
-        "initial_pdb": Path(pdb_directory, "ubq-1D3Z-model-1.pdb"),
-        "pressure": 1.0 * unit.atmosphere,
-        "temperature": 303.0 * unit.kelvin,
-        "ph": 6.5,
-        "ionic_strength": 0.0 * unit.molar,
-        "observables": {
-            "sidechain_rdc": {
-                "experimental_datasets": ["ottinger_jacs_1998"],
+                "experimental_datasets": ["ottinger_jacs_1998", "hus_jacs_2003"],
             },
         },
     },
@@ -907,6 +939,12 @@ experimental_datasets = {
         "references": [
             "Hagarman A, Measey TJ, Mathieu D, Schwalbe H, "
             "Schweitzer-Stenner R. (2010). J. Am. Chem. Soc. 132, 540-551.",
+        ],
+    },
+    "higman_jbnmr_2004": {
+        "references": [
+            "Higman VA, Boyd J, Smith LJ, Redfield C. (2004). J. Biomol. NMR "
+            "30, 327-346.",
         ],
     },
     "hu_jacs_1997": {
