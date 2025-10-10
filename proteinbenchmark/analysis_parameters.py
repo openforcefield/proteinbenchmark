@@ -511,26 +511,33 @@ PEREZ_KARPLUS_RESIDUE_MAP = {
 PEREZ_KARPLUS_RESIDUE_MAP["ALA"] = "ALA"
 PEREZ_KARPLUS_RESIDUE_MAP["CYS"] = "CYS"
 PEREZ_KARPLUS_RESIDUE_MAP["CYX"] = "CYS"
-PEREZ_KARPLUS_RESIDUE_MAP["ILE"] = "ILE,VAL"
+PEREZ_KARPLUS_RESIDUE_MAP["ILE"] = "ILE"
 PEREZ_KARPLUS_RESIDUE_MAP["SER"] = "SER"
 PEREZ_KARPLUS_RESIDUE_MAP["THR"] = "THR"
-PEREZ_KARPLUS_RESIDUE_MAP["VAL"] = "ILE,VAL"
+PEREZ_KARPLUS_RESIDUE_MAP["VAL"] = "VAL"
 
 PEREZ_KARPLUS_PARAMETERS = {
     "3j_ha_hb": {
         "dihedral": "chi1",
-        "ILE,VAL": {
-            "delta": 0.0,
+        "ILE": {
+            "delta": -120.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 1.79 / unit.second,
             "sigma": 0.40 / unit.second,
         },
         "THR": {
-            "delta": 0.0,
+            "delta": -120.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 0.81 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "VAL": {
+            "delta": 0.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 1.79 / unit.second,
             "sigma": 0.40 / unit.second,
         },
     },
