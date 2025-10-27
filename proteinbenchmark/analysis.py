@@ -1818,13 +1818,16 @@ def compute_residual_dipolar_couplings(
         # Skip internuclear vectors not measured in this alignment medium
         rows_to_calculate = ~observable_df[column].isna()
 
+        if not numpy.any(rows_to_calculate.values):
+            continue
+
         # Only use backbone couplings to estimate the alignment tensor
         rows_to_align = rows_to_calculate & observable_df["Observable"].isin(
             backbone_observables
         )
 
         if not numpy.any(rows_to_align.values):
-            continue
+            rows_to_align = rows_to_calculate
 
         # Singular value decomposition M = U S V^T
         U, S, VT = numpy.linalg.svd(

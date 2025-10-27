@@ -122,7 +122,7 @@ Observable Resid_i Resname_i Atom_i Resid_j Resname_j Atom_j Experiment_1 Uncert
 1d_n_hn    127     CYS          N   127     CYS          H   -13.000      0.00           -6.400      0.00           -7.430      0.00          NaN          NaN
 1d_n_hn    128     ARG          N   128     ARG          H   NaN          NaN           NaN          NaN            -6.210      0.00          NaN          NaN
 1d_n_hn    129     LEU          N   129     LEU          H    10.800      0.00            4.500      0.00            5.050      0.00          NaN          NaN
-1d_nd2_hd2  19     ASN        ND2    27     ASN        HD2   NaN          NaN           NaN          NaN           NaN          NaN            -5.300      0.10
+1d_nd2_hd2  19     ASN        ND2    19     ASN        HD2   NaN          NaN           NaN          NaN           NaN          NaN            -5.300      0.10
 1d_nd2_hd2  27     ASN        ND2    27     ASN        HD2   NaN          NaN           NaN          NaN           NaN          NaN            -9.200      0.20
 1d_nd2_hd2  37     ASN        ND2    37     ASN        HD2   NaN          NaN           NaN          NaN           NaN          NaN            14.300      0.10
 1d_nd2_hd2  39     ASN        ND2    39     ASN        HD2   NaN          NaN           NaN          NaN           NaN          NaN            -8.000      0.50
