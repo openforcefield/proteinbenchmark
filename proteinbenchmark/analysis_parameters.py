@@ -759,7 +759,7 @@ BARFIELD_KARPLUS_PARAMETERS = {
         "C": 0.14 / unit.second,
         "D": -1.31 / unit.second,
         "sigma": 0.12 / unit.second,
-        "minimum": -1.68 / unit.second,
+        "minimum": -1.31 / unit.second,
         "maximum": 0.0 / unit.second,
     },
 }
