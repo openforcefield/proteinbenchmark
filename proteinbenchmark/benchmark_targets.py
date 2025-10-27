@@ -654,6 +654,32 @@ benchmark_targets = {
             "backbone_S2": "buck_biochem_1995",
         },
     },
+    "hewl-4LZT": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "hewl-4LZT-altloc-A.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 308.0 * unit.kelvin,
+        "ph": 3.8,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "residual_dipolar_couplings": {
+                "experimental_datasets": [
+                    "schwalbe_prosci_2001",
+                    "higman_jbnmr_2004",
+                ],
+                "observable_path": Path(
+                    observable_directory, "hewl", "hewl-residual-dipolar-couplings.dat"
+                ),
+            },
+            "scalar_couplings": {
+                "experimental_datasets": ["schwalbe_prosci_2001"],
+                "observable_path": Path(
+                    observable_directory, "hewl", "hewl-scalar-couplings.dat"
+                ),
+            },
+            "backbone_S2": "buck_biochem_1995",
+        },
+    },
     "hewl-sidechain-S2": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "hewl-1E8L-model-1.pdb"),
