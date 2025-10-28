@@ -396,10 +396,14 @@ def solvate(
 
         # Compute number of ions expected for neutral solute and for SLTCAP
         n_cation_expected_neutral = int(
-            numpy.round(solvent_volume * ionic_strength + (charge_magnitude - total_charge) / 2)
+            numpy.round(
+                solvent_volume * ionic_strength + (charge_magnitude - total_charge) / 2
+            )
         )
         n_anion_expected_neutral = int(
-            numpy.round(solvent_volume * ionic_strength + (charge_magnitude + total_charge) / 2)
+            numpy.round(
+                solvent_volume * ionic_strength + (charge_magnitude + total_charge) / 2
+            )
         )
         n_cation_expected_sltcap = int(
             numpy.round(
@@ -586,12 +590,17 @@ def assign_parameters(
     if ff_type in {"smirnoff", "nagl"}:
         # Get unique molecules (solute, water, sodium ion, chloride ion) needed
         # for openff.toolkit.topology.Topology.from_openmm()
-        unique_molecules = [
-            *openff_solute_molecules,
-            Molecule.from_smiles("O"),
-            Molecule.from_smiles("[Na+1]"),
-            Molecule.from_smiles("[Cl-1]"),
+        unique_molecules = [*openff_solute_molecules]
+        unique_solvent_molecules = [
+            mol
+            for mol in [
+                Molecule.from_smiles("O"),
+                Molecule.from_smiles("[Na+1]"),
+                Molecule.from_smiles("[Cl-1]"),
+            ]
+            if mol not in unique_molecules
         ]
+        unique_molecules.extend(unique_solvent_molecules)
 
         if water_model in {"opc", "tip4p-fb"}:
             # Create a new OpenMM topology without water virtual sites
@@ -638,7 +647,7 @@ def assign_parameters(
             )
 
         if ff_type == "nagl":
-            from openff.toolkit import ToolkitRegistry, RDKitToolkitWrapper
+            from openff.toolkit import RDKitToolkitWrapper, ToolkitRegistry
             from openff.toolkit.utils import toolkit_registry_manager
             from openff.toolkit.utils.nagl_wrapper import NAGLToolkitWrapper
 

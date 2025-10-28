@@ -1,4 +1,5 @@
 """Default parameter values for MD simulations."""
+
 from openff.units import unit
 
 # Default system setup parameters

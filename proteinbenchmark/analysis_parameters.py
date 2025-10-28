@@ -1,4 +1,5 @@
 """Default parameter values for analysis of trajectories."""
+
 from pathlib import Path
 from typing import TypedDict
 
@@ -21,6 +22,16 @@ class KarplusDict(TypedDict, total=False):
 
 
 DCD_TIME_TO_PICOSECONDS = 0.04888821 * unit.picosecond
+
+# Gyromagnetic ratios gamma / (2  pi) in rad s^-1 T^-1, taken from 2001 IUPAC
+# values. Harris et al. 2001, Pure Appl Chem 73, 1795-1818.
+GYROMAGNETIC_RATIOS = {
+    "1H": 2.67522128e8 * unit.coulomb / unit.kilogram,
+    "13C": 6.728284e7 * unit.coulomb / unit.kilogram,
+    "15N": -2.71261804e7 * unit.coulomb / unit.kilogram,
+    "19F": 2.518148e8 * unit.coulomb / unit.kilogram,
+    "31P": 1.08394e8 * unit.coulomb / unit.kilogram,
+}
 
 # Lists of atoms that make up named dihedrals in protein residues
 DIHEDRAL_ATOMS = {
@@ -500,26 +511,33 @@ PEREZ_KARPLUS_RESIDUE_MAP = {
 PEREZ_KARPLUS_RESIDUE_MAP["ALA"] = "ALA"
 PEREZ_KARPLUS_RESIDUE_MAP["CYS"] = "CYS"
 PEREZ_KARPLUS_RESIDUE_MAP["CYX"] = "CYS"
-PEREZ_KARPLUS_RESIDUE_MAP["ILE"] = "ILE,VAL"
+PEREZ_KARPLUS_RESIDUE_MAP["ILE"] = "ILE"
 PEREZ_KARPLUS_RESIDUE_MAP["SER"] = "SER"
 PEREZ_KARPLUS_RESIDUE_MAP["THR"] = "THR"
-PEREZ_KARPLUS_RESIDUE_MAP["VAL"] = "ILE,VAL"
+PEREZ_KARPLUS_RESIDUE_MAP["VAL"] = "VAL"
 
 PEREZ_KARPLUS_PARAMETERS = {
     "3j_ha_hb": {
         "dihedral": "chi1",
-        "ILE,VAL": {
-            "delta": 0.0,
+        "ILE": {
+            "delta": -120.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 1.79 / unit.second,
             "sigma": 0.40 / unit.second,
         },
         "THR": {
-            "delta": 0.0,
+            "delta": -120.0,
             "A": 7.23 / unit.second,
             "B": -1.37 / unit.second,
             "C": 0.81 / unit.second,
+            "sigma": 0.40 / unit.second,
+        },
+        "VAL": {
+            "delta": 0.0,
+            "A": 7.23 / unit.second,
+            "B": -1.37 / unit.second,
+            "C": 1.79 / unit.second,
             "sigma": 0.40 / unit.second,
         },
     },
@@ -741,7 +759,7 @@ BARFIELD_KARPLUS_PARAMETERS = {
         "C": 0.14 / unit.second,
         "D": -1.31 / unit.second,
         "sigma": 0.12 / unit.second,
-        "minimum": -1.68 / unit.second,
+        "minimum": -1.31 / unit.second,
         "maximum": 0.0 / unit.second,
     },
 }

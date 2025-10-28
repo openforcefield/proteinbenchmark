@@ -6,9 +6,11 @@ from proteinbenchmark.analysis import (
     compute_chemical_shifts_sparta_plus,
     compute_fraction_helix,
     compute_h_bond_scalar_couplings,
+    compute_residual_dipolar_couplings,
     compute_scalar_couplings,
     measure_dihedrals,
     measure_h_bond_geometries,
+    measure_internuclear_vector_geometries,
 )
 from proteinbenchmark.gmx_simulation import GMXSimulation
 from proteinbenchmark.openmm_simulation import OpenMMSimulation
@@ -505,7 +507,9 @@ class ProteinBenchmarkSystem:
 
         # Align production trajectory
         if not exists_and_not_empty(reimaged_topology):
-            print(f"Aligning production trajectory for system {self.system_name} {replica}")
+            print(
+                f"Aligning production trajectory for system {self.system_name} {replica}"
+            )
 
             replica_dir = Path(self.base_path, f"replica-{replica:d}")
             replica_prefix = Path(replica_dir, self.system_name)
@@ -566,14 +570,14 @@ class ProteinBenchmarkSystem:
         if not exists_and_not_empty(chemical_shifts):
             print(f"Computing chemical shifts for system {self.system_name} {replica}")
 
-            #fragment_index = compute_chemical_shifts_shiftx2(
+            # fragment_index = compute_chemical_shifts_shiftx2(
             fragment_index = compute_chemical_shifts_sparta_plus(
                 topology_path=reimaged_topology,
                 trajectory_path=reimaged_trajectory,
                 frame_length=frame_length,
                 output_path=chemical_shifts,
-            #    ph=self.target_parameters["ph"],
-            #    temperature=self.target_parameters["temperature"],
+                #    ph=self.target_parameters["ph"],
+                #    temperature=self.target_parameters["temperature"],
             )
 
             if fragment_index > 0:
@@ -583,7 +587,9 @@ class ProteinBenchmarkSystem:
         dihedral_clusters = f"{analysis_prefix}-dihedral-clusters.dat"
 
         if not exists_and_not_empty(dihedral_clusters):
-            print(f"Assigning dihedral clusters for system {self.system_name} {replica}")
+            print(
+                f"Assigning dihedral clusters for system {self.system_name} {replica}"
+            )
 
             assign_dihedral_clusters(
                 dihedrals_path=dihedrals,
@@ -647,6 +653,46 @@ class ProteinBenchmarkSystem:
                 time_series_output_path=time_series_output_path,
             )
 
+        # Residual dipolar couplings
+        internuclear_vector_geometries = (
+            f"{analysis_prefix}-internuclear-vector-geometries.dat"
+        )
+        residual_dipolar_couplings = f"{analysis_prefix}-residual-dipolar-couplings.dat"
+
+        if "residual_dipolar_couplings" in target_observables:
+            experimental_observables = target_observables["residual_dipolar_couplings"][
+                "observable_path"
+            ]
+
+            if not exists_and_not_empty(internuclear_vector_geometries):
+                print(
+                    "Computing internuclear vector geometries for system "
+                    f"{self.system_name} {replica}"
+                )
+
+                fragment_index = measure_internuclear_vector_geometries(
+                    observable_path=experimental_observables,
+                    topology_path=reimaged_topology,
+                    trajectory_path=reimaged_trajectory,
+                    frame_length=frame_length,
+                    output_path=internuclear_vector_geometries,
+                )
+
+                if fragment_index > 0:
+                    merge_csvs(internuclear_vector_geometries)
+
+            if not exists_and_not_empty(residual_dipolar_couplings):
+                print(
+                    "Computing residual dipolar couplings for system "
+                    f"{self.system_name} {replica}"
+                )
+
+                compute_residual_dipolar_couplings(
+                    observable_path=experimental_observables,
+                    internuclear_vector_geometries_path=internuclear_vector_geometries,
+                    output_path=residual_dipolar_couplings,
+                )
+
         # Fraction helix
         fraction_helix = f"{analysis_prefix}-fraction-helix.dat"
 
@@ -654,8 +700,7 @@ class ProteinBenchmarkSystem:
             fraction_helix
         ):
             print(
-                f"Computing fraction helix for system {self.system_name} "
-                f"{replica}"
+                f"Computing fraction helix for system {self.system_name} " f"{replica}"
             )
 
             experimental_observables = target_observables["fraction_helix"][

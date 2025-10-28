@@ -1,9 +1,8 @@
 """
 proteinbenchmark
-A library for running and analyzing benchmark simulations for protein force 
+A library for running and analyzing benchmark simulations for protein force
 fields.
 """
-
 
 from proteinbenchmark.analysis import *
 from proteinbenchmark.analysis_parameters import *
