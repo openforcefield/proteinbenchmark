@@ -592,7 +592,8 @@ def assign_parameters(
         # for openff.toolkit.topology.Topology.from_openmm()
         unique_molecules = [*openff_solute_molecules]
         unique_solvent_molecules = [
-            mol for mol in [
+            mol
+            for mol in [
                 Molecule.from_smiles("O"),
                 Molecule.from_smiles("[Na+1]"),
                 Molecule.from_smiles("[Cl-1]"),
