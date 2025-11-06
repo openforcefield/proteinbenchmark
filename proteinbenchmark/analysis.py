@@ -830,8 +830,12 @@ def compute_chemical_shifts_sparta_plus(
     pdb_filename_prefix = Path(trajectory_path).stem
     tmp_pdb_prefix = Path(spartap_output_dir, pdb_filename_prefix)
     for frame_index, frame in enumerate(trajectory):
-        pass
-        frame_pdb_path = f"{tmp_pdb_prefix}-{frame_index}.pdb"
+        frame_prefix = f"{tmp_pdb_prefix}-{frame_index}"
+        # skip if SPARTA+ output already exists for this frame
+        frame_tab_path = f"{frame_prefix}_pred.tab"
+        if Path(frame_tab_path).exists():
+            continue
+        frame_pdb_path = f"{frame_prefix}.pdb"
         with open(frame_pdb_path, "w") as pdb_file:
             pdb_file.write(str(loos.PDB.fromAtomicGroup(frame)))
 
