@@ -839,23 +839,25 @@ def compute_chemical_shifts_sparta_plus(
         # PDBs every 2000 frames to avoid shell error "argument list too long"
         if frame_index % 2000 == 1999 and frame_index > 0:
             spartap_return_value = subprocess.run(
-                [
-                    "sparta+",
+                " ".join([
+                    "/home/wangl14/SPARTA+/sparta+",
                     "-in",
                     f"{pdb_filename_prefix}-*.pdb",
-                ],
+                ]),
                 cwd=spartap_output_dir,
+                shell=True,
             )
             for tmp_file in Path(spartap_output_dir).glob(f"{pdb_filename_prefix}-*.pdb"):
                 tmp_file.unlink()
 
     spartap_return_value = subprocess.run(
-        [
-            "sparta+",
+        " ".join([
+            "/home/wangl14/SPARTA+/sparta+",
             "-in",
             f"{pdb_filename_prefix}-*.pdb",
-        ],
+        ]),
         cwd=spartap_output_dir,
+        shell=True
     )
 
     # Set up list of dicts to store chemical shifts
