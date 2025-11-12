@@ -636,6 +636,12 @@ benchmark_targets = {
         "ph": 3.8,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["schwalbe_prosci_2001"],
+                "observable_path": Path(
+                    observable_directory, "hewl", "hewl-noe-upper-distances.dat"
+                ),
+            },
             "residual_dipolar_couplings": {
                 "experimental_datasets": [
                     "schwalbe_prosci_2001",
@@ -662,6 +668,12 @@ benchmark_targets = {
         "ph": 3.8,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["schwalbe_prosci_2001"],
+                "observable_path": Path(
+                    observable_directory, "hewl", "hewl-noe-upper-distances.dat"
+                ),
+            },
             "residual_dipolar_couplings": {
                 "experimental_datasets": [
                     "schwalbe_prosci_2001",

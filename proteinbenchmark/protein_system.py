@@ -6,11 +6,13 @@ from proteinbenchmark.analysis import (
     compute_chemical_shifts_sparta_plus,
     compute_fraction_helix,
     compute_h_bond_scalar_couplings,
+    compute_noe_effective_distances,
     compute_residual_dipolar_couplings,
     compute_scalar_couplings,
     measure_dihedrals,
     measure_h_bond_geometries,
     measure_internuclear_vector_geometries,
+    measure_noe_distances,
 )
 from proteinbenchmark.gmx_simulation import GMXSimulation
 from proteinbenchmark.openmm_simulation import OpenMMSimulation
@@ -691,6 +693,44 @@ class ProteinBenchmarkSystem:
                     observable_path=experimental_observables,
                     internuclear_vector_geometries_path=internuclear_vector_geometries,
                     output_path=residual_dipolar_couplings,
+                )
+
+        # Nuclear Overhauser effect upper distances
+        noe_distances = f"{analysis_prefix}-noe-distances.dat"
+        noe_effective_distances = f"{analysis_prefix}-noe-effective-distances.dat"
+
+        if "noe_upper_distances" in target_observables:
+            experimental_observables = target_observables["noe_upper_distances"][
+                "observable_path"
+            ]
+
+            if not exists_and_not_empty(noe_distances):
+                print(
+                    f"Computing NOE distances for system {self.system_name} "
+                    f"{replica}"
+                )
+
+                fragment_index = measure_noe_distances(
+                    observable_path=experimental_observables,
+                    topology_path=reimaged_topology,
+                    trajectory_path=reimaged_trajectory,
+                    frame_length=frame_length,
+                    output_path=noe_distances,
+                )
+
+                if fragment_index > 0:
+                    merge_csvs(noe_distances)
+
+            if not exists_and_not_empty(noe_effective_distances):
+                print(
+                    "Computing NOE effective distances for system "
+                    f"{self.system_name} {replica}"
+                )
+
+                compute_noe_effective_distances(
+                    observable_path=experimental_observables,
+                    noe_distances_path=noe_distances,
+                    output_path=noe_effective_distances,
                 )
 
         # Fraction helix

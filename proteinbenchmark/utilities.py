@@ -1,7 +1,10 @@
 """Utilities for file input and output."""
 
+from operator import itemgetter
 from pathlib import Path
 
+import loos
+import numpy
 import openmm
 import pandas
 from openmm import app
@@ -45,6 +48,201 @@ def exists_and_not_empty(file_name):
 
     path = Path(file_name)
     return path.exists() and path.stat().st_size > 0
+
+
+def extract_noe_upper_distances(input_path: str, output_path: str):
+    """Extract NOE upper distance boundaries from an NMR STAR file."""
+
+    read_noe_distances = False
+    constraint_type = None
+
+    noe_upper_distances = list()
+
+    with open(input_path, "r") as input_file:
+        for line_index, line in enumerate(input_file):
+            fields = line.split()
+
+            if len(fields) == 0:
+                continue
+
+            if fields[0] == "_Gen_dist_constraint_list.Constraint_type":
+                constraint_type = fields[1]
+
+            elif read_noe_distances and fields[0] == "stop_":
+                read_noe_distances = False
+
+            # Only read the first restraint for each entry
+            elif read_noe_distances and fields[1] == "1":
+                # TODO: are the field indices guaranteed to be the same for all
+                # STAR files?
+                resid_i = int(fields[36])
+                resname_i = fields[37]
+                atom_i = fields[51]
+                resid_j = int(fields[43])
+                resname_j = fields[44]
+                atom_j = fields[59]
+                distance = float(fields[28])
+
+                if resid_j < resid_i:
+                    resid_i, resid_j = resid_j, resid_i
+                    resname_i, resname_j = resname_j, resname_i
+                    atom_i, atom_j = atom_j, atom_i
+
+                noe_upper_distances.append(
+                    (resid_i, resname_i, atom_i, resid_j, resname_j, atom_j, distance)
+                )
+
+            elif (
+                fields[0] == "_Gen_dist_constraint.Gen_dist_constraint_list_ID"
+                and constraint_type == "NOE"
+            ):
+                read_noe_distances = True
+
+    # Sort by (resid_i, atom_i, resid_j, atom_j) by sorting one-at-a-time in
+    # reverse order. For atom names, sort by Greek character in the second
+    # position of the atom string
+    atom_sort_order = ["N", "A", "B", "G", "D", "E", "Z", "H"]
+    atom_sort_dict = {atom: index for index, atom in enumerate(atom_sort_order)}
+
+    noe_upper_distances.sort(key=lambda t: atom_sort_dict[t[5][1]])
+    noe_upper_distances.sort(key=itemgetter(3))
+    noe_upper_distances.sort(key=lambda t: atom_sort_dict[t[2][1]])
+    noe_upper_distances.sort(key=itemgetter(0))
+
+    pseudoatom_name_map = dict()
+
+    for resname in [
+        "ALA",
+        "ARG",
+        "ASN",
+        "ASP",
+        "CYS",
+        "GLN",
+        "GLU",
+        "GLY",
+        "HIS",
+        "ILE",
+        "LEU",
+        "LYS",
+        "MET",
+        "PHE",
+        "PRO",
+        "SER",
+        "THR",
+        "TRP",
+        "TYR",
+        "VAL",
+    ]:
+        pseudoatom_name_map[resname] = dict()
+
+        if resname != "PRO":
+            pseudoatom_name_map[resname]["HN"] = "H"
+
+        if resname == "GLY":
+            pseudoatom_name_map[resname]["HA#"] = "PA"
+        else:
+            pseudoatom_name_map[resname]["HA"] = "HA"
+
+        if resname == "ALA":
+            pseudoatom_name_map[resname]["HB#"] = "MB"
+        elif resname == "ILE":
+            pseudoatom_name_map[resname]["HB"] = "HB"
+            pseudoatom_name_map[resname]["HB#"] = "HB"
+        elif resname in {"THR", "VAL"}:
+            pseudoatom_name_map[resname]["HB"] = "HB"
+        else:
+            pseudoatom_name_map[resname]["HB2"] = "HB2"
+            pseudoatom_name_map[resname]["HB1"] = "HB3"
+            pseudoatom_name_map[resname]["HB#"] = "PB"
+
+    pseudoatom_name_map["ARG"]["HG#"] = "PG"
+    pseudoatom_name_map["ARG"]["HD#"] = "PD"
+    pseudoatom_name_map["ASN"]["HD#"] = "ND2"
+    pseudoatom_name_map["GLN"]["HG#"] = "PG"
+    pseudoatom_name_map["GLU"]["HG#"] = "PG"
+    pseudoatom_name_map["HIS"]["HD2"] = "HD2"
+    pseudoatom_name_map["HIS"]["HE1"] = "HE1"
+    pseudoatom_name_map["ILE"]["HG1#"] = "PG1"
+    pseudoatom_name_map["ILE"]["HG2#"] = "MG2"
+    pseudoatom_name_map["ILE"]["HG*"] = "IG"
+    pseudoatom_name_map["ILE"]["HD#"] = "MD1"
+    pseudoatom_name_map["LEU"]["HG"] = "HG"
+    pseudoatom_name_map["LEU"]["HD*"] = "QD"
+    pseudoatom_name_map["LYS"]["HG#"] = "PG"
+    pseudoatom_name_map["LYS"]["HD#"] = "PD"
+    pseudoatom_name_map["LYS"]["HE#"] = "PE"
+    pseudoatom_name_map["MET"]["HG#"] = "PG"
+    pseudoatom_name_map["MET"]["HE#"] = "ME"
+    pseudoatom_name_map["PHE"]["HD*"] = "RD"
+    pseudoatom_name_map["PHE"]["HE*"] = "RE"
+    pseudoatom_name_map["PHE"]["HZ"] = "HZ"
+    pseudoatom_name_map["PRO"]["HG#"] = "PG"
+    pseudoatom_name_map["PRO"]["HD#"] = "PD"
+    pseudoatom_name_map["THR"]["HG2#"] = "MG2"
+    pseudoatom_name_map["TRP"]["HD1"] = "HD1"
+    pseudoatom_name_map["TRP"]["HE1"] = "HE1"
+    pseudoatom_name_map["TRP"]["HE3"] = "HE3"
+    pseudoatom_name_map["TRP"]["HZ2"] = "HZ2"
+    pseudoatom_name_map["TRP"]["HZ3"] = "HZ3"
+    pseudoatom_name_map["TRP"]["HH2"] = "HH2"
+    pseudoatom_name_map["TYR"]["HD*"] = "RD"
+    pseudoatom_name_map["TYR"]["HE*"] = "RE"
+    pseudoatom_name_map["VAL"]["HG1#"] = "MG1"
+    pseudoatom_name_map["VAL"]["HG2#"] = "MG2"
+    pseudoatom_name_map["VAL"]["HG*"] = "QG"
+
+    pseudoatom_corrections = {
+        "H": 0.0,
+        "P": 1.0,
+        "M": 1.5,
+        "N": 1.0,
+        "I": 1.0,
+        "R": 2.4,
+        "Q": 2.4,
+    }
+
+    # Write NOE upper distances to output path
+    with open(output_path, "w") as output_file:
+        output_file.write(
+            "Observable         Resid_i Resname_i Atom_i Resid_j Resname_j "
+            "Atom_j Experiment"
+        )
+
+        for (
+            resid_i,
+            resname_i,
+            atom_i,
+            resid_j,
+            resname_j,
+            atom_j,
+            distance,
+        ) in noe_upper_distances:
+            try:
+                pseudoatom_i = pseudoatom_name_map[resname_i][atom_i]
+            except KeyError:
+                raise ValueError(
+                    f"Atom {atom_i} of residue {resname_i} {resid_i} is not "
+                    "in the pseudoatom map."
+                )
+
+            try:
+                pseudoatom_j = pseudoatom_name_map[resname_j][atom_j]
+            except KeyError:
+                raise ValueError(
+                    f"Atom {atom_j} of residue {resname_j} {resid_j} is not "
+                    "in the pseudoatom map."
+                )
+
+            raw_distance = distance
+            for pseudoatom in (pseudoatom_i, pseudoatom_j):
+                if pseudoatom != "ME":
+                    raw_distance -= pseudoatom_corrections[pseudoatom[0]]
+
+            output_file.write(
+                f"\nNOE_upper_distance {resid_i:3d}     {resname_i:3s}       "
+                f"{pseudoatom_i:4s}   {resid_j:3d}     {resname_j:3s}       "
+                f"{pseudoatom_j:4s}   {raw_distance:4.1f}"
+            )
 
 
 def list_of_dicts_to_csv(list_of_dicts, csv_path):
