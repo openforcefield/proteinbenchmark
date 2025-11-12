@@ -518,16 +518,14 @@ class ProteinBenchmarkSystem:
 
             if self.simulation_platform == "openmm":
                 traj_path = f"{replica_prefix}-production.dcd"
-                output_selection = 'chainid == "A"'
             elif self.simulation_platform == "gmx":
                 traj_path = f"{replica_dir}/traj.xtc"
-                output_selection = 'resname != "HOH" && resname != "NA"'
 
             align_trajectory(
                 topology_path=self.minimized_coords,
                 trajectory_path=traj_path,
                 output_prefix=f"{analysis_prefix}-reimaged",
-                output_selection=output_selection,
+                output_selection='resname != "HOH" && resname != "NA" && resname != "CL"',
                 align_selection='name == "CA"',
                 reference_path=self.initial_pdb,
             )

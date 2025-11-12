@@ -55,7 +55,7 @@ def align_trajectory(
     topology_path: str,
     trajectory_path: str,
     output_prefix: str,
-    output_selection: str = 'chainid == "A"',
+    output_selection: str = 'resname != "HOH" && resname != "NA" && resname != "CL"',
     align_selection: str | None = None,
     reference_path: str | None = None,
     reference_selection: str | None = None,
