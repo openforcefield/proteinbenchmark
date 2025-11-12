@@ -498,6 +498,185 @@ def measure_internuclear_vector_geometries(
     return fragment_index
 
 
+def measure_noe_distances(
+    observable_path: str,
+    topology_path: str,
+    trajectory_path: str,
+    frame_length: unit.Quantity,
+    output_path: str,
+):
+    """
+    Measure the distances between pairs of atoms in a 2-D NOESY spectrum.
+
+    Parameters
+    ---------
+    observable_path
+        The path to the experimental observables, which defines the list of
+        atom pairs to measure.
+    topology_path
+        The path to the system topology, e.g. a PDB file.
+    trajectory_path
+        The path to the trajectory.
+    frame_length
+       The amount of simulation time between frames in the trajectory.
+    output_path
+        The path to write the time series of interatomic distances.
+    """
+
+    import loos
+    from loos.pyloos import Trajectory
+
+    # Load topology
+    topology = loos.createSystem(topology_path)
+
+    # Read NOE distances
+    observable_df = pandas.read_csv(
+        observable_path,
+        sep=r"\s+",
+    )
+
+    # Select atoms for NOEs
+    noe_pairs = list()
+    atom_selections = dict()
+
+    for index, row in observable_df.iterrows():
+        resid_i = row["Resid_i"]
+        atom_i = row["Atom_i"]
+        resid_j = row["Resid_j"]
+        atom_j = row["Atom_j"]
+
+        atom_list = list()
+        pseudoatom_name_list = list()
+
+        for atom, resid in ((atom_i, resid_i), (atom_j, resid_j)):
+            if atom[0] == "P":
+                pseudoatom_name_list = [
+                    (f"H{atom[1:]}2", resid),
+                    (f"H{atom[1:]}3", resid),
+                ]
+
+            elif atom[0] == "M":
+                pseudoatom_name_list = [
+                    (f"H{atom[1:]}1", resid),
+                    (f"H{atom[1:]}2", resid),
+                    (f"H{atom[1:]}3", resid),
+                ]
+
+            elif atom[0] == "Q":
+                pseudoatom_name_list = [
+                    (f"H{atom[1:]}11", resid),
+                    (f"H{atom[1:]}12", resid),
+                    (f"H{atom[1:]}13", resid),
+                    (f"H{atom[1:]}21", resid),
+                    (f"H{atom[1:]}22", resid),
+                    (f"H{atom[1:]}23", resid),
+                ]
+
+            elif atom[0] in {"R", "N"}:
+                pseudoatom_name_list = [
+                    (f"H{atom[1:]}1", resid),
+                    (f"H{atom[1:]}2", resid),
+                ]
+
+            elif atom[0] == "I":
+                pseudoatom_name_list = [
+                    (f"H{atom[1:]}12", resid),
+                    (f"H{atom[1:]}13", resid),
+                    (f"H{atom[1:]}21", resid),
+                    (f"H{atom[1:]}22", resid),
+                    (f"H{atom[1:]}23", resid),
+                ]
+
+            else:
+                pseudoatom_name_list = [(atom, resid)]
+
+            pseudoatom_atom_list = list()
+
+            for atom_name, atom_resid in pseudoatom_name_list:
+                atom_full_name = f"{atom_name}-{atom_resid}"
+
+                # Atom selection is slow, so only do this once for each atom
+                if atom_full_name not in atom_selections:
+                    atom_selection = loos.selectAtoms(
+                        topology,
+                        f'resid == {atom_resid} && name == "{atom_name}"',
+                    )
+
+                    if len(atom_selection) == 0:
+                        raise ValueError(
+                            f"Unable to select atom {atom_name} with resid "
+                            f"{atom_resid} for NOE distance {index}."
+                        )
+
+                    atom_selections[atom_full_name] = atom_selection[0]
+
+                pseudoatom_atom_list.append(atom_selections[atom_full_name])
+
+            atom_list.append(pseudoatom_atom_list)
+
+        noe_pairs.append(
+            {
+                "NOE": f"{resid_i}-{atom_i}-{resid_j}-{atom_j}",
+                "loos_atoms_i": atom_list[0],
+                "loos_atoms_j": atom_list[1],
+            }
+        )
+
+    # Set up trajectory
+    trajectory = Trajectory(trajectory_path, topology)
+    frame_time = 0.0 * unit.picosecond
+    fragment_index = 0
+    noe_distances = list()
+
+    # Load one frame into memory at a time
+    for frame in trajectory:
+        frame_time += frame_length
+
+        frame_index = trajectory.index()
+        frame_time_ns = frame_time.m_as(unit.nanosecond)
+
+        # Write NOE distances to file every 10 000 frames to avoid pandas
+        # out-of-memory
+        if frame_index % 10000 == 0 and frame_index > 0:
+            list_of_dicts_to_csv(
+                noe_distances,
+                f"{output_path}-{fragment_index}",
+            )
+            fragment_index += 1
+            noe_distances = list()
+
+        frame_dict = {"Frame": frame_index, "Time (ns)": frame_time_ns}
+
+        # Measure NOE distances
+        for noe_dict in noe_pairs:
+            noe_effective_distance = 0.0
+
+            for atom_i in noe_dict["loos_atoms_i"]:
+                for atom_j in noe_dict["loos_atoms_j"]:
+                    noe_effective_distance += numpy.power(
+                        (atom_i.coords() - atom_j.coords()).length(),
+                        -6,
+                    )
+
+            frame_dict[noe_dict["NOE"]] = numpy.power(
+                noe_effective_distance,
+                -1.0 / 6,
+            )
+
+        noe_distances.append(frame_dict)
+
+    if fragment_index == 0:
+        list_of_dicts_to_csv(noe_distances, output_path)
+
+    else:
+        list_of_dicts_to_csv(
+            noe_distances,
+            f"{output_path}-{fragment_index}",
+        )
+
+    return fragment_index
+
+
 def measure_h_bond_geometries(
     topology_path: str,
     trajectory_path: str,
@@ -1905,6 +2084,54 @@ def compute_residual_dipolar_couplings(
     ).reset_index(drop=True)
 
     residual_dipolar_coupling_df.to_csv(output_path)
+
+
+def compute_noe_effective_distances(
+    observable_path: str,
+    noe_distances_path: str,
+    output_path: str,
+    effective_distance_power: int = 6,
+):
+    """
+    Compute effective distances for NOE upper distance restraints.
+
+    Parameters
+    ---------
+    observable_path
+        The path to the data for experimental observables.
+    noe_distances_path
+        The path to the time series of NOE distances.
+    output_path
+        The path to write the computed effective distances.
+    effective_distance_power
+        Power used to compute the effective distance from the measured distance.
+        R_eff = < R ^ (-p) > ^ (-1/p)
+    """
+
+    # Read experimental observables for NOE upper distances
+    observable_df = pandas.read_csv(
+        observable_path,
+        sep=r"\s+",
+    )
+
+    # Read time series of NOE distances
+    noe_distance_df = pandas.read_csv(noe_distances_path, index_col=0)
+
+    # Compute effective distances from measured distances
+    noe_effective_distances = numpy.zeros(observable_df.shape[0])
+
+    for index, row in observable_df.iterrows():
+        noe_distances = noe_distance_df[
+            f'{row["Resid_i"]}-{row["Atom_i"]}-{row["Resid_j"]}-{row["Atom_j"]}'
+        ]
+
+        noe_effective_distances[index] = numpy.power(
+            numpy.mean(numpy.power(noe_distances, -effective_distance_power)),
+            -1.0 / effective_distance_power,
+        )
+
+    observable_df["Computed"] = noe_effective_distances
+    observable_df.to_csv(output_path)
 
 
 def compute_fraction_helix(
