@@ -170,9 +170,10 @@ def measure_dihedrals(
 
     # Load topology
     topology = loos.createSystem(topology_path)
-    min_resid = topology.minResid()
-    max_resid = topology.maxResid()
-    cterm_resname = topology[len(topology) - 1].resname()
+    protein = loos.selectAtoms(topology, 'resname != "HOH"')
+    min_resid = protein.minResid()
+    max_resid = protein.maxResid()
+    cterm_resname = protein[len(protein) - 1].resname()
 
     # Select atoms for dihedrals
     dihedrals_by_residue = list()
@@ -182,7 +183,7 @@ def measure_dihedrals(
         resid = residue[0].resid()
         resname = residue[0].resname()
 
-        if resname in {"NME", "NH2"}:
+        if resname in {"NME", "NH2", "HOH"}:
             continue
 
         residue_dihedrals = dict()
@@ -223,7 +224,8 @@ def measure_dihedrals(
                 # Atom selection is slow, so only do this once for each atom
                 if atom_full_name not in atom_selections:
                     atom_selection = loos.selectAtoms(
-                        topology, f'resid == {atom_resid} && name == "{atom_name}"'
+                        protein,
+                        f'resid == {atom_resid} && name == "{atom_name}"',
                     )
 
                     if len(atom_selection) == 0:
@@ -450,8 +452,8 @@ def measure_internuclear_vector_geometries(
         frame_index = trajectory.index()
         frame_time_ns = frame_time.m_as(unit.nanosecond)
 
-        # Write dihedrals to file every 10 000 frames to avoid pandas
-        # out-of-memory
+        # Write internuclear vector geometries to file every 10 000 frames to
+        # avoid pandas out-of-memory
         if frame_index % 10000 == 9999 and frame_index > 0:
             list_of_dicts_to_csv(
                 internuclear_vector_geometries,
@@ -536,18 +538,19 @@ def measure_h_bond_geometries(
 
     # Load topology
     topology = loos.createSystem(topology_path)
-    min_resid = topology.minResid()
-    max_resid = topology.maxResid()
+    protein = loos.selectAtoms(topology, 'resname != "HOH"')
+    min_resid = protein.minResid()
+    max_resid = protein.maxResid()
 
     # Select OFF atoms that can participate in hydrogen bonds
     offtop = Topology.from_pdb(topology_path)
     putative_donors = [
         match.topology_atom_indices
-        for match in offtop.chemical_environment_matches("[#7,#8,#16:1]-[#1:2]")
+        for match in offtop.chemical_environment_matches("[#7,#8&!H2,#16:1]-[#1:2]")
     ]
     putative_acceptors = [
         match.topology_atom_indices
-        for match in offtop.chemical_environment_matches("[#7,#8,#16:1]")
+        for match in offtop.chemical_environment_matches("[#7,#8&!H2,#16:1]")
     ]
 
     # Construct a list of [donor, hydrogen, acceptor] LOOS atom selections
@@ -568,7 +571,8 @@ def measure_h_bond_geometries(
             donor_name = offtop.atom(donor_index).name
 
             atom_selection = loos.selectAtoms(
-                topology, f'resid == {donor_resid} && name == "{donor_name}"'
+                protein,
+                f'resid == {donor_resid} && name == "{donor_name}"',
             )
 
             if len(atom_selection) == 0:
@@ -583,7 +587,8 @@ def measure_h_bond_geometries(
             hydrogen_name = offtop.atom(hydrogen_index).name
 
             atom_selection = loos.selectAtoms(
-                topology, f'resid == {hydrogen_resid} && name == "{hydrogen_name}"'
+                protein,
+                f'resid == {hydrogen_resid} && name == "{hydrogen_name}"',
             )
 
             if len(atom_selection) == 0:
@@ -615,7 +620,8 @@ def measure_h_bond_geometries(
                 acceptor_name = offtop.atom(acceptor_index).name
 
                 atom_selection = loos.selectAtoms(
-                    topology, f'resid == {acceptor_resid} && name == "{acceptor_name}"'
+                    protein,
+                    f'resid == {acceptor_resid} && name == "{acceptor_name}"',
                 )
 
                 if len(atom_selection) == 0:
@@ -631,7 +637,7 @@ def measure_h_bond_geometries(
             putative_h_bonds.append([donor_atom, hydrogen_atom, acceptor_atom])
 
     # Set up trajectory
-    trajectory = Trajectory(trajectory_path, topology)
+    trajectory = Trajectory(trajectory_path, protein)
 
     # Count observations of putative hydrogen bonds
     h_bond_observations = numpy.zeros(len(putative_h_bonds))
@@ -688,7 +694,8 @@ def measure_h_bond_geometries(
         # participate in multiple observed hydrogen bonds
         if acceptor_index not in acceptor_amide_atoms:
             amide_c_selection = loos.selectAtoms(
-                topology, f'resid == {acceptor_resid} && name == "C"'
+                protein,
+                f'resid == {acceptor_resid} && name == "C"',
             )
 
             if len(amide_c_selection) == 0:
@@ -697,7 +704,8 @@ def measure_h_bond_geometries(
                 )
 
             amide_n_selection = loos.selectAtoms(
-                topology, f'resid == {acceptor_resid + 1} && name == "N"'
+                protein,
+                f'resid == {acceptor_resid + 1} && name == "N"',
             )
 
             if len(amide_n_selection) == 0:
