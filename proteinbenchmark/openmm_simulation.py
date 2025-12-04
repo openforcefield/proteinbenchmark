@@ -7,6 +7,10 @@ from openmm import app, unit
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml
 
 
+class FrameCountMismatchError(Exception):
+    pass
+
+
 class OpenMMSimulation:
     """A class representing a simulation in OpenMM."""
 
@@ -166,6 +170,100 @@ class OpenMMSimulation:
         else:
             return simulation
 
+    def check_frame_count(self, simulation: app.Simulation):
+        """
+        Check the number of frames in the state data reporter and the DCD
+        reporter match the expected number of frames from the OpenMM simulation.
+
+        Parameters
+        ---------
+        simulation
+            An OpenMM Simulation object.
+        """
+
+        import mdtraj
+        from mdtraj.formats.dcd import DCDTrajectoryFile
+        from mdtraj.utils import in_units_of
+
+        # Get expected number of frames based on current step from checkpoint
+        # If the state data or DCD reporters have additional frames written,
+        # truncate them to the expected number of frames
+        expected_frame_count = int(simulation.currentStep / self.output_frequency)
+
+        # Check number of frames in state data reporter file
+        with open(self.state_reporter_file, "r") as state_reporter:
+            # Subtract one for header line
+            state_reporter_frames = sum(1 for _ in state_reporter) - 1
+
+        if state_reporter_frames < expected_frame_count:
+            raise FrameCountMismatchError(
+                f"The state data reporter file has {state_reporter_frames:d} "
+                f"frames but {expected_frame_count:d} were expected."
+            )
+
+        elif state_reporter_frames > expected_frame_count:
+            # Write to a temporary file so that we don't have to read the entire
+            # state reporter file into memory
+            tmp_file = f"{self.state_reporter_file}.tmp"
+
+            with open(self.state_reporter_file, "r") as input_state_data:
+                with open(tmp_file, "w") as output_state_data:
+                    # Write header line
+                    output_state_data.write(input_state_data.readline())
+
+                    # Write frames up to the expected number from the checkpoint
+                    frame_index = 0
+                    while frame_index < expected_frame_count:
+                        frame_index += 1
+                        output_state_data.write(input_state_data.readline())
+
+            # Overwrite the state reporter file with the truncated temporary
+            # file
+            Path(tmp_file).rename(self.state_reporter_file)
+
+        # Check number of frames in DCD reporter file
+        mdtraj_top = mdtraj.load_topology(self.initial_pdb_file)
+        dcd_frames = 0
+        for traj in mdtraj.iterload(self.dcd_reporter_file, top=mdtraj_top):
+            dcd_frames += len(traj)
+
+        if dcd_frames < expected_frame_count:
+            raise FrameCountMismatchError(
+                f"The DCD reporter file has {dcd_frames:d} frames but "
+                f"{expected_frame_count:d} were expected."
+            )
+
+        elif dcd_frames > expected_frame_count:
+            # Write to a temporary file so that we don't have to read the entire
+            # DCD file into memory
+            tmp_file = f"{self.dcd_reporter_file}.tmp"
+
+            with DCDTrajectoryFile(self.dcd_reporter_file, "r") as input_dcd:
+                with DCDTrajectoryFile(tmp_file, "w") as output_dcd:
+                    # Write frames up to the expected number from the checkpoint
+                    frame_index = 0
+                    while frame_index < expected_frame_count:
+                        frame_index += 1
+                        frame = input_dcd.read_as_traj(mdtraj_top, n_frames=1)
+
+                        output_dcd.write(
+                            xyz=in_units_of(
+                                frame.xyz,
+                                frame._distance_unit,
+                                output_dcd.distance_unit,
+                            ),
+                            cell_lengths=in_units_of(
+                                frame.unitcell_lengths,
+                                frame._distance_unit,
+                                output_dcd.distance_unit,
+                            ),
+                            cell_angles=frame.unitcell_angles[0],
+                        )
+
+            # Overwrite the state reporter file with the truncated temporary
+            # file
+            Path(tmp_file).rename(self.dcd_reporter_file)
+
     def start_from_pdb(self):
         """
         Start a new simulation initializing positions from a PDB and velocities
@@ -188,6 +286,7 @@ class OpenMMSimulation:
     def start_from_save_state(
         self,
         save_state_file: str,
+        resume: bool=False,
     ):
         """
         Start a new simulation initializing positions and velocities from a
@@ -225,17 +324,13 @@ class OpenMMSimulation:
         frames from the checkpoint.
         """
 
-        import mdtraj
-        from mdtraj.formats.dcd import DCDTrajectoryFile
-        from mdtraj.utils import in_units_of
-
         # Create an OpenMM simulation
         simulation = self.setup_simulation()
 
         # Load the checkpoint
         if not exists_and_not_empty(self.checkpoint_file):
             raise ValueError(
-                f"Checkpoint file {self.checkpoint_file} does not exist or is " "empty."
+                f"Checkpoint file {self.checkpoint_file} does not exist or is empty."
             )
 
         simulation.loadCheckpoint(self.checkpoint_file)
@@ -244,84 +339,28 @@ class OpenMMSimulation:
         if simulation.currentStep == self.n_steps:
             return
 
-        # Get expected number of frames based on current step from checkpoint
-        # If the state data or DCD reporters have additional frames written,
-        # truncate them to the expected number of frames
-        expected_frame_count = int(simulation.currentStep / self.output_frequency)
+        # Check frame counts between simulation, state data reporter, and DCD
+        # reporter
+        try:
+            check_frame_count(simulation)
 
-        # Check number of frames in state data reporter file
-        with open(self.state_reporter_file, "r") as state_reporter:
-            # Subtract one for header line
-            state_reporter_frames = sum(1 for _ in state_reporter) - 1
+        except FrameCountMismatchError:
+            # Load the last serialized saved state XML
+            save_state_index = 0
+            save_state_dir = Path(self.save_state_prefix).parent
+            glob_prefix = Path(self.save_state_prefix).name
 
-        if state_reporter_frames < expected_frame_count:
-            raise ValueError(
-                f"The state data reporter file has {state_reporter_frames:d} "
-                f"frames but {expected_frame_count:d} were expected."
-            )
+            for save_state_file in save_state_dir.glob(f"{glob_prefix}-*.xml"):
+                file_index = int(save_state_file.stem.split("-")[-1])
+                if file_index > save_state_index:
+                    save_state_index = file_index
 
-        elif state_reporter_frames > expected_frame_count:
-            # Write to a temporary file so that we don't have to read the entire
-            # state reporter file into memory
-            tmp_file = f"{self.state_reporter_file}.tmp"
+            save_state_file = f"{self.save_state_prefix}-{save_state_index}.xml"
+            simulation.loadState(save_state_file)
 
-            with open(self.state_reporter_file, "r") as input_state_data:
-                with open(tmp_file, "w") as output_state_data:
-                    # Write header line
-                    output_state_data.write(input_state_data.readline())
-
-                    # Write frames up to the expected number from the checkpoint
-                    frame_index = 0
-                    while frame_index < expected_frame_count:
-                        frame_index += 1
-                        output_state_data.write(input_state_data.readline())
-
-            # Overwrite the state reporter file with the truncated temporary
-            # file
-            Path(tmp_file).rename(self.state_reporter_file)
-
-        # Check number of frames in DCD reporter file
-        mdtraj_top = mdtraj.load_topology(self.initial_pdb_file)
-        dcd_frames = 0
-        for traj in mdtraj.iterload(self.dcd_reporter_file, top=mdtraj_top):
-            dcd_frames += len(traj)
-
-        if dcd_frames < expected_frame_count:
-            raise ValueError(
-                f"The DCD reporter file has {dcd_frames:d} frames but "
-                f"{expected_frame_count:d} were expected."
-            )
-
-        elif dcd_frames > expected_frame_count:
-            # Write to a temporary file so that we don't have to read the entire
-            # DCD file into memory
-            tmp_file = f"{self.dcd_reporter_file}.tmp"
-
-            with DCDTrajectoryFile(self.dcd_reporter_file, "r") as input_dcd:
-                with DCDTrajectoryFile(tmp_file, "w") as output_dcd:
-                    # Write frames up to the expected number from the checkpoint
-                    frame_index = 0
-                    while frame_index < expected_frame_count:
-                        frame_index += 1
-                        frame = input_dcd.read_as_traj(mdtraj_top, n_frames=1)
-
-                        output_dcd.write(
-                            xyz=in_units_of(
-                                frame.xyz,
-                                frame._distance_unit,
-                                output_dcd.distance_unit,
-                            ),
-                            cell_lengths=in_units_of(
-                                frame.unitcell_lengths,
-                                frame._distance_unit,
-                                output_dcd.distance_unit,
-                            ),
-                            cell_angles=frame.unitcell_angles[0],
-                        )
-
-            # Overwrite the state reporter file with the truncated temporary
-            # file
-            Path(tmp_file).rename(self.dcd_reporter_file)
+            # Truncate both the state data reporter and DCD reporter to the
+            # number of frames in the saved state
+            check_frame_count(simulation)
 
         # Resume dynamics with the checkpointed simulation
         self.run_dynamics(simulation, append=True)
