@@ -342,7 +342,7 @@ class OpenMMSimulation:
         # Check frame counts between simulation, state data reporter, and DCD
         # reporter
         try:
-            check_frame_count(simulation)
+            self.check_frame_count(simulation)
 
         except FrameCountMismatchError:
             # Load the last serialized saved state XML
@@ -360,7 +360,7 @@ class OpenMMSimulation:
 
             # Truncate both the state data reporter and DCD reporter to the
             # number of frames in the saved state
-            check_frame_count(simulation)
+            self.check_frame_count(simulation)
 
         # Resume dynamics with the checkpointed simulation
         self.run_dynamics(simulation, append=True)
