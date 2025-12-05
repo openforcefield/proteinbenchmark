@@ -420,7 +420,12 @@ class OpenMMSimulation:
         # Run dynamics until the desired number of steps is reached
         while simulation.currentStep < self.n_steps:
             steps_remaining = self.n_steps - simulation.currentStep
-            steps_to_take = min(self.save_state_frequency, steps_remaining)
+            steps_at_next_save_state = int(
+                numpy.ceil((simulation.currentStep + 1) / self.save_state_frequency)
+                * self.save_state_frequency
+            )
+            steps_to_next_save_state = steps_at_next_save_state - simulation.currentStep
+            steps_to_take = min(steps_to_next_save_state, steps_remaining)
 
             # Run dynamics
             simulation.step(steps_to_take)
