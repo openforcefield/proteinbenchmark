@@ -597,6 +597,9 @@ class ProteinBenchmarkSystem:
             )
 
         # Compute observables
+        if "observables" not in self.target_parameters:
+            return
+
         target_observables = self.target_parameters["observables"]
 
         # Scalar couplings

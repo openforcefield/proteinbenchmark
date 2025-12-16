@@ -271,6 +271,41 @@ force_fields = {
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
+    "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e3-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e3-opc3-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e4-2-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e4-2-opc3-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e4-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e4-opc3-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e5-2-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e5-2-opc3-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e5-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e5-opc3-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
     "null-0.0.3-4-mer-aaqaa3-1e3-opc3": {
         "force_field_file": Path(
             ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-opc3-NAGL.offxml"
@@ -288,6 +323,20 @@ force_fields = {
     "null-0.0.3-4-mer-aaqaa3-1e3-2-opc3": {
         "force_field_file": Path(
             ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-2-opc3-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-4-mer-hewl-1e4-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-hewl-1e4-opc3-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-4-mer-hewl-1e5-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-hewl-1e5-opc3-NAGL.offxml"
         ),
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
@@ -919,7 +968,32 @@ force_fields = {
         "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
     },
     "sage-2.1.0-nagl-tip4p-fb": {
-        "force_field_file": Path(ff_directory, "Sage-2.1.0-NAGL.offxml"),
+        "force_field_file": "openff-2.3.0-rc2.offxml",
+        "water_model": "tip4p-fb",
+        "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "sage-2.3.0-rc2-opc": {
+        "force_field_file": "openff-2.3.0-rc2.offxml",
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "sage-2.3.0-rc2-opc3": {
+        "force_field_file": "openff-2.3.0-rc2.offxml",
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "sage-2.3.0-rc2-tip3p": {
+        "force_field_file": "openff-2.3.0-rc2.offxml",
+        "water_model": "tip3p",
+        "water_model_file": None,
+    },
+    "sage-2.3.0-rc2-tip3p-fb": {
+        "force_field_file": "openff-2.3.0-rc2.offxml",
+        "water_model": "tip3p-fb",
+        "water_model_file": Path(ff_directory, "tip3p_fb-1.1.0.offxml"),
+    },
+    "sage-2.3.0-rc2-tip4p-fb": {
+        "force_field_file": "openff-2.3.0-rc2.offxml",
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
