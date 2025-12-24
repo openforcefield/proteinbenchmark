@@ -61,7 +61,7 @@ def align_trajectory(
     reference_selection: str | None = None,
 ):
     """
-    Center and align a subset of atoms in a trajectory.
+    Center and align a subset of atoms in a trajectory, then reimage by molecule.
 
     Parameters
     ---------
@@ -87,6 +87,74 @@ def align_trajectory(
 
     import loos
     from loos.pyloos import Trajectory
+
+    def reimage_coordinate(
+        coordinate: loos.GCoord,
+        box_vectors: numpy.typing.ArrayLike,
+        #inverse_box_vectors: numpy.typing.ArrayLike,
+    ):
+        """Reimage a coordinate using arbitrary periodic box vectors."""
+
+        reimaged_coordinate = numpy.array([coordinate.x(), coordinate.y(), coordinate.z()])
+
+        for i in range(3)[::-1]:
+            n = numpy.floor(numpy.abs(reimaged_coordinate[i]) / box_vectors[i, i] + 0.5)
+
+            if reimaged_coordinate[i] < 0:
+                n = -n
+
+            reimaged_coordinate -= n * box_vectors[i]
+
+        #scaled_coordinate = numpy.dot(
+        #    inverse_box_vectors,
+        #    numpy.array([coordinate.x(), coordinate.y(), coordinate.z()]),
+        #)
+
+        #reimaged_scaled_coordinate = scaled_coordinate - numpy.round(scaled_coordinate)
+        #reimaged_coordinate = numpy.dot(box_vectors, reimaged_scaled_coordinate)
+
+        return loos.GCoord(*reimaged_coordinate)
+
+
+    def reimage_molecule(
+        molecule: loos.AtomicGroup,
+        box_vectors: numpy.typing.ArrayLike,
+        #inverse_box_vectors: numpy.typing.ArrayLike,
+        reimage_by_atom: bool=False,
+    ):
+        """
+        Reimage a molecule using arbitrary periodic box vectors.
+
+        Parameters
+        ----------
+        molecule
+            LOOS AtomicGroup to reimage.
+        box_vectors
+            Three-by-three matrix of periodic box vectors.
+        reimage_by_atom
+            Reimage by atom instead of by molecule.
+        """
+
+        if reimage_by_atom:
+            # Translate the centroid to the origin, reimage by atom, then
+            # translate back
+            offset = molecule.centroid()
+            molecule.translate(-offset)
+
+            for atom in molecule:
+                atom.coords(
+                    #reimage_coordinate(atom.coords(), box_vectors, inverse_box_vectors)
+                    reimage_coordinate(atom.coords(), box_vectors)
+                )
+
+        else:
+            # Reimage the molecule centroid
+            centroid = molecule.centroid()
+            #reimaged_centroid = reimage_coordinate(centroid, box_vectors, inverse_box_vectors)
+            reimaged_centroid = reimage_coordinate(centroid, box_vectors)
+            offset = reimaged_centroid - centroid
+
+        molecule.translate(offset)
 
     # Load topology and trajectory
     topology = loos.createSystem(topology_path)
@@ -115,12 +183,62 @@ def align_trajectory(
     else:
         reference_atoms = loos.selectAtoms(reference, reference_selection)
 
+    # Get bonds in OpenFF Topology, then split LOOS output atoms by molecules
+    offtop = Topology.from_pdb(topology_path)
+
+    topology.clearBonds()
+    for bond in offtop.bonds:
+        topology_index_1 = offtop.atom_index(bond.atom1)
+        topology_index_2 = offtop.atom_index(bond.atom2)
+        topology[topology_index_1].addBond(topology[topology_index_2])
+        topology[topology_index_2].addBond(topology[topology_index_1])
+
+    output_molecules = output_atoms.splitByMolecule()
+
     # Set up writer for output trajectory
     output_trajectory = loos.DCDWriter(f"{output_prefix}.dcd")
 
     first_frame = True
 
     for frame in trajectory:
+        if len(output_molecules) > 1:
+            # Reimage by molecule. LOOS assumes a triclinic box, so do reimaging
+            # manually here using the box vectors for the rhombic dodecahedron.
+            d = frame.periodicBox()[0]
+            box_vectors = numpy.array([
+                [d, 0, 0],
+                [0, d, 0],
+                [d / 2, d / 2, d / numpy.sqrt(2)],
+            ])
+
+            #sqrt_2_over_d = numpy.sqrt(2) / d
+            #inverse_box_vectors = numpy.array([
+            #    [1 / d, 0, 0],
+            #    [0, 1 / d, 0],
+            #    [-sqrt_2_over_d / 2, -sqrt_2_over_d / 2, sqrt_2_over_d],
+            #]) 
+
+            #output_atoms.centerAtOrigin()
+
+            #for molecule in output_molecules:
+            #    reimage_molecule(molecule, box_vectors, inverse_box_vectors, reimage_by_atom=True)
+
+            # Move the first molecule to the origin, then do a first pass at
+            # reimaging. This tends to do a better job at keeping multiple
+            # molecules together in the same image.
+            output_atoms.translate(-output_molecules[0].centroid())
+
+            for molecule in output_molecules:
+                #reimage_molecule(molecule, box_vectors, inverse_box_vectors)
+                reimage_molecule(molecule, box_vectors)
+
+            # Center all molecules at the origin and reimage again
+            output_atoms.centerAtOrigin()
+
+            for molecule in output_molecules:
+                #reimage_molecule(molecule, box_vectors, inverse_box_vectors)
+                reimage_molecule(molecule, box_vectors)
+
         # Align frame onto reference
         transform_matrix = align_atoms.superposition(reference_atoms)
 
