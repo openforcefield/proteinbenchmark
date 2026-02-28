@@ -271,6 +271,11 @@ force_fields = {
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
+    "null-0.0.3-3-mer-opc3": {
+        "force_field_file": Path(ff_directory, "Protein-Null-0.0.3-3-mer-NAGL.offxml"),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
     "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e3-opc3": {
         "force_field_file": Path(
             ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-hewl-1e3-opc3-NAGL.offxml"
@@ -369,9 +374,23 @@ force_fields = {
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },
+    "null-0.0.3-4-mer-aaqaa3-1e3-qm-aaqaa3-1e3-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-qm-aaqaa3-1e3-opc3-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
     "null-0.0.3-4-mer-aaqaa3-1e3-qm-freeze-opc3": {
         "force_field_file": Path(
             ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-opc3-qm-freeze-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
+    },
+    "null-0.0.3-4-mer-aaqaa3-1e3-qm-freeze-aaqaa3-1e3-opc3": {
+        "force_field_file": Path(
+            ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-qm-freeze-aaqaa3-1e3-opc3-NAGL.offxml"
         ),
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
@@ -1147,6 +1166,13 @@ force_fields = {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.2-NH2.offxml"),
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
+    },
+    "specific-0.0.3-bb-sage-4-mer-opc3": {
+        "force_field_file": Path(
+            ff_directory, "Protein-Specific-0.0.3-BB-Sage-4-mer-NAGL.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
     },
     "specific-0.0.3-opc": {
         "force_field_file": Path(ff_directory, "Protein-Specific-0.0.3.offxml"),
