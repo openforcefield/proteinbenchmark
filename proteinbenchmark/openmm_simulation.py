@@ -1,10 +1,23 @@
+import dataclasses
+import math
+from collections.abc import Iterable
 from pathlib import Path
+from typing import Literal, Self, overload
 
 import numpy
 import openmm
-from openmm import app, unit
+import openmm.app
+import openmm.unit
+import openmmtools.mcmc
+import openmmtools.multistate
+from openff.toolkit import Quantity
+from openff.units import ensure_quantity
+from openmm import (
+    app,
+    unit,
+)
 
-from proteinbenchmark.utilities import exists_and_not_empty, read_xml
+from proteinbenchmark.utilities import exists_and_not_empty, read_xml, write_xml
 
 
 class FrameCountMismatchError(Exception):
@@ -118,7 +131,7 @@ class OpenMMSimulation:
             f"\n    n_steps {self.n_steps:d} steps"
             f"\n    output_frequency {self.output_frequency:d} steps"
             f"\n    checkpoint_frequency {self.checkpoint_frequency:d} steps"
-            f"\n    save_state_frequency {self.save_state_frequency:d} steps"
+            f"\n    save_state_frequency {self.save_state_frequency:d} steps",
         )
 
     def setup_simulation(
@@ -153,7 +166,7 @@ class OpenMMSimulation:
                     self.pressure,
                     self.temperature,
                     self.barostat_frequency,
-                )
+                ),
             )
 
         # Create simulation
@@ -198,7 +211,7 @@ class OpenMMSimulation:
         if state_reporter_frames < expected_frame_count:
             raise FrameCountMismatchError(
                 f"The state data reporter file has {state_reporter_frames:d} "
-                f"frames but {expected_frame_count:d} were expected."
+                f"frames but {expected_frame_count:d} were expected.",
             )
 
         elif state_reporter_frames > expected_frame_count:
@@ -230,7 +243,7 @@ class OpenMMSimulation:
         if dcd_frames < expected_frame_count:
             raise FrameCountMismatchError(
                 f"The DCD reporter file has {dcd_frames:d} frames but "
-                f"{expected_frame_count:d} were expected."
+                f"{expected_frame_count:d} were expected.",
             )
 
         elif dcd_frames > expected_frame_count:
@@ -286,7 +299,7 @@ class OpenMMSimulation:
     def start_from_save_state(
         self,
         save_state_file: str,
-        resume: bool=False,
+        resume: bool = False,
     ):
         """
         Start a new simulation initializing positions and velocities from a
@@ -305,7 +318,7 @@ class OpenMMSimulation:
         if not exists_and_not_empty(save_state_file):
             raise ValueError(
                 f"Serialized OpenMM state file {save_state_file} does not "
-                "exist or is empty."
+                "exist or is empty.",
             )
 
         simulation.loadState(save_state_file)
@@ -330,7 +343,7 @@ class OpenMMSimulation:
         # Load the checkpoint
         if not exists_and_not_empty(self.checkpoint_file):
             raise ValueError(
-                f"Checkpoint file {self.checkpoint_file} does not exist or is empty."
+                f"Checkpoint file {self.checkpoint_file} does not exist or is empty.",
             )
 
         simulation.loadCheckpoint(self.checkpoint_file)
@@ -384,7 +397,9 @@ class OpenMMSimulation:
         # Set up reporters for DCD trajectory coordinates, state data, and
         # binary checkpoints
         dcd_reporter = app.DCDReporter(
-            self.dcd_reporter_file, self.output_frequency, append=append
+            self.dcd_reporter_file,
+            self.output_frequency,
+            append=append,
         )
         state_reporter = app.StateDataReporter(
             self.state_reporter_file,
@@ -401,7 +416,8 @@ class OpenMMSimulation:
             append=append,
         )
         checkpoint_reporter = app.CheckpointReporter(
-            self.checkpoint_file, self.checkpoint_frequency
+            self.checkpoint_file,
+            self.checkpoint_frequency,
         )
 
         simulation.reporters.extend([dcd_reporter, state_reporter, checkpoint_reporter])
@@ -422,7 +438,7 @@ class OpenMMSimulation:
             steps_remaining = self.n_steps - simulation.currentStep
             steps_at_next_save_state = int(
                 numpy.ceil((simulation.currentStep + 1) / self.save_state_frequency)
-                * self.save_state_frequency
+                * self.save_state_frequency,
             )
             steps_to_next_save_state = steps_at_next_save_state - simulation.currentStep
             steps_to_take = min(steps_to_next_save_state, steps_remaining)
@@ -434,3 +450,331 @@ class OpenMMSimulation:
             save_state_index += 1
             save_state_file = f"{self.save_state_prefix}-{save_state_index}.xml"
             simulation.saveState(save_state_file)
+
+
+@dataclasses.dataclass
+class OpenMMHrexEnsemble:
+    """An H-REx ensemble of simulations with Gibbs sampling using openmmtools"""
+
+    base_simulation: OpenMMSimulation
+    system_fn_ladder: list[Path]
+    steps_between_exchange_attempts: int
+
+    @classmethod
+    def construct_rest2(
+        cls,
+        n_replicas: int,
+        base_simulation: OpenMMSimulation,
+        tempered_atom_idcs: Iterable[int],
+        steps_between_exchange_attempts: int,
+        max_effective_temperature: unit.Quantity | Quantity = unit.Quantity(
+            600.0,
+            "kelvin",
+        ),
+    ) -> Self:
+        t_0 = base_simulation.temperature
+        t_max = ensure_quantity(max_effective_temperature, "openmm")
+        effective_temperatures: list[openmm.unit.Quantity] = [
+            t_0 * (t_max / t_0) ** (m / (n_replicas - 1)) for m in range(n_replicas)
+        ]
+        assert effective_temperatures[0] == t_0
+        assert effective_temperatures[-1] == t_max
+        assert len(effective_temperatures) == n_replicas
+
+        tempered_atom_idcs = set(tempered_atom_idcs)
+
+        ladder: list[Path] = []
+
+        for t_m, m in zip(
+            effective_temperatures,
+            range(n_replicas),
+            strict=True,
+        ):
+            openmm_system = read_xml(base_simulation.openmm_system_file)
+            if m != 0:
+                for force in openmm_system.getForces():
+                    _rest2_scale_force(
+                        force,
+                        tempered_atom_idcs=tempered_atom_idcs,
+                        base_temperature=t_0,
+                        effective_temperature=t_m,
+                    )
+
+            base_system_path = Path(base_simulation.openmm_system_file)
+            rung_system_fn = base_system_path.with_name(
+                f"{base_system_path.stem}-rung{m}-{t_m.value_in_unit(unit.kelvin):3.2f}k.openmm.xml",
+            )
+            write_xml(rung_system_fn, openmm_system)
+            ladder.append(rung_system_fn)
+
+        return cls(
+            base_simulation=base_simulation,
+            system_fn_ladder=ladder,
+            steps_between_exchange_attempts=steps_between_exchange_attempts,
+        )
+
+    @overload
+    def setup_simulation(
+        self,
+        return_pdb: Literal[True],
+    ) -> tuple[openmmtools.multistate.ReplicaExchangeSampler, openmm.app.PDBFile]: ...
+
+    @overload
+    def setup_simulation(
+        self,
+        return_pdb: Literal[False] = False,
+    ) -> openmmtools.multistate.ReplicaExchangeSampler: ...
+
+    def setup_simulation(
+        self,
+        return_pdb: bool = False,
+    ) -> (
+        openmmtools.multistate.ReplicaExchangeSampler
+        | tuple[openmmtools.multistate.ReplicaExchangeSampler, openmm.app.PDBFile]
+    ):
+        """
+        Set up an OpenMM simulation with a Langevin integrator and a Monte Carlo
+        barostat.
+
+        Parameters
+        ----------
+        return_pdb
+            Return OpenMM PDBFile as well as OpenMM Simulation.
+        """
+        if self.base_simulation.n_steps % self.steps_between_exchange_attempts != 0:
+            raise ValueError(
+                "steps_between_exchange_attempts must evenly divide n_steps",
+            )
+        if (
+            self.base_simulation.checkpoint_frequency
+            % self.steps_between_exchange_attempts
+            != 0
+        ):
+            raise ValueError(
+                "steps_between_exchange_attempts must evenly divide checkpoint_frequency",
+            )
+        if (
+            self.base_simulation.output_frequency % self.steps_between_exchange_attempts
+            != 0
+        ):
+            raise ValueError(
+                "steps_between_exchange_attempts must evenly divide output_frequency",
+            )
+
+        # Load OpenMM systems and initial PDB
+        openmm_systems = [read_xml(fn) for fn in self.system_fn_ladder]
+        initial_pdb = app.PDBFile(self.base_simulation.initial_pdb_file)
+
+        # Set up BAOAB Langevin integrator from openmmtools with VRORV splitting
+        integrator = openmm.LangevinMiddleIntegrator(
+            self.base_simulation.temperature,
+            self.base_simulation.langevin_friction,
+            self.base_simulation.timestep,
+        )
+
+        # Set up Monte Carlo barostat
+        if self.base_simulation.pressure.value_in_unit(unit.atmosphere) > 0:
+            for system in openmm_systems:
+                system.addForce(
+                    openmm.MonteCarloBarostat(
+                        self.base_simulation.pressure,
+                        self.base_simulation.temperature,
+                        self.base_simulation.barostat_frequency,
+                    ),
+                )
+
+        # Create sampler
+        sampler = openmmtools.multistate.ReplicaExchangeSampler(
+            mcmc_moves=openmmtools.mcmc.IntegratorMove(
+                integrator=integrator,
+                n_steps=self.steps_between_exchange_attempts,
+            ),
+            replica_mixing_scheme="swap-all",
+            number_of_iterations=(
+                self.base_simulation.n_steps // self.steps_between_exchange_attempts
+            ),
+        )
+
+        # Configure reporters
+        if (
+            self.base_simulation.dcd_reporter_file
+            == self.base_simulation.state_reporter_file
+        ):
+            analysis_frequency = self.steps_between_exchange_attempts
+            storage = openmmtools.multistate.MultiStateReporter(
+                storage=self.base_simulation.dcd_reporter_file,
+                checkpoint_storage=self.base_simulation.checkpoint_file,
+                checkpoint_interval=self.base_simulation.checkpoint_frequency
+                // analysis_frequency,
+                position_interval=self.base_simulation.output_frequency
+                // analysis_frequency,
+                velocity_interval=self.base_simulation.output_frequency
+                // analysis_frequency,
+            )
+        else:
+            raise ValueError("DCD and state reporter files must have same name")
+
+        # Initialize with states
+        sampler.create(
+            thermodynamic_states=[
+                openmmtools.states.ThermodynamicState(
+                    system=system,
+                    temperature=integrator.getTemperature(),
+                )
+                for system in openmm_systems
+            ],
+            sampler_states=[
+                openmmtools.states.SamplerState(
+                    positions=initial_pdb.getPositions(),
+                    box_vectors=initial_pdb.getTopology().getPeriodicBoxVectors(),
+                )
+                for system in openmm_systems
+            ],
+            storage=storage,
+        )
+        assert sampler.n_replicas == len(openmm_systems)
+
+        # Specify platform and mixed precision
+        try:
+            platform = openmm.Platform.getPlatformByName("CUDA")
+        except openmm.OpenMMException:
+            platform = openmm.Platform.getPlatformByName("HIP")
+        context_cache_dict = dict(
+            platform=platform,
+            platform_properties={"Precision": "mixed"},
+            capacity=None,
+            time_to_live=None,
+        )
+        sampler.energy_context_cache = openmmtools.cache.ContextCache(
+            **context_cache_dict,
+        )
+        sampler.sampler_context_cache = openmmtools.cache.ContextCache(
+            **context_cache_dict,
+        )
+
+        if return_pdb:
+            return sampler, initial_pdb
+        else:
+            return sampler
+
+    def start_from_storage(
+        self,
+        storage: str,
+    ) -> openmmtools.multistate.ReplicaExchangeSampler:
+        sampler = openmmtools.multistate.ReplicaExchangeSampler.from_storage(storage)
+        assert isinstance(sampler, openmmtools.multistate.ReplicaExchangeSampler)
+        assert sampler.n_replicas == len(self.system_fn_ladder)
+        n_iterations = sampler.number_of_iterations
+        assert len(sampler.mcmc_moves) == 1
+        assert sampler.mcmc_moves[0].n_steps == self.steps_between_exchange_attempts
+        assert (
+            n_iterations * self.steps_between_exchange_attempts
+            == self.base_simulation.n_steps
+        )
+        return sampler
+
+
+def _rest2_scale_force(
+    force: openmm.Force,
+    *,
+    tempered_atom_idcs: set[int],
+    base_temperature: openmm.unit.Quantity,
+    effective_temperature: openmm.unit.Quantity,
+    scale_non_torsion_bonded_interactions: bool = True,
+) -> openmm.Force:
+    beta_0 = 1 / base_temperature
+    beta_m = 1 / effective_temperature
+    match force:
+        case (
+            openmm.CMMotionRemover()
+            | openmm.AndersenThermostat()
+            | openmm.MonteCarloAnisotropicBarostat()
+            | openmm.MonteCarloBarostat()
+            | openmm.MonteCarloFlexibleBarostat()
+            | openmm.MonteCarloMembraneBarostat()
+        ):
+            # No scaling for non-force Forces
+            pass
+        case openmm.NonbondedForce():
+            # solute-solute should be scaled by:                             beta_m/beta_0
+            # solute-solvent should be scaled by:                            sqrt(beta_m/beta_0)
+            # solvent-solvent should not be scaled
+            # electrostatics are of form q1*q2*<other stuff>
+            # scaling solute charges by sqrt(beta_m/beta_0) gives
+            #   solute-solute:   sqrt(beta_m/beta_0) * sqrt(beta_m/beta_0) = beta_m/beta_0
+            #   solute-solvent:                    sqrt(beta_m/beta_0) * 1 = sqrt(beta_m/beta_0)
+            # LJs are of form sqrt(eps1*eps2)*<other stuff>
+            # scaling solute epsilons by beta_m/beta_0 gives
+            #   solute-solute:         sqrt(beta_m/beta_0 * beta_m/beta_0) = beta_m/beta_0
+            #   solute-solvent:                    sqrt(beta_m/beta_0 * 1) = sqrt(beta_m/beta_0)
+            # solvent parameters are unchanged so solvent-solvent interactions are unscaled
+            for i in tempered_atom_idcs:
+                charge, sigma, epsilon = force.getParticleParameters(i)
+                charge_tempered = math.sqrt(beta_m / beta_0) * charge
+                epsilon_tempered = (beta_m / beta_0) * epsilon
+                force.setParticleParameters(i, charge_tempered, sigma, epsilon_tempered)
+        case openmm.PeriodicTorsionForce():
+            # Energies are proportional to K
+            # each parameter set in the force fully defines the relevent particles
+            # therefore we just multiply K by the desired scale for the parameter
+            for i in range(force.getNumTorsions()):
+                p1, p2, p3, p4, periodicity, phase, k = force.getTorsionParameters(i)
+                torsion_particles = {p1, p2, p3, p4}
+                if torsion_particles.isdisjoint(tempered_atom_idcs):
+                    # no particles are tempered, this is solvent-solvent
+                    k_tempered = k
+                elif torsion_particles.issubset(tempered_atom_idcs):
+                    # all particles are tempered, this is solute-solute
+                    k_tempered = k * beta_m / beta_0
+                else:
+                    # some but not all particles are tempered, this is solute-solvent
+                    k_tempered = k * math.sqrt(beta_m / beta_0)
+                force.setTorsionParameters(
+                    i,
+                    p1,
+                    p2,
+                    p3,
+                    p3,
+                    periodicity,
+                    phase,
+                    k_tempered,
+                )
+        case openmm.HarmonicAngleForce() if scale_non_torsion_bonded_interactions:
+            # Energies are proportional to K
+            # each parameter set in the force fully defines the relevent particles
+            # therefore we just multiply K by the desired scale for the parameter
+            for i in range(force.getNumAngles()):
+                p1, p2, p3, angle, k = force.getAngleParameters(i)
+                angle_particles = {p1, p2, p3}
+                if angle_particles.isdisjoint(tempered_atom_idcs):
+                    # no particles are tempered, this is solvent-solvent
+                    k_tempered = k
+                elif angle_particles.issubset(tempered_atom_idcs):
+                    k_tempered = k * beta_m / beta_0
+                else:
+                    k_tempered = k * math.sqrt(beta_m / beta_0)
+                force.setAngleParameters(i, p1, p2, p3, angle, k_tempered)
+        case openmm.HarmonicBondForce() if scale_non_torsion_bonded_interactions:
+            # Energies are proportional to K
+            # each parameter set in the force fully defines the relevent particles
+            # therefore we just multiply K by the desired scale for the parameter
+            for i in range(force.getNumBonds()):
+                p1, p2, length, k = force.getBondParameters(i)
+                bond_particles = {p1, p2}
+                if bond_particles.isdisjoint(tempered_atom_idcs):
+                    # no particles are tempered, this is solvent-solvent
+                    k_tempered = k
+                elif bond_particles.issubset(tempered_atom_idcs):
+                    # all particles are tempered, this is solute-solute
+                    k_tempered = k * beta_m / beta_0
+                else:
+                    # some but not all particles are tempered, this is solute-solvent
+                    k_tempered = k * math.sqrt(beta_m / beta_0)
+                force.setBondParameters(i, p1, p2, length, k_tempered)
+        case openmm.HarmonicAngleForce() | openmm.HarmonicBondForce():
+            # User has asked not to scale these forces, so leave them alone
+            assert not scale_non_torsion_bonded_interactions
+            pass
+        case _:
+            raise ValueError(f"Cannot scale force {force}")
+    return force

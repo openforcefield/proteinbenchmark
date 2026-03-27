@@ -3,11 +3,10 @@
 from operator import itemgetter
 from pathlib import Path
 
-import loos
 import numpy
 import openmm
 import pandas
-from openmm import app
+from openmm import app, System
 
 package_data_directory = Path(Path(__file__).parent.absolute(), "data")
 
@@ -18,6 +17,7 @@ def copy_internal_coords(ra, rb, rc, rd, ta, tb, tc):
     a fourth target atom so that it has the same distance, angle, and dihedral
     as the reference atoms.
     """
+    import loos
 
     distance = rd.coords().distance(rc.coords())
     angle = numpy.deg2rad(loos.angle(rd, rc, rb))
@@ -278,7 +278,7 @@ def merge_csvs(csv_prefix):
         Path(f"{csv_prefix}-{i}").unlink()
 
 
-def read_xml(xml_file_name):
+def read_xml(xml_file_name: str | Path) -> System:
     """Read an OpenMM system from an XML file."""
 
     with open(xml_file_name, "r") as xml_file:
