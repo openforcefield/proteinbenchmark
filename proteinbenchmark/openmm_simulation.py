@@ -713,6 +713,32 @@ def _rest2_scale_force(
                 charge_tempered = math.sqrt(beta_m / beta_0) * charge
                 epsilon_tempered = (beta_m / beta_0) * epsilon
                 force.setParticleParameters(i, charge_tempered, sigma, epsilon_tempered)
+            # Also need to scale exceptions where appropriate
+            # In exceptions, charge products and epsilons are each proportional
+            # to the energy, so they can be scaled directly
+            for i in range(force.getNumExceptions()):
+                p1, p2, charge_prod, sigma, epsilon = force.getExceptionParameters(i)
+                exception_particles = {p1, p2}
+                if exception_particles.isdisjoint(tempered_atom_idcs):
+                    # no particles are tempered, this is solvent-solvent
+                    charge_prod_tempered = charge_prod
+                    epsilon_tempered = epsilon
+                elif exception_particles.issubset(tempered_atom_idcs):
+                    # all particles are tempered, this is solute-solute
+                    charge_prod_tempered = charge_prod * beta_m / beta_0
+                    epsilon_tempered = epsilon * beta_m / beta_0
+                else:
+                    # some but not all particles are tempered, this is solute-solvent
+                    charge_prod_tempered = charge_prod * math.sqrt(beta_m / beta_0)
+                    epsilon_tempered = epsilon * math.sqrt(beta_m / beta_0)
+                force.setExceptionParameters(
+                    i,
+                    p1,
+                    p2,
+                    charge_prod_tempered,
+                    sigma,
+                    epsilon_tempered,
+                )
         case openmm.PeriodicTorsionForce():
             # Energies are proportional to K
             # each parameter set in the force fully defines the relevent particles
