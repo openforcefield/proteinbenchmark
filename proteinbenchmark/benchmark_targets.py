@@ -352,6 +352,24 @@ benchmark_targets = {
         "ph": 6.5,
         "ionic_strength": 0.225 * unit.molar,
     },
+    "cyclo-vvggvg": {
+        "target_type": "cyclic",
+        "aa_sequence": "VVGGVG",
+        "smiles": "N1[C@@H](C(C)C)C(=O)N[C@@H](C(C)C)C(=O)N[CH2]C(=O)N[CH2]C(=O)N[C@@H](C(C)C)C(=O)N[CH2]C(=O)1",
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 288.0 * unit.kelvin,
+        "ph": 7.0,
+        "ionic_strength": 0.0 * unit.molar,
+        "sampling_method": "REST2",
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["cummings_biophysj_2019"],
+                "observable_path": Path(
+                    observable_directory, "lin-et-al-cyclic-peptides", "cummings-et-al-2019.json"
+                ),
+            },
+        },
+    },
     "dhr29b": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "dhr29b-2KPU-model-1.pdb"),
@@ -965,6 +983,12 @@ experimental_datasets = {
         "references": [
             "Cornilescu G, Ramirez BE, Frank MK, Clore GM, Gronenborn AM, "
             "Bax A. (1999). J. Am. Chem. Soc. 121, 6275-6279.",
+        ],
+    },
+    "cummings_biophysj_2019": {
+        "references": [
+            "Cummings AE, Miao J, Slough DP, McHugh SM, Kritzer JA, Lin Y. "
+            "(2019). Biophys. J. 116, 433-444.",
         ],
     },
     "graf_jacs_2007": {

@@ -10,6 +10,7 @@ from openmmforcefields.generators import EspalomaTemplateGenerator
 
 from proteinbenchmark.force_fields import force_fields
 from proteinbenchmark.utilities import (
+    enforce_iupac_branch_numbering,
     read_xml,
     remove_model_lines,
     write_pdb,
@@ -22,9 +23,10 @@ def build_initial_coordinates(
     ph: float,
     initial_pdb: str,
     protonated_pdb: str,
-    aa_sequence: str = None,
-    nterm_cap: str = None,
-    cterm_cap: str = None,
+    aa_sequence: str | None = None,
+    smiles: str | None = None,
+    nterm_cap: str | None = None,
+    cterm_cap: str | None = None,
 ):
     """
     Build initial coordinates and set protonation state.
@@ -35,7 +37,7 @@ def build_initial_coordinates(
         The method for building the initial coordinates. "extended" will build
         coordinates from a given amino acid sequence using pmx with phi and psi
         set to -180 deg for every residue. "pdb" will build coordinates from a
-        given PDB file.
+        given PDB file. "smiles" will build coordinates from a SMILES string.
     ph
         The pH used to assign protonation state.
     initial_pdb
@@ -45,6 +47,8 @@ def build_initial_coordinates(
         The path to write the protonated PDB with initial coordinates.
     aa_sequence
         The primary amino acid sequence for the "extended" build method.
+    smiles
+        The SMILES string of the molecule for the "smiles" build method.
     nterm_cap
         The capping group to add on the N terminus. Must be "ace" or None.
     cterm_cap
@@ -63,10 +67,77 @@ def build_initial_coordinates(
             f'"pdb" with initial_pdb\n    {initial_pdb}'
         )
 
+    # TODO test this for non-canonical residues
+    elif build_method == "smiles":
+        if smiles is None:
+            raise ValueError('smiles must be set to use build_method "smiles"')
+
+        print(
+            f"Building initial coordinates at pH {ph:.3f} using build_method "
+            f'"smiles" with smiles\n    {smiles}'
+        )
+            
+        offmol = Molecule.from_smiles(smiles)
+
+        # Generate a HierarchyScheme
+        if aa_sequence is not None:
+            offmol.properties["sequence"] = aa_sequence
+
+        offmol.perceive_residues()
+
+        # Atom order will be all heavy atoms and then all hydrogens, so sort
+        # atoms by residue number
+        resnum_map_dict = {
+            atom.molecule_atom_index: atom_index
+            for atom_index, atom in enumerate(
+                sorted(offmol.atoms, key=lambda a: int(a.metadata["residue_number"]))
+            )
+        }
+        offmol = offmol.remap(resnum_map_dict)
+
+        offmol.perceive_residues()
+
+        # Set Molecule atom names to HierarchyScheme atom names
+        for atom in offmol.atoms:
+            atom.name = atom.metadata["atom_name"]
+
+        # Generate a conformer and enforce IUPAC branch numbering
+        offmol.generate_conformers(n_conformers=1)
+        enforce_iupac_branch_numbering(offmol)
+
+        # Write to PDB using OpenMM
+        write_pdb(
+            initial_pdb,
+            offmol.to_topology().to_openmm(),
+            offmol.conformers[0].to_openmm(),
+        )
+
+        # Write CONECT records for bonds between non-sequential residues
+        # This should catch disulfide bonds and cyclization linkages
+        conect_pairs = list()
+        for bond in offmol.bonds:
+            resnum1 = int(bond.atom1.metadata["residue_number"])
+            resnum2 = int(bond.atom2.metadata["residue_number"])
+            if numpy.abs(resnum1 - resnum2) > 1:
+                # Increment by 1 because PDB indices are 1-based
+                conect_pairs.append((bond.atom1_index + 1, bond.atom2_index + 1))
+
+        if len(conect_pairs) > 0:
+            remove_model_lines(initial_pdb, remove_end=True)
+            with open(initial_pdb, "a") as pdb_file:
+                for pdb_index_1, pdb_index_2 in conect_pairs:
+                    pdb_file.write(f"CONECT{pdb_index_1:5d}{pdb_index_2:5d}\n")
+                    pdb_file.write(f"CONECT{pdb_index_2:5d}{pdb_index_1:5d}\n")
+                pdb_file.write("END")
+
+        # Make sure we can round trip Molecule -> PDB -> Molecule
+        tmp_offtop = Topology.from_pdb(initial_pdb)
+        assert tmp_offtop.molecule(0).to_inchikey() == offmol.to_inchikey()
+
     elif build_method in {"alpha", "beta", "extended", "PII"}:
         if aa_sequence is None:
             raise ValueError(
-                'aa_sequence must be set to use build_method "extended" or ' "helical"
+                f'aa_sequence must be set to use build_method "{build_method}"'
             )
 
         print(
@@ -157,8 +228,8 @@ def build_initial_coordinates(
 
     else:
         raise ValueError(
-            'Argument `build_method` must be one of\n    "extended"'
-            '\n    "helical"\n    "pdb"'
+            'Argument `build_method` must be one of\n    "alpha"\n    "beta"'
+            '\n    "extended"\n    "pdb"\n    "PII"\n    "smiles"'
         )
 
     # Clean up initial structure and assign protonation states using pdb2pqr

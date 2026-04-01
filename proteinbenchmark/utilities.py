@@ -8,6 +8,7 @@ import numpy
 import openmm
 import pandas
 from openmm import app
+from openff.toolkit import Molecule
 
 package_data_directory = Path(Path(__file__).parent.absolute(), "data")
 
@@ -41,6 +42,199 @@ def copy_internal_coords(ra, rb, rc, rd, ta, tb, tc):
         numpy.array([dx, dy, dz]),
     )
     return numpy.array([tc.coords()[0], tc.coords()[1], tc.coords()[2]]) + r_cd
+
+
+def enforce_iupac_branch_numbering(offmol: Molecule, conformer_index: int = 0):
+    """
+    Ensure that a molecule with a HierarchyScheme for canonical amino acids
+    follows the IUPAC rules for branch numbering in tetrahedral configurations
+    (https://iupac.qmul.ac.uk/misc/ppep1.html#222) for a particular conformer.
+    """
+
+    if "residues" not in offmol.hierarchy_schemes:
+        return
+
+    conformer = offmol.conformers[conformer_index]
+    new_conformer_indices = numpy.arange(conformer.shape[0])
+
+    # Construct a dictionary that maps residue_number and atom name to molecule
+    # atom index
+    atom_dict = {
+        int(residue.residue_number): {
+            atom.metadata["atom_name"]: atom.molecule_atom_index
+            for atom in residue.atoms
+        }
+        for residue in offmol.residues
+    }
+        
+    for residue in offmol.residues:
+        resnum = int(residue.residue_number)
+
+        # Alpha methylene HA2 and HA3
+        if residue.residue_name == "GLY":
+            n = atom_dict[resnum]["N"]
+            ca = atom_dict[resnum]["CA"]
+            c = atom_dict[resnum]["C"]
+            ha2 = atom_dict[resnum]["HA2"]
+            ha3 = atom_dict[resnum]["HA3"]
+
+            # Select GLY HA2 and HA3 based on phi, but use psi for first residue
+            if resnum == 1:
+                n_next = atom_dict[resnum + 1]["N"]
+
+                psi = measure_dihedral(conformer, n, ca, c, n_next)
+                ha2_torsion = measure_dihedral(conformer, ha2, ca, c, n_next)
+                ha3_torsion = measure_dihedral(conformer, ha3, ca, c, n_next)
+
+                if (ha3_torsion - psi) % 360 > (ha2_torsion - psi) % 360:
+                    new_conformer_indices[ha2] = ha3
+                    new_conformer_indices[ha3] = ha2
+
+            else:
+                c_prev = atom_dict[resnum - 1]["C"]
+
+                phi = measure_dihedral(conformer, c_prev, n, ca, c)
+                ha2_torsion = measure_dihedral(conformer, c_prev, n, ca, ha2)
+                ha3_torsion = measure_dihedral(conformer, c_prev, n, ca, ha3)
+
+                if (ha2_torsion - phi) % 360 > (ha3_torsion - phi) % 360:
+                    new_conformer_indices[ha2] = ha3
+                    new_conformer_indices[ha3] = ha2
+
+        # Beta methylene HB2 and HB3
+        if residue.residue_name in {
+            "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "HIS", "LEU", "LYS",
+            "MET", "PHE", "PRO", "SER", "TYR", "TRP",
+        }:
+            n = atom_dict[resnum]["N"]
+            ca = atom_dict[resnum]["CA"]
+            cb = atom_dict[resnum]["CB"]
+            hb2 = atom_dict[resnum]["HB2"]
+            hb3 = atom_dict[resnum]["HB3"]
+
+            if residue.residue_name == "CYS":
+                ag = atom_dict[resnum]["SG"]
+            elif residue.residue_name == "SER":
+                ag = atom_dict[resnum]["OG"]
+            else:
+                ag = atom_dict[resnum]["CG"]
+
+            chi1 = measure_dihedral(conformer, n, ca, cb, ag)
+            hb2_torsion = measure_dihedral(conformer, n, ca, cb, hb2)
+            hb3_torsion = measure_dihedral(conformer, n, ca, cb, hb3)
+
+            if (hb2_torsion - chi1) % 360 > (hb3_torsion - chi1) % 360:
+                new_conformer_indices[hb2] = hb3
+                new_conformer_indices[hb3] = hb2
+
+        # Gamma methylene HG2 and HG3
+        if residue.residue_name in {"ARG", "GLN", "GLU", "LYS", "MET", "PRO"}:
+            ca = atom_dict[resnum]["CA"]
+            cb = atom_dict[resnum]["CB"]
+            cg = atom_dict[resnum]["CG"]
+            hg2 = atom_dict[resnum]["HG2"]
+            hg3 = atom_dict[resnum]["HG3"]
+
+            if residue.residue_name == "MET":
+                ad = atom_dict[resnum]["SD"]
+            else:
+                ad = atom_dict[resnum]["CD"]
+
+            chi2 = measure_dihedral(conformer, ca, cb, cg, ad)
+            hg2_torsion = measure_dihedral(conformer, ca, cb, cg, hg2)
+            hg3_torsion = measure_dihedral(conformer, ca, cb, cg, hg3)
+
+            if (hg2_torsion - chi2) % 360 > (hg3_torsion - chi2) % 360:
+                new_conformer_indices[hg2] = hg3
+                new_conformer_indices[hg3] = hg2
+
+        # Delta methylene HD2 and HD3
+        if residue.residue_name in {"ARG", "LYS", "PRO"}:
+            cb = atom_dict[resnum]["CB"]
+            cg = atom_dict[resnum]["CG"]
+            cd = atom_dict[resnum]["CD"]
+            hd2 = atom_dict[resnum]["HD2"]
+            hd3 = atom_dict[resnum]["HD3"]
+
+            if residue.residue_name == "ARG":
+                ae = atom_dict[resnum]["NE"]
+            elif residue.residue_name == "PRO":
+                ae = atom_dict[resnum]["N"]
+            else:
+                ae = atom_dict[resnum]["CE"]
+
+            chi3 = measure_dihedral(conformer, cb, cg, cd, ae)
+            hd2_torsion = measure_dihedral(conformer, cb, cg, cd, hd2)
+            hd3_torsion = measure_dihedral(conformer, cb, cg, cd, hd3)
+
+            if (hd2_torsion - chi3) % 360 > (hd3_torsion - chi3) % 360:
+                new_conformer_indices[hd2] = hd3
+                new_conformer_indices[hd3] = hd2
+
+        # Epsilon methylene HE2 and HE3
+        if residue.residue_name == "LYS":
+            cg = atom_dict[resnum]["CG"]
+            cd = atom_dict[resnum]["CD"]
+            ce = atom_dict[resnum]["CE"]
+            nz = atom_dict[resnum]["NZ"]
+            he2 = atom_dict[resnum]["HE2"]
+            he3 = atom_dict[resnum]["HE3"]
+
+            chi4 = measure_dihedral(conformer, cg, cd, ce, nz)
+            he2_torsion = measure_dihedral(conformer, cg, cd, ce, he2)
+            he3_torsion = measure_dihedral(conformer, cg, cd, ce, he3)
+
+            if (he2_torsion - chi4) % 360 > (he3_torsion - chi4) % 360:
+                new_conformer_indices[he2] = he3
+                new_conformer_indices[he3] = he2
+
+        # Beta isopropyl CG1 and CG2
+        if residue.residue_name == "VAL":
+            n = atom_dict[resnum]["N"]
+            ca = atom_dict[resnum]["CA"]
+            cb = atom_dict[resnum]["CB"]
+            hb = atom_dict[resnum]["HB"]
+            cg1 = atom_dict[resnum]["CG1"]
+            cg2 = atom_dict[resnum]["CG2"]
+
+            chi1 = measure_dihedral(conformer, n, ca, cb, cg1)
+            cg2_torsion = measure_dihedral(conformer, n, ca, cb, cg2)
+            hb_torsion = measure_dihedral(conformer, n, ca, cb, hb)
+
+            if (chi1 - hb_torsion) % 360 > (cg2_torsion - hb_torsion) % 360:
+                new_conformer_indices[cg1] = cg2
+                new_conformer_indices[atom_dict[resnum]["HG11"]] = atom_dict[resnum]["HG21"]
+                new_conformer_indices[atom_dict[resnum]["HG12"]] = atom_dict[resnum]["HG22"]
+                new_conformer_indices[atom_dict[resnum]["HG13"]] = atom_dict[resnum]["HG23"]
+                new_conformer_indices[cg2] = cg1
+                new_conformer_indices[atom_dict[resnum]["HG21"]] = atom_dict[resnum]["HG11"]
+                new_conformer_indices[atom_dict[resnum]["HG22"]] = atom_dict[resnum]["HG12"]
+                new_conformer_indices[atom_dict[resnum]["HG23"]] = atom_dict[resnum]["HG13"]
+
+        # Gamma isopropyl CD1 and CD2
+        if residue.residue_name == "LEU":
+            ca = atom_dict[resnum]["CA"]
+            cb = atom_dict[resnum]["CB"]
+            cg = atom_dict[resnum]["CG"]
+            hg = atom_dict[resnum]["HG"]
+            cd1 = atom_dict[resnum]["CD1"]
+            cd2 = atom_dict[resnum]["CD2"]
+
+            chi2 = measure_dihedral(conformer, ca, cb, cg, cd1)
+            cd2_torsion = measure_dihedral(conformer, ca, cb, cg, cd22)
+            hg_torsion = measure_dihedral(conformer, ca, cb, cg, hg)
+
+            if (chi2 - hg_torsion) % 360 > (cd2_torsion - hg_torsion) % 360:
+                new_conformer_indices[cd1] = cd2
+                new_conformer_indices[atom_dict[resnum]["HD11"]] = atom_dict[resnum]["HD21"]
+                new_conformer_indices[atom_dict[resnum]["HD12"]] = atom_dict[resnum]["HD22"]
+                new_conformer_indices[atom_dict[resnum]["HD13"]] = atom_dict[resnum]["HD23"]
+                new_conformer_indices[cd2] = cd1
+                new_conformer_indices[atom_dict[resnum]["HD21"]] = atom_dict[resnum]["HD11"]
+                new_conformer_indices[atom_dict[resnum]["HD22"]] = atom_dict[resnum]["HD12"]
+                new_conformer_indices[atom_dict[resnum]["HD23"]] = atom_dict[resnum]["HD13"]
+
+    offmol.conformers[conformer_index] = conformer[new_conformer_indices]
 
 
 def exists_and_not_empty(file_name):
@@ -251,6 +445,21 @@ def list_of_dicts_to_csv(list_of_dicts, csv_path):
     df = pandas.DataFrame(list_of_dicts)
     df.to_csv(csv_path)
 
+
+def measure_dihedral(conformer: numpy.typing.ArrayLike, i: int, j: int, k: int, l: int) -> float:
+    """Measure a dihedral for atoms with indices (i, j, k, l) in degrees."""
+
+    r_ij = conformer[j] - conformer[i]
+    r_jk = conformer[k] - conformer[j]
+    r_kl = conformer[l] - conformer[k]
+
+    cross_jkl = numpy.cross(r_jk, r_kl)
+    dihedral = numpy.arctan2(
+        numpy.dot(numpy.linalg.norm(r_jk) * r_ij, cross_jkl),
+        numpy.dot(numpy.cross(r_ij, r_jk), cross_jkl),
+    )
+
+    return numpy.rad2deg(dihedral).m
 
 def merge_csvs(csv_prefix):
     """Merge multiple CSV files into one CSV."""

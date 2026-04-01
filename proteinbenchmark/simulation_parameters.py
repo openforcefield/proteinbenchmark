@@ -31,6 +31,14 @@ LANGEVIN_FRICTION = 1.0 / unit.picosecond
 OPENMM_BAROSTAT_FREQUENCY = 25
 GMX_BAROSTAT_CONSTANT = 10.0 * unit.picosecond
 
+# Default REST2 parameters
+REST2_FRAME_LENGTH = 100.0 * unit.picosecond
+REST2_CHECKPOINT_LENGTH = REST2_FRAME_LENGTH * 100
+REST2_SAVE_STATE_LENGTH = REST2_CHECKPOINT_LENGTH * 10
+REST2_TRAJ_LENGTH = 1.0 * unit.microsecond
+REST2_N_WINDOWS = 8
+REST2_MAX_TEMPERATURE = 700.0 * unit.kelvin
+
 # Production trajectory length for peptides, folded proteins, and disordered
 # proteins
 PEPTIDE_TRAJ_LENGTH = 500.0 * unit.nanosecond

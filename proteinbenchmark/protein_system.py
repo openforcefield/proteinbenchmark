@@ -41,9 +41,9 @@ class ProteinBenchmarkSystem:
         force_field_name: str,
         water_model_name: str,
         force_field_file: str,
-        water_model_file: str = None,
+        water_model_file: str | None = None,
         simulation_platform: str = "openmm",
-        gmx_executable: str = None,
+        gmx_executable: str | None = None,
     ):
         """
         Initializes the ProteinBenchmarkSystem object with target parameters.
@@ -151,6 +151,22 @@ class ProteinBenchmarkSystem:
                     protonated_pdb=self.protonated_pdb,
                 )
 
+            # smiles build method takes priority over aa_sequence
+            elif "smiles" in self.target_parameters:
+                if "aa_sequence" in self.target_parameters:
+                    aa_sequence = self.target_parameters["aa_sequence"]
+                else:
+                    aa_sequence = None
+
+                build_initial_coordinates(
+                    build_method="smiles",
+                    ph=self.target_parameters["ph"],
+                    initial_pdb=self.initial_pdb,
+                    protonated_pdb=self.protonated_pdb,
+                    aa_sequence=aa_sequence,
+                    smiles=self.target_parameters["smiles"],
+                )
+
             elif "aa_sequence" in self.target_parameters:
                 if "build_method" in self.target_parameters:
                     build_method = self.target_parameters["build_method"]
@@ -180,7 +196,7 @@ class ProteinBenchmarkSystem:
             else:
                 raise ValueError(
                     f"benchmark_targets for target {self.target_name} must "
-                    'contain one of "aa_sequence" or "initial_pdb"'
+                    'contain one of "aa_sequence", "initial_pdb", or "smiles"'
                 )
 
         # Solvate and add ions using Amber ff14SB as a reference force field
@@ -258,6 +274,31 @@ class ProteinBenchmarkSystem:
                     restraint_energy_constant=restraint_energy_constant,
                     force_tolerance=force_tolerance,
                 )
+
+        if (
+            "sampling_method" in self.target_parameters
+            and self.target_parameters["sampling_method"] == "REST2"
+        ):
+            if self.simulation_platofrm != "openmm":
+                raise NotImplementedError("REST2 sampling is supported only in OpenMM")
+
+            if "REST2_N_windows" in self.target_parameters:
+                n_windows = self.target_parameters["REST2_N_windows"]
+            else:
+                n_windows = REST2_N_WINDOWS
+
+            # Copy protonated, solvated, and minimized PDBs for first window
+            Path(f"{self.setup_prefix}-1-protonated.pdb").write_text(
+                Path(self.protonated_pdb).read_text()
+            )
+            Path(f"{self.setup_prefix}-1-solvated.pdb").write_text(
+                Path(solvated_pdb).read_text()
+            )
+            Path(f"{self.setup_prefix}-1-minimized.pdb").write_text(
+                Path(self.minimized_coords).read_text()
+            )
+
+            
 
         print(f"Setup complete for system {self.system_name}")
 
