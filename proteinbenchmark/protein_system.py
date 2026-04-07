@@ -158,6 +158,10 @@ class ProteinBenchmarkSystem:
                 else:
                     aa_sequence = None
 
+                if self.target_parameters["target_type"] == "cyclic":
+                    nterm_cap = "cyclic"
+                    cterm_cap = "cyclic"
+
                 build_initial_coordinates(
                     build_method="smiles",
                     ph=self.target_parameters["ph"],
@@ -165,6 +169,8 @@ class ProteinBenchmarkSystem:
                     protonated_pdb=self.protonated_pdb,
                     aa_sequence=aa_sequence,
                     smiles=self.target_parameters["smiles"],
+                    nterm_cap=nterm_cap,
+                    cterm_cap=cterm_cap,
                 )
 
             elif "aa_sequence" in self.target_parameters:
@@ -279,8 +285,12 @@ class ProteinBenchmarkSystem:
             "sampling_method" in self.target_parameters
             and self.target_parameters["sampling_method"] == "REST2"
         ):
-            if self.simulation_platofrm != "openmm":
+            if self.simulation_platform != "openmm":
                 raise NotImplementedError("REST2 sampling is supported only in OpenMM")
+
+            from openff.toolkit import Topology
+            from openmm import app
+            from proteinbenchmark.utilities import enforce_iupac_branch_numbering, write_pdb
 
             if "REST2_N_windows" in self.target_parameters:
                 n_windows = self.target_parameters["REST2_N_windows"]
@@ -298,7 +308,63 @@ class ProteinBenchmarkSystem:
                 Path(self.minimized_coords).read_text()
             )
 
-            
+            # Get number of water molecules in solvated PDB for first window
+            solvated_pdb = app.PDBFile(solvated_pdb)
+            _oxygen = app.element.oxygen
+            n_water = 0
+
+            for chain in solvated_pdb.topology.chains():
+                for residue in chain.residues():
+                    if residue.name == "HOH":
+                        for atom in residue.atoms():
+                            if atom.element == _oxygen:
+                                n_water += 1
+
+            # Generate a solute conformer for each window after the first
+            offtop = Topology.from_pdb(self.protonated_pdb)
+            openmm_top = offtop.to_openmm()
+            offmol = offtop.molecule(0)
+
+            offmol.generate_conformers(n_windows - 1, clear_existing=False)
+
+            for window_index in range(2, n_windows + 1):
+                window_protonated_pdb = f"{self.setup_prefix}-{window_index}-protonated.pdb"
+                window_solvated_pdb = f"{self.setup_prefix}-{window_index}-solvated.pdb"
+                window_minimized_coords = f"{self.setup_prefix}-{window_index}-minimized.pdb"
+
+                # Enforce IUPAC branch numbering for this conformer
+                enforce_iupac_branch_numbering(
+                    offmol,
+                    conformer_index=window_index - 1,
+                )
+
+                # Write the solute conformer for this window
+                write_pdb(
+                    window_protonated_pdb,
+                    openmm_top,
+                    offmol.conformers[window_index - 1].to_openmm(),
+                )
+
+                # Solvate and add ions using number of waters molecules in the
+                # solvated PDB from the first window
+                solvate(
+                    ionic_strength=self.target_parameters["ionic_strength"],
+                    protonated_pdb_file=window_protonated_pdb,
+                    solvated_pdb_file=window_solvated_pdb,
+                    water_model=self.water_model,
+                    n_solvent=n_water,
+                )
+
+                # Minimize energy of solvated system with Cartesian restraints
+                # on non-hydrogen solute atoms
+                minimize_openmm(
+                    parametrized_system=self.parametrized_system,
+                    solvated_pdb_file=window_solvated_pdb,
+                    minimized_coords_file=window_minimized_coords,
+                    restraint_energy_constant=restraint_energy_constant,
+                    force_tolerance=force_tolerance,
+                )
+
 
         print(f"Setup complete for system {self.system_name}")
 

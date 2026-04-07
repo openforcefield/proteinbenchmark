@@ -255,6 +255,31 @@ def build_initial_coordinates(
     pdb2pqr_parser = pdb2pqr_build_main_parser()
     pdb2pqr_main_driver(pdb2pqr_parser.parse_args(pdb2pqr_args.split()))
 
+    # Special handling for cyclic peptides
+    if nterm_cap == "cyclic" and cterm_cap == "cyclic":
+        protonated_model = pmx.Model(protonated_pdb)
+
+        nterm_residue = protonated_model.residues[0]
+        del nterm_residue["H2"]
+        del nterm_residue["H3"]
+
+        cterm_residue = protonated_model.residues[-1]
+        del cterm_residue["OXT"]
+
+        protonated_model.write(protonated_pdb)
+
+        # Remove MODEL lines written by PMX that cannot be read by OpenMM
+        # Also remove END so that we can write CONECT records
+        remove_model_lines(protonated_pdb, remove_end=True)
+
+        # Add CONECT record to enforce cyclic peptide bond
+        n = nterm_residue["N"]
+        c = cterm_residue["C"]
+        with open(protonated_pdb, "a") as pdb_file:
+            pdb_file.write(f"CONECT{n.id:5d}{c.id:5d}\n")
+            pdb_file.write(f"CONECT{c.id:5d}{n.id:5d}\n")
+            pdb_file.write("END")
+
     # Special handling for protonated C terminus
     if ph < cterm_pka and cterm_cap is None:
         protonated_model = pmx.Model(protonated_pdb)
@@ -280,9 +305,9 @@ def build_initial_coordinates(
 
             protonated_model.write(protonated_pdb)
 
-            # Remove MODEL lines written by PMX that cannot be read by OpenMM
-            # Also remove END so that we can write CONECT records
-            remove_model_lines(protonated_pdb, remove_end=True)
+        # Remove MODEL lines written by PMX that cannot be read by OpenMM
+        # Also remove END so that we can write CONECT records
+        remove_model_lines(protonated_pdb, remove_end=True)
 
         # Add CONECT record to enforce bond between "HO" and "OXT"
         ho = c_term_residue["HO"]
