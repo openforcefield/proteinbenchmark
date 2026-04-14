@@ -3,6 +3,7 @@ import math
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal, Self, overload
+import logging
 
 import numpy
 import openmm
@@ -19,6 +20,7 @@ from openmm import (
 
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml, write_xml
 
+LOGGER = logging.getLogger(__name__)
 
 class FrameCountMismatchError(Exception):
     pass
@@ -477,9 +479,14 @@ class OpenMMHrexEnsemble:
         effective_temperatures: list[openmm.unit.Quantity] = [
             t_0 * (t_max / t_0) ** (m / (n_replicas - 1)) for m in range(n_replicas)
         ]
-        assert effective_temperatures[0] == t_0
-        assert effective_temperatures[-1] == t_max
-        assert len(effective_temperatures) == n_replicas
+        assert effective_temperatures[0] == t_0, f"{effective_temperatures[0]} != {t_0}"
+        assert numpy.isclose(
+            effective_temperatures[-1].value_in_unit(openmm.unit.kelvin),
+            t_max.value_in_unit(openmm.unit.kelvin),
+        ), f"{effective_temperatures[-1]} != {t_max}"
+        assert len(effective_temperatures) == n_replicas, (
+            f"{len(effective_temperatures)} != {n_replicas}"
+        )
 
         tempered_atom_idcs = set(tempered_atom_idcs)
 
@@ -517,17 +524,20 @@ class OpenMMHrexEnsemble:
     def setup_simulation(
         self,
         return_pdb: Literal[True],
+        use_gpu: bool = True,
     ) -> tuple[openmmtools.multistate.ReplicaExchangeSampler, openmm.app.PDBFile]: ...
 
     @overload
     def setup_simulation(
         self,
         return_pdb: Literal[False] = False,
+        use_gpu: bool = True,
     ) -> openmmtools.multistate.ReplicaExchangeSampler: ...
 
     def setup_simulation(
         self,
         return_pdb: bool = False,
+        use_gpu: bool = True,
     ) -> (
         openmmtools.multistate.ReplicaExchangeSampler
         | tuple[openmmtools.multistate.ReplicaExchangeSampler, openmm.app.PDBFile]
@@ -635,22 +645,24 @@ class OpenMMHrexEnsemble:
         assert sampler.n_replicas == len(openmm_systems)
 
         # Specify platform and mixed precision
-        try:
-            platform = openmm.Platform.getPlatformByName("CUDA")
-        except openmm.OpenMMException:
-            platform = openmm.Platform.getPlatformByName("HIP")
-        context_cache_dict = dict(
-            platform=platform,
-            platform_properties={"Precision": "mixed"},
-            capacity=None,
-            time_to_live=None,
-        )
-        sampler.energy_context_cache = openmmtools.cache.ContextCache(
-            **context_cache_dict,
-        )
-        sampler.sampler_context_cache = openmmtools.cache.ContextCache(
-            **context_cache_dict,
-        )
+        if use_gpu:
+            try:
+                platform = openmm.Platform.getPlatformByName("CUDA")
+            except openmm.OpenMMException:
+                platform = openmm.Platform.getPlatformByName("HIP")
+            context_cache_dict = dict(
+                platform=platform,
+                platform_properties={"Precision": "mixed"},
+                capacity=None,
+                time_to_live=None,
+            )
+
+            sampler.energy_context_cache = openmmtools.cache.ContextCache(
+                **context_cache_dict,
+            )
+            sampler.sampler_context_cache = openmmtools.cache.ContextCache(
+                **context_cache_dict,
+            )
 
         if return_pdb:
             return sampler, initial_pdb
@@ -694,7 +706,7 @@ def _rest2_scale_force(
             | openmm.MonteCarloMembraneBarostat()
         ):
             # No scaling for non-force Forces
-            pass
+            LOGGER.debug(f"skipping {force} as it does not represent a true force")
         case openmm.NonbondedForce():
             # solute-solute should be scaled by:                             beta_m/beta_0
             # solute-solvent should be scaled by:                            sqrt(beta_m/beta_0)
@@ -713,6 +725,7 @@ def _rest2_scale_force(
                 charge_tempered = math.sqrt(beta_m / beta_0) * charge
                 epsilon_tempered = (beta_m / beta_0) * epsilon
                 force.setParticleParameters(i, charge_tempered, sigma, epsilon_tempered)
+                LOGGER.debug(f"nb for atom {i}: charge {charge} -> {charge_tempered}, epsilon {epsilon} -> {epsilon_tempered}")
             # Also need to scale exceptions where appropriate
             # In exceptions, charge products and epsilons are each proportional
             # to the energy, so they can be scaled directly
@@ -739,6 +752,7 @@ def _rest2_scale_force(
                     sigma,
                     epsilon_tempered,
                 )
+                LOGGER.debug(f"nb-exc for atoms {(p1, p2)}: chargeProd {charge_prod} -> {charge_prod_tempered}, epsilon {epsilon} -> {epsilon_tempered}")
         case openmm.PeriodicTorsionForce():
             # Energies are proportional to K
             # each parameter set in the force fully defines the relevent particles
@@ -760,11 +774,13 @@ def _rest2_scale_force(
                     p1,
                     p2,
                     p3,
-                    p3,
+                    p4,
                     periodicity,
                     phase,
                     k_tempered,
                 )
+                LOGGER.debug(f"torsion for atoms {(p1, p2, p3, p4)}: k {k} -> {k_tempered}")
+
         case openmm.HarmonicAngleForce() if scale_non_torsion_bonded_interactions:
             # Energies are proportional to K
             # each parameter set in the force fully defines the relevent particles
@@ -780,6 +796,7 @@ def _rest2_scale_force(
                 else:
                     k_tempered = k * math.sqrt(beta_m / beta_0)
                 force.setAngleParameters(i, p1, p2, p3, angle, k_tempered)
+                LOGGER.debug(f"angle for atoms {(p1, p2, p3)}: k {k} -> {k_tempered}")
         case openmm.HarmonicBondForce() if scale_non_torsion_bonded_interactions:
             # Energies are proportional to K
             # each parameter set in the force fully defines the relevent particles
@@ -797,9 +814,11 @@ def _rest2_scale_force(
                     # some but not all particles are tempered, this is solute-solvent
                     k_tempered = k * math.sqrt(beta_m / beta_0)
                 force.setBondParameters(i, p1, p2, length, k_tempered)
+                LOGGER.debug(f"bond for atoms {(p1, p2)}: k {k} -> {k_tempered}")
         case openmm.HarmonicAngleForce() | openmm.HarmonicBondForce():
             # User has asked not to scale these forces, so leave them alone
             assert not scale_non_torsion_bonded_interactions
+            LOGGER.debug(f"skipping {force} as {scale_non_torsion_bonded_interactions=}")
             pass
         case _:
             raise ValueError(f"Cannot scale force {force}")
