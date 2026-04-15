@@ -1,9 +1,9 @@
 import dataclasses
+import logging
 import math
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal, Self, overload
-import logging
 
 import numpy
 import openmm
@@ -21,6 +21,7 @@ from openmm import (
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml, write_xml
 
 LOGGER = logging.getLogger(__name__)
+
 
 class FrameCountMismatchError(Exception):
     pass
@@ -524,20 +525,23 @@ class OpenMMHrexEnsemble:
     def setup_simulation(
         self,
         return_pdb: Literal[True],
-        use_gpu: bool = True,
+        require_gpu: bool = True,
+        analysis_particle_indices: tuple[int, ...] | None = None,
     ) -> tuple[openmmtools.multistate.ReplicaExchangeSampler, openmm.app.PDBFile]: ...
 
     @overload
     def setup_simulation(
         self,
         return_pdb: Literal[False] = False,
-        use_gpu: bool = True,
+        require_gpu: bool = True,
+        analysis_particle_indices: tuple[int, ...] | None = None,
     ) -> openmmtools.multistate.ReplicaExchangeSampler: ...
 
     def setup_simulation(
         self,
         return_pdb: bool = False,
-        use_gpu: bool = True,
+        require_gpu: bool = True,
+        analysis_particle_indices: tuple[int, ...] | None = None,
     ) -> (
         openmmtools.multistate.ReplicaExchangeSampler
         | tuple[openmmtools.multistate.ReplicaExchangeSampler, openmm.app.PDBFile]
@@ -550,6 +554,14 @@ class OpenMMHrexEnsemble:
         ----------
         return_pdb
             Return OpenMM PDBFile as well as OpenMM Simulation.
+        require_gpu
+            If ``True``, require a GPU-accelerated mixed precision platform. If
+            ``False``, use the default platform.
+        analysis_particle_indices
+            Tuple of particle indices for which to write positions and
+            velocities. If ``None`` or not given, write positions and velocities
+            for all particles.
+
         """
         if self.base_simulation.n_steps % self.steps_between_exchange_attempts != 0:
             raise ValueError(
@@ -600,8 +612,10 @@ class OpenMMHrexEnsemble:
                 n_steps=self.steps_between_exchange_attempts,
             ),
             replica_mixing_scheme="swap-all",
+            # Add 1 to number of iterations because openmmtools writes
+            # positions/velocities at frame 1+i*n, not frame 0+i*n
             number_of_iterations=(
-                self.base_simulation.n_steps // self.steps_between_exchange_attempts
+                self.base_simulation.n_steps // self.steps_between_exchange_attempts + 1
             ),
         )
 
@@ -611,15 +625,23 @@ class OpenMMHrexEnsemble:
             == self.base_simulation.state_reporter_file
         ):
             analysis_frequency = self.steps_between_exchange_attempts
+            if analysis_particle_indices is None:
+                analysis_particle_indices = tuple(
+                    range(openmm_systems[0].getNumParticles()),
+                )
             storage = openmmtools.multistate.MultiStateReporter(
-                storage=self.base_simulation.dcd_reporter_file,
+                storage=self.base_simulation.state_reporter_file,
                 checkpoint_storage=self.base_simulation.checkpoint_file,
-                checkpoint_interval=self.base_simulation.checkpoint_frequency
-                // analysis_frequency,
-                position_interval=self.base_simulation.output_frequency
-                // analysis_frequency,
-                velocity_interval=self.base_simulation.output_frequency
-                // analysis_frequency,
+                checkpoint_interval=(
+                    self.base_simulation.checkpoint_frequency // analysis_frequency
+                ),
+                position_interval=(
+                    self.base_simulation.output_frequency // analysis_frequency
+                ),
+                velocity_interval=(
+                    self.base_simulation.output_frequency // analysis_frequency
+                ),
+                analysis_particle_indices=analysis_particle_indices,
             )
         else:
             raise ValueError("DCD and state reporter files must have same name")
@@ -645,7 +667,7 @@ class OpenMMHrexEnsemble:
         assert sampler.n_replicas == len(openmm_systems)
 
         # Specify platform and mixed precision
-        if use_gpu:
+        if require_gpu:
             try:
                 platform = openmm.Platform.getPlatformByName("CUDA")
             except openmm.OpenMMException:
@@ -725,7 +747,9 @@ def _rest2_scale_force(
                 charge_tempered = math.sqrt(beta_m / beta_0) * charge
                 epsilon_tempered = (beta_m / beta_0) * epsilon
                 force.setParticleParameters(i, charge_tempered, sigma, epsilon_tempered)
-                LOGGER.debug(f"nb for atom {i}: charge {charge} -> {charge_tempered}, epsilon {epsilon} -> {epsilon_tempered}")
+                LOGGER.debug(
+                    f"nb for atom {i}: charge {charge} -> {charge_tempered}, epsilon {epsilon} -> {epsilon_tempered}",
+                )
             # Also need to scale exceptions where appropriate
             # In exceptions, charge products and epsilons are each proportional
             # to the energy, so they can be scaled directly
@@ -752,7 +776,9 @@ def _rest2_scale_force(
                     sigma,
                     epsilon_tempered,
                 )
-                LOGGER.debug(f"nb-exc for atoms {(p1, p2)}: chargeProd {charge_prod} -> {charge_prod_tempered}, epsilon {epsilon} -> {epsilon_tempered}")
+                LOGGER.debug(
+                    f"nb-exc for atoms {(p1, p2)}: chargeProd {charge_prod} -> {charge_prod_tempered}, epsilon {epsilon} -> {epsilon_tempered}",
+                )
         case openmm.PeriodicTorsionForce():
             # Energies are proportional to K
             # each parameter set in the force fully defines the relevent particles
@@ -779,7 +805,9 @@ def _rest2_scale_force(
                     phase,
                     k_tempered,
                 )
-                LOGGER.debug(f"torsion for atoms {(p1, p2, p3, p4)}: k {k} -> {k_tempered}")
+                LOGGER.debug(
+                    f"torsion for atoms {(p1, p2, p3, p4)}: k {k} -> {k_tempered}",
+                )
 
         case openmm.HarmonicAngleForce() if scale_non_torsion_bonded_interactions:
             # Energies are proportional to K
@@ -818,7 +846,9 @@ def _rest2_scale_force(
         case openmm.HarmonicAngleForce() | openmm.HarmonicBondForce():
             # User has asked not to scale these forces, so leave them alone
             assert not scale_non_torsion_bonded_interactions
-            LOGGER.debug(f"skipping {force} as {scale_non_torsion_bonded_interactions=}")
+            LOGGER.debug(
+                f"skipping {force} as {scale_non_torsion_bonded_interactions=}",
+            )
             pass
         case _:
             raise ValueError(f"Cannot scale force {force}")
