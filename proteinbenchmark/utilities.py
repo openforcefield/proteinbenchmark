@@ -50,7 +50,11 @@ def exists_and_not_empty(file_name):
     return path.exists() and path.stat().st_size > 0
 
 
-def extract_noe_upper_distances(input_path: str, output_path: str):
+def extract_noe_upper_distances(
+    input_path: str,
+    output_path: str,
+    remove_pseudoatom_corrections: bool=False,
+):
     """Extract NOE upper distance boundaries from an NMR STAR file."""
 
     read_noe_distances = False
@@ -139,7 +143,10 @@ def extract_noe_upper_distances(input_path: str, output_path: str):
             pseudoatom_name_map[resname]["HN"] = "H"
 
         if resname == "GLY":
+            pseudoatom_name_map[resname]["HA2"] = "HA2"
+            pseudoatom_name_map[resname]["HA2"] = "HA2"
             pseudoatom_name_map[resname]["HA#"] = "PA"
+            pseudoatom_name_map[resname]["HA*"] = "PA"
         else:
             pseudoatom_name_map[resname]["HA"] = "HA"
 
@@ -154,29 +161,63 @@ def extract_noe_upper_distances(input_path: str, output_path: str):
             pseudoatom_name_map[resname]["HB2"] = "HB2"
             pseudoatom_name_map[resname]["HB1"] = "HB3"
             pseudoatom_name_map[resname]["HB#"] = "PB"
+            pseudoatom_name_map[resname]["HB*"] = "PB"
 
+    pseudoatom_name_map["ARG"]["HG2"] = "HG2"
+    pseudoatom_name_map["ARG"]["HG1"] = "HG3"
     pseudoatom_name_map["ARG"]["HG#"] = "PG"
+    pseudoatom_name_map["ARG"]["HD2"] = "HD2"
+    pseudoatom_name_map["ARG"]["HD1"] = "HD3"
     pseudoatom_name_map["ARG"]["HD#"] = "PD"
+    pseudoatom_name_map["ASN"]["HD21"] = "HD21"
+    pseudoatom_name_map["ASN"]["HD22"] = "HD22"
     pseudoatom_name_map["ASN"]["HD#"] = "ND2"
+    pseudoatom_name_map["GLN"]["HG2"] = "HG2"
+    pseudoatom_name_map["GLN"]["HG1"] = "HG3"
     pseudoatom_name_map["GLN"]["HG#"] = "PG"
+    pseudoatom_name_map["GLN"]["HE21"] = "HE21"
+    pseudoatom_name_map["GLN"]["HE22"] = "HE22"
+    pseudoatom_name_map["GLU"]["HG2"] = "HG2"
+    pseudoatom_name_map["GLU"]["HG1"] = "HG3"
     pseudoatom_name_map["GLU"]["HG#"] = "PG"
     pseudoatom_name_map["HIS"]["HD2"] = "HD2"
     pseudoatom_name_map["HIS"]["HE1"] = "HE1"
+    pseudoatom_name_map["ILE"]["HG12"] = "HG12"
+    pseudoatom_name_map["ILE"]["HG11"] = "HG13"
     pseudoatom_name_map["ILE"]["HG1#"] = "PG1"
     pseudoatom_name_map["ILE"]["HG2#"] = "MG2"
     pseudoatom_name_map["ILE"]["HG*"] = "IG"
+    pseudoatom_name_map["ILE"]["HD1#"] = "MD1"
     pseudoatom_name_map["ILE"]["HD#"] = "MD1"
     pseudoatom_name_map["LEU"]["HG"] = "HG"
+    pseudoatom_name_map["LEU"]["HD1#"] = "MD1"
+    pseudoatom_name_map["LEU"]["HD2#"] = "MD2"
     pseudoatom_name_map["LEU"]["HD*"] = "QD"
+    pseudoatom_name_map["LYS"]["HG2"] = "HG2"
+    pseudoatom_name_map["LYS"]["HG1"] = "HG3"
     pseudoatom_name_map["LYS"]["HG#"] = "PG"
+    pseudoatom_name_map["LYS"]["HD2"] = "HD2"
+    pseudoatom_name_map["LYS"]["HD1"] = "HD3"
     pseudoatom_name_map["LYS"]["HD#"] = "PD"
+    pseudoatom_name_map["LYS"]["HE2"] = "HE2"
+    pseudoatom_name_map["LYS"]["HE1"] = "HE3"
     pseudoatom_name_map["LYS"]["HE#"] = "PE"
+    pseudoatom_name_map["MET"]["HG2"] = "HG2"
+    pseudoatom_name_map["MET"]["HG1"] = "HG3"
     pseudoatom_name_map["MET"]["HG#"] = "PG"
     pseudoatom_name_map["MET"]["HE#"] = "ME"
+    pseudoatom_name_map["PHE"]["HD1"] = "HD1"
+    pseudoatom_name_map["PHE"]["HD2"] = "HD2"
     pseudoatom_name_map["PHE"]["HD*"] = "RD"
+    pseudoatom_name_map["PHE"]["HE1"] = "HE1"
+    pseudoatom_name_map["PHE"]["HE2"] = "HE2"
     pseudoatom_name_map["PHE"]["HE*"] = "RE"
     pseudoatom_name_map["PHE"]["HZ"] = "HZ"
+    pseudoatom_name_map["PRO"]["HG2"] = "HG2"
+    pseudoatom_name_map["PRO"]["HG1"] = "HG3"
     pseudoatom_name_map["PRO"]["HG#"] = "PG"
+    pseudoatom_name_map["PRO"]["HD2"] = "HD2"
+    pseudoatom_name_map["PRO"]["HD1"] = "HD3"
     pseudoatom_name_map["PRO"]["HD#"] = "PD"
     pseudoatom_name_map["THR"]["HG2#"] = "MG2"
     pseudoatom_name_map["TRP"]["HD1"] = "HD1"
@@ -185,7 +226,11 @@ def extract_noe_upper_distances(input_path: str, output_path: str):
     pseudoatom_name_map["TRP"]["HZ2"] = "HZ2"
     pseudoatom_name_map["TRP"]["HZ3"] = "HZ3"
     pseudoatom_name_map["TRP"]["HH2"] = "HH2"
+    pseudoatom_name_map["TYR"]["HD1"] = "HD1"
+    pseudoatom_name_map["TYR"]["HD2"] = "HD2"
     pseudoatom_name_map["TYR"]["HD*"] = "RD"
+    pseudoatom_name_map["TYR"]["HE1"] = "HE1"
+    pseudoatom_name_map["TYR"]["HE2"] = "HE2"
     pseudoatom_name_map["TYR"]["HE*"] = "RE"
     pseudoatom_name_map["VAL"]["HG1#"] = "MG1"
     pseudoatom_name_map["VAL"]["HG2#"] = "MG2"
@@ -234,9 +279,10 @@ def extract_noe_upper_distances(input_path: str, output_path: str):
                 )
 
             raw_distance = distance
-            for pseudoatom in (pseudoatom_i, pseudoatom_j):
-                if pseudoatom != "ME":
-                    raw_distance -= pseudoatom_corrections[pseudoatom[0]]
+            if remove_pseudoatom_corrections:
+                for pseudoatom in (pseudoatom_i, pseudoatom_j):
+                    if pseudoatom != "ME":
+                        raw_distance -= pseudoatom_corrections[pseudoatom[0]]
 
             output_file.write(
                 f"\nNOE_upper_distance {resid_i:3d}     {resname_i:3s}       "
