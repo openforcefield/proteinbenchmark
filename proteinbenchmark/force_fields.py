@@ -1057,6 +1057,31 @@ force_fields = {
         "water_model": "tip4p-fb",
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
+    "rosemary-3.0.0-alpha1b-opc": {
+        "force_field_file": Path(ff_directory, "openff_no_water-3.0.0-alpha1b.offxml"),
+        "water_model": "opc",
+        "water_model_file": "opc-1.0.0.offxml",
+    },
+    "rosemary-3.0.0-alpha1b-opc3": {
+        "force_field_file": Path(ff_directory, "openff_no_water-3.0.0-alpha1b.offxml"),
+        "water_model": "opc3",
+        "water_model_file": "opc3-1.0.0.offxml",
+    },
+    "rosemary-3.0.0-alpha1b-tip3p": {
+        "force_field_file": Path(ff_directory, "openff_no_water-3.0.0-alpha1b.offxml"),
+        "water_model": "tip3p",
+        "water_model_file": "tip3p-1.0.0.offxml",
+    },
+    "rosemary-3.0.0-alpha1b-tip3p-fb": {
+        "force_field_file": Path(ff_directory, "openff_no_water-3.0.0-alpha1b.offxml"),
+        "water_model": "tip3p-fb",
+        "water_model_file": "tip3p_fb-1.1.0.offxml",
+    },
+    "rosemary-3.0.0-alpha1b-tip4p-fb": {
+        "force_field_file": Path(ff_directory, "openff_no_water-3.0.0-alpha1b.offxml"),
+        "water_model": "tip4p-fb",
+        "water_model_file": "tip4p_fb-1.0.0.offxml",
+    },
     "sage-2.1.0-nagl-opc": {
         "force_field_file": Path(ff_directory, "Sage-2.1.0-NAGL.offxml"),
         "water_model": "opc",
