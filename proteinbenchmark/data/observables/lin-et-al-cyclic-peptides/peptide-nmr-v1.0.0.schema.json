@@ -1,0 +1,525 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "peptide-nmr-v1.0.0.schema.json",
+  "title": "Cyclic Peptide Experimental NMR Data",
+  "description": "Schema for collating experimental NMR data (chemical shifts, J-couplings, NOE observations, and NOE-derived distance restraints) for cyclic peptides. All atom names follow PDB v3 naming conventions, with the following extension: the '#' suffix denotes a pseudo-atom representing a group of equivalent or non-stereospecifically assigned protons, following CNSsolve convention. For example, 'HG1#' denotes all protons of the gamma-1 methyl group, 'HB#' denotes both beta protons when they have not been stereospecifically assigned. Numeric measurements are represented as objects with 'value' (number) and 'unit' (string) properties. Struct-of-arrays are used for all tabular data: within any given struct-of-arrays object, all arrays must have the same length.",
+  "type": "object",
+  "required": ["$schema", "peptides"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Schema ID this JSON file adheres to"
+    },
+    "peptides": {
+      "type": "array",
+      "description": "Array of cyclic peptide entries, each containing all available experimental NMR data for that peptide.",
+      "items": { "$ref": "#/$defs/Peptide" },
+      "minItems": 1
+    }
+  },
+
+  "$defs": {
+    "Measurement": {
+      "type": "object",
+      "title": "Measurement",
+      "description": "A single numeric measurement with its associated unit. The unit field should use the full unit name, e.g. 'ppm', 'hertz', 'angstrom', 'degrees', 'degrees Celsius', 'Kelvin', 'millimolar', 'megahertz', 'ppb per degree Celsius', 'pH units'.",
+      "required": ["value", "unit"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "The numeric value of the measurement. The appropriate number of significant figures should be given."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Full name of the unit."
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "NullableMeasurement": {
+      "title": "NullableMeasurement",
+      "description": "Either a Measurement object or null. Used in array contexts where a particular entry was not reported or could not be measured.",
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Measurement" }]
+    },
+
+    "SourceReference": {
+      "type": "object",
+      "title": "SourceReference",
+      "description": "Provenance information identifying the paper and specific table from which a data block was extracted. Every data section within a Peptide entry carries its own SourceReference, since different data types for the same peptide may originate from different tables or papers.",
+      "required": ["paper", "doi", "table"],
+      "additionalProperties": false,
+      "properties": {
+        "paper": {
+          "type": "string",
+          "description": "Short citation for the source paper, e.g. 'Slough et al. 2018'."
+        },
+        "doi": {
+          "type": ["string", "null"],
+          "description": "DOI of the source paper, or null if unavailable."
+        },
+        "table": {
+          "type": "string",
+          "description": "Label of the specific table from which this data block was extracted, e.g. 'Table S7'."
+        }
+      }
+    },
+
+    "Residue": {
+      "type": "object",
+      "title": "Residue",
+      "description": "A single residue in the cyclic peptide sequence.",
+      "required": ["position", "three_letter_code", "chirality"],
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "type": "integer",
+          "description": "1-indexed position of this residue in the cyclic peptide sequence, following the numbering used in the source paper.",
+          "minimum": 1
+        },
+        "three_letter_code": {
+          "type": "string",
+          "description": "Standard three-letter amino acid code in uppercase, e.g. 'GLY', 'SER', 'ARG'.",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "chirality": {
+          "type": "string",
+          "description": "'L' for L-amino acids; 'D' for D-amino acids.",
+          "enum": ["L", "D"]
+        }
+      }
+    },
+
+    "ExperimentalConditions": {
+      "type": "object",
+      "title": "ExperimentalConditions",
+      "description": "Conditions under which NMR spectra were recorded for this peptide. All fields are required and non-nullable; a value must be provided for each field even if it must be sourced from outside the provided SI extracts.",
+      "required": [
+        "solvent",
+        "ph",
+        "temperature",
+        "concentration",
+        "spectrometer_frequency"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "solvent": {
+          "type": "string",
+          "description": "Solvent composition, e.g. '90:10 H2O:D2O'."
+        },
+        "ph": {
+          "description": "Solution pH.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Measurement" }]
+        },
+        "temperature": {
+          "description": "Temperature at which spectra were recorded.",
+          "$ref": "#/$defs/Measurement"
+        },
+        "concentration": {
+          "description": "Peptide concentration.",
+          "$ref": "#/$defs/Measurement"
+        },
+        "spectrometer_frequency": {
+          "description": "Proton Larmor frequency of the NMR spectrometer.",
+          "$ref": "#/$defs/Measurement"
+        }
+      }
+    },
+
+    "ProtonShifts": {
+      "type": "object",
+      "title": "ProtonShifts",
+      "description": "Struct-of-arrays for 1H chemical shifts. One entry per distinct proton observed. All three arrays must be the same length. Atom names follow PDB v3 convention with the '#' pseudo-atom extension described in the root schema description.",
+      "required": ["residue_index", "atom_name", "shift"],
+      "additionalProperties": false,
+      "properties": {
+        "residue_index": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position corresponding to each shift entry."
+        },
+        "atom_name": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDB v3 atom name for each proton, e.g. 'HN', 'HA', 'HA2', 'HA3', 'HB2', 'HB3', 'HB', 'HG1', 'HD1', 'HD2', 'HE', 'HD21', 'HD22'."
+        },
+        "shift": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "1H chemical shift for each entry, in ppm."
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "CarbonShifts": {
+      "type": "object",
+      "title": "CarbonShifts",
+      "description": "Struct-of-arrays for 13C chemical shifts. All three arrays must be the same length.",
+      "required": ["residue_index", "atom_name", "shift"],
+      "additionalProperties": false,
+      "properties": {
+        "residue_index": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position corresponding to each shift entry."
+        },
+        "atom_name": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDB v3 atom name for each carbon, e.g. 'CA', 'CB', 'CG1', 'CG2', 'CD1', 'CD2', 'CZ'."
+        },
+        "shift": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "13C chemical shift for each entry, in ppm."
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "NitrogenShifts": {
+      "type": "object",
+      "title": "NitrogenShifts",
+      "description": "Struct-of-arrays for 15N chemical shifts. All three arrays must be the same length.",
+      "required": ["residue_index", "atom_name", "shift"],
+      "additionalProperties": false,
+      "properties": {
+        "residue_index": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position corresponding to each shift entry."
+        },
+        "atom_name": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDB v3 atom name for each nitrogen, e.g. 'N', 'ND2', 'NE'."
+        },
+        "shift": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "15N chemical shift for each entry, in ppm."
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "AmideProtonTemperatureCoefficients": {
+      "type": "object",
+      "title": "AmideProtonTemperatureCoefficients",
+      "description": "Struct-of-arrays for amide proton (HN) chemical shift temperature coefficients. Both arrays must be the same length.",
+      "required": ["residue_index", "coefficient"],
+      "additionalProperties": false,
+      "properties": {
+        "residue_index": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position for each entry."
+        },
+        "coefficient": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "Temperature coefficient of the amide proton chemical shift, in ppb per degree Celsius."
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "ChemicalShifts": {
+      "type": "object",
+      "title": "ChemicalShifts",
+      "description": "All chemical shift data for a peptide. Proton shifts are always present when this object is non-null. Carbon shifts, nitrogen shifts, and amide proton temperature coefficients are each null when not reported.",
+      "required": [
+        "source",
+        "proton_shifts",
+        "carbon_shifts",
+        "nitrogen_shifts",
+        "amide_proton_temperature_coefficients"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "description": "Source paper and table for all chemical shift data for this peptide.",
+          "$ref": "#/$defs/SourceReference"
+        },
+        "proton_shifts": {
+          "description": "1H chemical shifts for all observed protons.",
+          "$ref": "#/$defs/ProtonShifts"
+        },
+        "carbon_shifts": {
+          "description": "13C chemical shifts, or null if not reported.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/CarbonShifts" }]
+        },
+        "nitrogen_shifts": {
+          "description": "15N chemical shifts, or null if not reported.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/NitrogenShifts" }]
+        },
+        "amide_proton_temperature_coefficients": {
+          "description": "HN chemical shift temperature coefficients, or null if not reported.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/AmideProtonTemperatureCoefficients" }
+          ]
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "JCouplingsAndTorsionalRestraints": {
+      "type": "object",
+      "title": "JCouplingsAndTorsionalRestraints",
+      "description": "Struct-of-arrays combining 3J_NH,CHα coupling constants and the φ torsional restraints derived from them, as reported together in the source tables. One row per coupling measurement. For glycine with two non-equivalent alpha protons, 'HA#' is used when the source reports a single undifferentiated coupling value; two rows with 'HA2' and 'HA3' are used when two distinct values are reported. The phi_center and phi_half_range fields are null when no torsional restraint was assigned for that coupling. All arrays must be the same length.",
+      "required": [
+        "source",
+        "residue_index",
+        "ha_atom_name",
+        "j_coupling",
+        "phi_center",
+        "phi_half_range"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "description": "Source paper and table for these J-coupling and torsional restraint data.",
+          "$ref": "#/$defs/SourceReference"
+        },
+        "residue_index": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position for each coupling entry."
+        },
+        "ha_atom_name": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDB v3 atom name of the alpha proton involved in the 3J_NH,CHα coupling. 'HA' for all standard non-glycine residues. For glycine: 'HA#' when a single undifferentiated value is reported; 'HA2' or 'HA3' when two distinct values are reported."
+        },
+        "j_coupling": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/NullableMeasurement" },
+          "description": "3J_NH,CHα coupling constant in hertz, or null if the value could not be measured."
+        },
+        "phi_center": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/NullableMeasurement" },
+          "description": "Center value of the φ torsional restraint in degrees, or null when no restraint was assigned."
+        },
+        "phi_half_range": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/NullableMeasurement" },
+          "description": "Half-width of the φ torsional restraint (the +/- value) in degrees, or null when no restraint was assigned."
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "ObservedNOEs": {
+      "type": "object",
+      "title": "ObservedNOEs",
+      "description": "Struct-of-arrays for raw observed NOE cross-peaks from 2D NOE spectra, with chemical shift coordinates and (where reported) qualitative strength classifications. All arrays must be the same length.",
+      "required": [
+        "source",
+        "residue_index_1",
+        "atom_name_1",
+        "chemical_shift_1",
+        "residue_index_2",
+        "atom_name_2",
+        "chemical_shift_2",
+        "strength"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "description": "Source paper and table for these observed NOE data.",
+          "$ref": "#/$defs/SourceReference"
+        },
+        "residue_index_1": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position of the first atom in each NOE cross-peak."
+        },
+        "atom_name_1": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDB v3 atom name (with '#' pseudo-atom extension where applicable) of the first atom in each NOE cross-peak."
+        },
+        "chemical_shift_1": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "Chemical shift coordinate in ppm of the first atom as read from the 2D NOE spectrum."
+        },
+        "residue_index_2": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position of the second atom in each NOE cross-peak."
+        },
+        "atom_name_2": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDB v3 atom name (with '#' pseudo-atom extension where applicable) of the second atom in each NOE cross-peak."
+        },
+        "chemical_shift_2": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "Chemical shift coordinate in ppm of the second atom as read from the 2D NOE spectrum."
+        },
+        "strength": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "string", "enum": ["strong", "weak"] }
+            ]
+          },
+          "description": "Qualitative NOE intensity classification: 'strong', 'weak', or null if not reported."
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "NOEDerivedDistanceRestraints": {
+      "type": "object",
+      "title": "NOEDerivedDistanceRestraints",
+      "description": "Struct-of-arrays for NOE-derived distance restraints in CNSsolve format. Each row specifies a pair of atoms and a target distance with lower and upper bound deltas. The effective lower bound is (target_distance - lower_bound_delta) and the effective upper bound is (target_distance + upper_bound_delta). Atom names follow PDB v3 convention with the '#' pseudo-atom extension described in the root schema description. All arrays must be the same length.",
+      "required": [
+        "source",
+        "residue_index_1",
+        "atom_name_1",
+        "residue_index_2",
+        "atom_name_2",
+        "target_distance",
+        "lower_bound_delta",
+        "upper_bound_delta"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "description": "Source paper and table for these NOE-derived distance restraints.",
+          "$ref": "#/$defs/SourceReference"
+        },
+        "residue_index_1": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position of the first atom in each distance restraint."
+        },
+        "atom_name_1": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDB v3 atom name (with '#' pseudo-atom extension where applicable) of the first atom in each distance restraint."
+        },
+        "residue_index_2": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "description": "1-indexed residue position of the second atom in each distance restraint."
+        },
+        "atom_name_2": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "PDB v3 atom name (with '#' pseudo-atom extension where applicable) of the second atom in each distance restraint."
+        },
+        "target_distance": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "Target inter-proton distance in angstroms, corresponding to the first number in the CNSsolve assign statement."
+        },
+        "lower_bound_delta": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "Value subtracted from target_distance to yield the lower bound, in angstroms. Corresponds to the second number in the CNSsolve assign statement."
+        },
+        "upper_bound_delta": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Measurement" },
+          "description": "Value added to target_distance to yield the upper bound, in angstroms. Corresponds to the third number in the CNSsolve assign statement."
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    },
+
+    "Peptide": {
+      "type": "object",
+      "title": "Peptide",
+      "description": "All available experimental NMR data for a single cyclic peptide. Fields that are null indicate data not reported in the source material for this peptide. The sequence is cyclic: the last residue is covalently bonded back to the first.",
+      "required": [
+        "name",
+        "sequence",
+        "experimental_conditions",
+        "chemical_shifts",
+        "j_couplings_and_torsional_restraints",
+        "observed_noes",
+        "noe_derived_distance_restraints"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the cyclic peptide, e.g. 'cyclo-(GNSRV)'. Uppercase letters denote L-amino acids; lowercase letters denote D-amino acids."
+        },
+        "sequence": {
+          "type": "array",
+          "description": "Ordered sequence of residues, 1-indexed following the numbering in the source paper.",
+          "items": { "$ref": "#/$defs/Residue" },
+          "minItems": 1
+        },
+        "experimental_conditions": {
+          "description": "NMR experimental conditions for this peptide. All fields are required and non-nullable.",
+          "$ref": "#/$defs/ExperimentalConditions"
+        },
+        "chemical_shifts": {
+          "description": "Chemical shift data and amide proton temperature coefficients, or null if not reported.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/ChemicalShifts" }]
+        },
+        "j_couplings_and_torsional_restraints": {
+          "description": "3J_NH,CHα coupling constants and derived φ torsional restraints, or null if not reported.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/JCouplingsAndTorsionalRestraints" }
+          ]
+        },
+        "observed_noes": {
+          "description": "Raw observed NOE cross-peaks from 2D NOE spectra, or null if not reported.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/ObservedNOEs" }]
+        },
+        "noe_derived_distance_restraints": {
+          "description": "NOE-derived distance restraints in CNSsolve format, or null if not reported.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/NOEDerivedDistanceRestraints" }
+          ]
+        },
+        "comment": {
+          "type": "string",
+          "description": "A natural language comment on this data"
+        }
+      }
+    }
+  }
+}
