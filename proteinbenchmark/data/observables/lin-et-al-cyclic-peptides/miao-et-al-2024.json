@@ -1,0 +1,2799 @@
+{
+  "$schema": "peptide-nmr-v1.0.0.schema.json",
+  "peptides": [
+    {
+      "name": "cyclo-(AVVas)",
+      "sequence": [
+        { "position": 1, "three_letter_code": "ALA", "chirality": "L" },
+        { "position": 2, "three_letter_code": "VAL", "chirality": "L" },
+        { "position": 3, "three_letter_code": "VAL", "chirality": "L" },
+        { "position": 4, "three_letter_code": "ALA", "chirality": "D" },
+        { "position": 5, "three_letter_code": "SER", "chirality": "D" }
+      ],
+      "experimental_conditions": {
+        "solvent": "90:10 H2O:D2O",
+        "ph": { "value": 5.05, "unit": "pH units" },
+        "temperature": { "value": 15, "unit": "degrees Celsius" },
+        "concentration": { "value": 2.0, "unit": "millimolar" },
+        "spectrometer_frequency": { "value": 600, "unit": "megahertz" }
+      },
+      "chemical_shifts": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S3"
+        },
+        "proton_shifts": {
+          "residue_index": [
+            1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5
+          ],
+          "atom_name": [
+            "HN",
+            "HA",
+            "HB#",
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#",
+            "HN",
+            "HA",
+            "HB",
+            "HG##",
+            "HN",
+            "HA",
+            "HB#",
+            "HN",
+            "HA",
+            "HB#"
+          ],
+          "shift": [
+            { "value": 8.463, "unit": "ppm" },
+            { "value": 4.244, "unit": "ppm" },
+            { "value": 1.427, "unit": "ppm" },
+            { "value": 8.371, "unit": "ppm" },
+            { "value": 3.929, "unit": "ppm" },
+            { "value": 2.148, "unit": "ppm" },
+            { "value": 1.0, "unit": "ppm" },
+            { "value": 0.935, "unit": "ppm" },
+            { "value": 7.779, "unit": "ppm" },
+            { "value": 4.229, "unit": "ppm" },
+            { "value": 1.991, "unit": "ppm" },
+            { "value": 0.92, "unit": "ppm" },
+            { "value": 9.061, "unit": "ppm" },
+            { "value": 4.088, "unit": "ppm" },
+            { "value": 1.436, "unit": "ppm" },
+            { "value": 7.782, "unit": "ppm" },
+            { "value": 4.468, "unit": "ppm" },
+            { "value": 3.743, "unit": "ppm" }
+          ]
+        },
+        "carbon_shifts": {
+          "residue_index": [1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5],
+          "atom_name": [
+            "CA",
+            "CB",
+            "CA",
+            "CB",
+            "CG1",
+            "CG2",
+            "CA",
+            "CB",
+            "CG#",
+            "CA",
+            "CB",
+            "CA",
+            "CB"
+          ],
+          "shift": [
+            { "value": 54.09, "unit": "ppm" },
+            { "value": 18.09, "unit": "ppm" },
+            { "value": 65.51, "unit": "ppm" },
+            { "value": 31.96, "unit": "ppm" },
+            { "value": 21.35, "unit": "ppm" },
+            { "value": 21.04, "unit": "ppm" },
+            { "value": 61.15, "unit": "ppm" },
+            { "value": 33.85, "unit": "ppm" },
+            { "value": 20.76, "unit": "ppm" },
+            { "value": 55.21, "unit": "ppm" },
+            { "value": 18.09, "unit": "ppm" },
+            { "value": 56.9, "unit": "ppm" },
+            { "value": 63.51, "unit": "ppm" }
+          ]
+        },
+        "nitrogen_shifts": {
+          "residue_index": [1, 2, 3, 4, 5],
+          "atom_name": ["N", "N", "N", "N", "N"],
+          "shift": [
+            { "value": 130.06, "unit": "ppm" },
+            { "value": 120.19, "unit": "ppm" },
+            { "value": 118.23, "unit": "ppm" },
+            { "value": 132.3, "unit": "ppm" },
+            { "value": 109.49, "unit": "ppm" }
+          ]
+        },
+        "amide_proton_temperature_coefficients": {
+          "residue_index": [1, 2, 3, 4, 5],
+          "coefficient": [
+            { "value": -8.5, "unit": "ppb per degree Celsius" },
+            { "value": -7.0, "unit": "ppb per degree Celsius" },
+            { "value": -5.0, "unit": "ppb per degree Celsius" },
+            { "value": -7.5, "unit": "ppb per degree Celsius" },
+            { "value": -4.6, "unit": "ppb per degree Celsius" }
+          ]
+        }
+      },
+      "j_couplings_and_torsional_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S17"
+        },
+        "residue_index": [1, 2, 3, 4, 5],
+        "ha_atom_name": ["HA", "HA", "HA", "HA", "HA"],
+        "j_coupling": [
+          { "value": 5.3, "unit": "hertz" },
+          { "value": 9.4, "unit": "hertz" },
+          { "value": 9.3, "unit": "hertz" },
+          { "value": 3.7, "unit": "hertz" },
+          { "value": 8.1, "unit": "hertz" }
+        ],
+        "phi_center": [
+          null,
+          { "value": -120.0, "unit": "degrees" },
+          { "value": -120.0, "unit": "degrees" },
+          { "value": 60.0, "unit": "degrees" },
+          { "value": 120.0, "unit": "degrees" }
+        ],
+        "phi_half_range": [
+          null,
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" }
+        ]
+      },
+      "observed_noes": null,
+      "noe_derived_distance_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S18"
+        },
+        "residue_index_1": [
+          1, 1, 1, 1, 1, 1, 1,
+
+          2, 2, 2, 2, 2,
+
+          3, 3, 3, 3, 3, 3, 3,
+
+          4, 4, 4, 4, 4, 4, 4, 4,
+
+          5, 5, 5
+        ],
+        "atom_name_1": [
+          "HN",
+          "HN",
+          "HA",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HA",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN"
+        ],
+        "residue_index_2": [
+          1, 1, 2, 3, 5, 5, 5,
+
+          1, 2, 2, 2, 2,
+
+          2, 2, 2, 2, 3, 3, 3,
+
+          3, 3, 3, 3, 4, 4, 5, 5,
+
+          4, 5, 5
+        ],
+        "atom_name_2": [
+          "HA",
+          "HB#",
+          "HN",
+          "HN",
+          "HA",
+          "HN",
+          "HB#",
+
+          "HB#",
+          "HA",
+          "HB",
+          "HG2#",
+          "HG1#",
+
+          "HB",
+          "HG1#",
+          "HN",
+          "HA",
+          "HA",
+          "HB",
+          "HG#",
+
+          "HA",
+          "HG#",
+          "HN",
+          "HB",
+          "HA",
+          "HB#",
+          "HN",
+          "HN",
+
+          "HB#",
+          "HA",
+          "HB#"
+        ],
+        "target_distance": [
+          { "value": 3.177, "unit": "angstrom" },
+          { "value": 2.485, "unit": "angstrom" },
+          { "value": 3.294, "unit": "angstrom" },
+          { "value": 3.984, "unit": "angstrom" },
+          { "value": 2.419, "unit": "angstrom" },
+          { "value": 3.267, "unit": "angstrom" },
+          { "value": 3.624, "unit": "angstrom" },
+
+          { "value": 2.691, "unit": "angstrom" },
+          { "value": 2.776, "unit": "angstrom" },
+          { "value": 2.977, "unit": "angstrom" },
+          { "value": 2.966, "unit": "angstrom" },
+          { "value": 4.21, "unit": "angstrom" },
+
+          { "value": 2.609, "unit": "angstrom" },
+          { "value": 3.431, "unit": "angstrom" },
+          { "value": 2.755, "unit": "angstrom" },
+          { "value": 3.899, "unit": "angstrom" },
+          { "value": 2.701, "unit": "angstrom" },
+          { "value": 3.088, "unit": "angstrom" },
+          { "value": 2.877, "unit": "angstrom" },
+
+          { "value": 2.281, "unit": "angstrom" },
+          { "value": 2.967, "unit": "angstrom" },
+          { "value": 4.213, "unit": "angstrom" },
+          { "value": 3.462, "unit": "angstrom" },
+          { "value": 3.119, "unit": "angstrom" },
+          { "value": 2.424, "unit": "angstrom" },
+          { "value": 3.57, "unit": "angstrom" },
+          { "value": 2.804, "unit": "angstrom" },
+
+          { "value": 2.866, "unit": "angstrom" },
+          { "value": 3.218, "unit": "angstrom" },
+          { "value": 2.864, "unit": "angstrom" }
+        ],
+        "lower_bound_delta": [
+          { "value": 0.635, "unit": "angstrom" },
+          { "value": 1.497, "unit": "angstrom" },
+          { "value": 0.659, "unit": "angstrom" },
+          { "value": 0.797, "unit": "angstrom" },
+          { "value": 0.484, "unit": "angstrom" },
+          { "value": 0.653, "unit": "angstrom" },
+          { "value": 1.725, "unit": "angstrom" },
+
+          { "value": 1.538, "unit": "angstrom" },
+          { "value": 0.555, "unit": "angstrom" },
+          { "value": 0.595, "unit": "angstrom" },
+          { "value": 0.593, "unit": "angstrom" },
+          { "value": 0.842, "unit": "angstrom" },
+
+          { "value": 0.522, "unit": "angstrom" },
+          { "value": 0.686, "unit": "angstrom" },
+          { "value": 0.551, "unit": "angstrom" },
+          { "value": 0.78, "unit": "angstrom" },
+          { "value": 0.54, "unit": "angstrom" },
+          { "value": 0.618, "unit": "angstrom" },
+          { "value": 2.575, "unit": "angstrom" },
+
+          { "value": 0.456, "unit": "angstrom" },
+          { "value": 2.593, "unit": "angstrom" },
+          { "value": 0.843, "unit": "angstrom" },
+          { "value": 0.692, "unit": "angstrom" },
+          { "value": 0.624, "unit": "angstrom" },
+          { "value": 1.485, "unit": "angstrom" },
+          { "value": 0.714, "unit": "angstrom" },
+          { "value": 0.561, "unit": "angstrom" },
+
+          { "value": 1.573, "unit": "angstrom" },
+          { "value": 0.644, "unit": "angstrom" },
+          { "value": 1.573, "unit": "angstrom" }
+        ],
+        "upper_bound_delta": [
+          { "value": 0.635, "unit": "angstrom" },
+          { "value": 0.497, "unit": "angstrom" },
+          { "value": 0.659, "unit": "angstrom" },
+          { "value": 0.797, "unit": "angstrom" },
+          { "value": 0.484, "unit": "angstrom" },
+          { "value": 0.653, "unit": "angstrom" },
+          { "value": 0.725, "unit": "angstrom" },
+
+          { "value": 0.538, "unit": "angstrom" },
+          { "value": 0.555, "unit": "angstrom" },
+          { "value": 0.595, "unit": "angstrom" },
+          { "value": 0.593, "unit": "angstrom" },
+          { "value": 0.842, "unit": "angstrom" },
+
+          { "value": 0.522, "unit": "angstrom" },
+          { "value": 0.686, "unit": "angstrom" },
+          { "value": 0.551, "unit": "angstrom" },
+          { "value": 0.78, "unit": "angstrom" },
+          { "value": 0.54, "unit": "angstrom" },
+          { "value": 0.618, "unit": "angstrom" },
+          { "value": 0.575, "unit": "angstrom" },
+
+          { "value": 0.456, "unit": "angstrom" },
+          { "value": 0.593, "unit": "angstrom" },
+          { "value": 0.843, "unit": "angstrom" },
+          { "value": 0.692, "unit": "angstrom" },
+          { "value": 0.624, "unit": "angstrom" },
+          { "value": 0.485, "unit": "angstrom" },
+          { "value": 0.714, "unit": "angstrom" },
+          { "value": 0.561, "unit": "angstrom" },
+
+          { "value": 0.573, "unit": "angstrom" },
+          { "value": 0.644, "unit": "angstrom" },
+          { "value": 0.573, "unit": "angstrom" }
+        ]
+      }
+    },
+    {
+      "name": "cyclo-(vNFRG)",
+      "sequence": [
+        { "position": 1, "three_letter_code": "VAL", "chirality": "D" },
+        { "position": 2, "three_letter_code": "ASN", "chirality": "L" },
+        { "position": 3, "three_letter_code": "PHE", "chirality": "L" },
+        { "position": 4, "three_letter_code": "ARG", "chirality": "L" },
+        { "position": 5, "three_letter_code": "GLY", "chirality": "L" }
+      ],
+      "experimental_conditions": {
+        "solvent": "90:10 H2O:D2O",
+        "ph": { "value": 4.81, "unit": "pH units" },
+        "temperature": { "value": 20, "unit": "degrees Celsius" },
+        "concentration": { "value": 2.0, "unit": "millimolar" },
+        "spectrometer_frequency": { "value": 600, "unit": "megahertz" }
+      },
+      "chemical_shifts": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S4"
+        },
+        "proton_shifts": {
+          "residue_index": [
+            1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+            4, 4, 4, 5, 5, 5
+          ],
+          "atom_name": [
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HD21",
+            "HD22",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HD#",
+            "HE#",
+            "HZ",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HG2",
+            "HG3",
+            "HD#",
+            "HE",
+            "HN",
+            "HA2",
+            "HA3"
+          ],
+          "shift": [
+            { "value": 8.492, "unit": "ppm" },
+            { "value": 3.875, "unit": "ppm" },
+            { "value": 1.939, "unit": "ppm" },
+            { "value": 0.874, "unit": "ppm" },
+            { "value": 0.996, "unit": "ppm" },
+            { "value": 9.092, "unit": "ppm" },
+            { "value": 4.589, "unit": "ppm" },
+            { "value": 2.551, "unit": "ppm" },
+            { "value": 2.699, "unit": "ppm" },
+            { "value": 7.543, "unit": "ppm" },
+            { "value": 6.939, "unit": "ppm" },
+            { "value": 8.02, "unit": "ppm" },
+            { "value": 4.663, "unit": "ppm" },
+            { "value": 3.097, "unit": "ppm" },
+            { "value": 3.097, "unit": "ppm" },
+            { "value": 7.305, "unit": "ppm" },
+            { "value": 7.371, "unit": "ppm" },
+            { "value": 7.302, "unit": "ppm" },
+            { "value": 8.346, "unit": "ppm" },
+            { "value": 4.051, "unit": "ppm" },
+            { "value": 1.751, "unit": "ppm" },
+            { "value": 1.751, "unit": "ppm" },
+            { "value": 1.097, "unit": "ppm" },
+            { "value": 1.271, "unit": "ppm" },
+            { "value": 3.046, "unit": "ppm" },
+            { "value": 7.067, "unit": "ppm" },
+            { "value": 7.892, "unit": "ppm" },
+            { "value": 3.724, "unit": "ppm" },
+            { "value": 4.136, "unit": "ppm" }
+          ]
+        },
+        "carbon_shifts": {
+          "residue_index": [1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5],
+          "atom_name": [
+            "CA",
+            "CB",
+            "CG1",
+            "CG2",
+            "CA",
+            "CB",
+            "CA",
+            "CB",
+            "CD1",
+            "CE1",
+            "CZ",
+            "CA",
+            "CB",
+            "CG",
+            "CD",
+            "CA"
+          ],
+          "shift": [
+            { "value": 64.15, "unit": "ppm" },
+            { "value": 31.46, "unit": "ppm" },
+            { "value": 20.66, "unit": "ppm" },
+            { "value": 21.29, "unit": "ppm" },
+            { "value": 54.58, "unit": "ppm" },
+            { "value": 38.78, "unit": "ppm" },
+            { "value": 58.37, "unit": "ppm" },
+            { "value": 39.16, "unit": "ppm" },
+            { "value": 131.98, "unit": "ppm" },
+            { "value": 131.49, "unit": "ppm" },
+            { "value": 129.78, "unit": "ppm" },
+            { "value": 57.15, "unit": "ppm" },
+            { "value": 28.13, "unit": "ppm" },
+            { "value": 26.93, "unit": "ppm" },
+            { "value": 43.35, "unit": "ppm" },
+            { "value": 44.99, "unit": "ppm" }
+          ]
+        },
+        "nitrogen_shifts": {
+          "residue_index": [1, 2, 2, 3, 4, 5],
+          "atom_name": ["N", "N", "ND2", "N", "N", "N"],
+          "shift": [
+            { "value": 126.35, "unit": "ppm" },
+            { "value": 127.36, "unit": "ppm" },
+            { "value": 112.7, "unit": "ppm" },
+            { "value": 121.3, "unit": "ppm" },
+            { "value": 125.36, "unit": "ppm" },
+            { "value": 111.21, "unit": "ppm" }
+          ]
+        },
+        "amide_proton_temperature_coefficients": {
+          "residue_index": [1, 2, 3, 4, 5],
+          "coefficient": [
+            { "value": -10.1, "unit": "ppb per degree Celsius" },
+            { "value": -11.0, "unit": "ppb per degree Celsius" },
+            { "value": -2.3, "unit": "ppb per degree Celsius" },
+            { "value": -7.3, "unit": "ppb per degree Celsius" },
+            { "value": -1.7, "unit": "ppb per degree Celsius" }
+          ]
+        }
+      },
+      "j_couplings_and_torsional_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S19"
+        },
+        "residue_index": [1, 2, 3, 4, 5, 5],
+        "ha_atom_name": ["HA", "HA", "HA", "HA", "HA2", "HA3"],
+        "j_coupling": [
+          { "value": 6.6, "unit": "hertz" },
+          { "value": 7.0, "unit": "hertz" },
+          { "value": 8.2, "unit": "hertz" },
+          { "value": 7.6, "unit": "hertz" },
+          { "value": 4.8, "unit": "hertz" },
+          { "value": 7.8, "unit": "hertz" }
+        ],
+        "phi_center": [
+          null,
+          null,
+          { "value": -120.0, "unit": "degrees" },
+          null,
+          null,
+          null
+        ],
+        "phi_half_range": [
+          null,
+          null,
+          { "value": 30.0, "unit": "degrees" },
+          null,
+          null,
+          null
+        ],
+        "comment": "According to the table caption, a dihedral restraint of -60° ± 30° should be assigned to L-amino acids with coupling constant less than 5.0; this was not assigned to G5-HA2 (perhaps because it is achiral and therefore not strictly an L-amino acid)"
+      },
+      "observed_noes": null,
+      "noe_derived_distance_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S20"
+        },
+        "residue_index_1": [
+          1, 1, 1, 1, 1,
+
+          1, 1, 1, 1, 1,
+
+          2, 2, 2, 2, 2,
+
+          2, 2, 2, 2, 2,
+
+          2, 2, 3, 3, 3,
+
+          3, 3, 3, 3, 4,
+
+          4, 4, 4, 4, 4,
+
+          4, 4, 4, 4, 4,
+
+          4, 4, 4, 5, 5,
+
+          5, 5, 5
+        ],
+        "atom_name_1": [
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HA",
+          "HG1#",
+          "HA",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HB3",
+          "HB2",
+          "HB3",
+          "HB2",
+          "HN",
+          "HB2",
+          "HB3",
+          "HB3",
+          "HN",
+          "HA",
+          "HN",
+          "HD#",
+          "HB#",
+          "HA",
+          "HN",
+          "HD#",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HB#",
+          "HA",
+          "HB#",
+          "HN",
+          "HN",
+          "HN",
+          "HD#",
+          "HG3",
+          "HG2",
+          "HB#",
+          "HN",
+          "HN",
+          "HN",
+          "HA3",
+          "HA2"
+        ],
+        "residue_index_2": [
+          1, 1, 1, 1, 2,
+
+          2, 3, 5, 5, 5,
+
+          2, 2, 2, 2, 2,
+
+          2, 2, 3, 3, 3,
+
+          3, 3, 3, 3, 3,
+
+          3, 3, 3, 4, 3,
+
+          3, 3, 3, 3, 4,
+
+          4, 4, 4, 4, 4,
+
+          4, 4, 4, 4, 4,
+
+          4, 5, 5
+        ],
+        "atom_name_2": [
+          "HB",
+          "HA",
+          "HG2#",
+          "HG1#",
+          "HN",
+          "HN",
+          "HN",
+          "HA3",
+          "HA2",
+          "HN",
+
+          "HB2",
+          "HB3",
+          "HA",
+          "HD21",
+          "HD21",
+          "HD22",
+          "HD22",
+          "HN",
+          "HN",
+          "HN",
+          "HD#",
+          "HD#",
+
+          "HN",
+          "HB#",
+          "HB#",
+          "HE#",
+          "HD#",
+          "HD#",
+          "HG@",
+
+          "HA",
+          "HD#",
+          "HB#",
+          "HN",
+          "HD#",
+          "HN",
+          "HN",
+          "HG3",
+          "HG2",
+          "HD#",
+          "HE",
+          "HE",
+          "HE",
+          "HE",
+
+          "HB#",
+          "HA",
+
+          "HN",
+          "HN",
+          "HN"
+        ],
+        "target_distance": [
+          { "value": 2.94, "unit": "angstrom" },
+          { "value": 3.091, "unit": "angstrom" },
+          { "value": 2.917, "unit": "angstrom" },
+          { "value": 3.953, "unit": "angstrom" },
+          { "value": 2.542, "unit": "angstrom" },
+          { "value": 3.539, "unit": "angstrom" },
+          { "value": 4.017, "unit": "angstrom" },
+          { "value": 2.718, "unit": "angstrom" },
+          { "value": 3.85, "unit": "angstrom" },
+          { "value": 4.188, "unit": "angstrom" },
+          { "value": 3.77, "unit": "angstrom" },
+          { "value": 3.062, "unit": "angstrom" },
+          { "value": 3.556, "unit": "angstrom" },
+          { "value": 3.147, "unit": "angstrom" },
+          { "value": 3.526, "unit": "angstrom" },
+          { "value": 3.858, "unit": "angstrom" },
+          { "value": 4.118, "unit": "angstrom" },
+          { "value": 2.966, "unit": "angstrom" },
+          { "value": 4.274, "unit": "angstrom" },
+          { "value": 3.795, "unit": "angstrom" },
+          { "value": 4.072, "unit": "angstrom" },
+          { "value": 4.196, "unit": "angstrom" },
+          { "value": 3.189, "unit": "angstrom" },
+          { "value": 3.026, "unit": "angstrom" },
+          { "value": 2.416, "unit": "angstrom" },
+          { "value": 3.481, "unit": "angstrom" },
+          { "value": 2.803, "unit": "angstrom" },
+          { "value": 4.171, "unit": "angstrom" },
+          { "value": 3.984, "unit": "angstrom" },
+          { "value": 2.954, "unit": "angstrom" },
+          { "value": 3.828, "unit": "angstrom" },
+          { "value": 2.699, "unit": "angstrom" },
+          { "value": 4.284, "unit": "angstrom" },
+          { "value": 4.168, "unit": "angstrom" },
+          { "value": 2.878, "unit": "angstrom" },
+          { "value": 3.291, "unit": "angstrom" },
+          { "value": 4.288, "unit": "angstrom" },
+          { "value": 3.763, "unit": "angstrom" },
+          { "value": 5.179, "unit": "angstrom" },
+          { "value": 3.184, "unit": "angstrom" },
+          { "value": 3.71, "unit": "angstrom" },
+          { "value": 3.816, "unit": "angstrom" },
+          { "value": 3.8, "unit": "angstrom" },
+          { "value": 3.852, "unit": "angstrom" },
+          { "value": 2.813, "unit": "angstrom" },
+          { "value": 3.595, "unit": "angstrom" },
+          { "value": 2.982, "unit": "angstrom" },
+          { "value": 3.139, "unit": "angstrom" }
+        ],
+        "lower_bound_delta": [
+          { "value": 0.588, "unit": "angstrom" },
+          { "value": 0.618, "unit": "angstrom" },
+          { "value": 0.583, "unit": "angstrom" },
+          { "value": 0.791, "unit": "angstrom" },
+          { "value": 0.508, "unit": "angstrom" },
+          { "value": 0.708, "unit": "angstrom" },
+          { "value": 0.803, "unit": "angstrom" },
+          { "value": 0.544, "unit": "angstrom" },
+          { "value": 0.77, "unit": "angstrom" },
+          { "value": 0.838, "unit": "angstrom" },
+          { "value": 0.754, "unit": "angstrom" },
+          { "value": 0.612, "unit": "angstrom" },
+          { "value": 0.711, "unit": "angstrom" },
+          { "value": 1.629, "unit": "angstrom" },
+          { "value": 1.705, "unit": "angstrom" },
+          { "value": 1.772, "unit": "angstrom" },
+          { "value": 1.824, "unit": "angstrom" },
+          { "value": 0.593, "unit": "angstrom" },
+          { "value": 0.855, "unit": "angstrom" },
+          { "value": 0.759, "unit": "angstrom" },
+          { "value": 2.814, "unit": "angstrom" },
+          { "value": 2.839, "unit": "angstrom" },
+          { "value": 0.638, "unit": "angstrom" },
+          { "value": 1.605, "unit": "angstrom" },
+          { "value": 3.483, "unit": "angstrom" },
+          { "value": 3.696, "unit": "angstrom" },
+          { "value": 2.561, "unit": "angstrom" },
+          { "value": 2.834, "unit": "angstrom" },
+          { "value": 3.797, "unit": "angstrom" },
+          { "value": 0.591, "unit": "angstrom" },
+          { "value": 2.766, "unit": "angstrom" },
+          { "value": 1.54, "unit": "angstrom" },
+          { "value": 0.857, "unit": "angstrom" },
+          { "value": 3.834, "unit": "angstrom" },
+          { "value": 0.576, "unit": "angstrom" },
+          { "value": 1.658, "unit": "angstrom" },
+          { "value": 0.858, "unit": "angstrom" },
+          { "value": 1.253, "unit": "angstrom" },
+          { "value": 1.036, "unit": "angstrom" },
+          { "value": 0.637, "unit": "angstrom" },
+          { "value": 0.842, "unit": "angstrom" },
+          { "value": 0.763, "unit": "angstrom" },
+          { "value": 1.76, "unit": "angstrom" },
+          { "value": 1.77, "unit": "angstrom" },
+          { "value": 0.563, "unit": "angstrom" },
+          { "value": 0.719, "unit": "angstrom" },
+          { "value": 0.596, "unit": "angstrom" },
+          { "value": 0.628, "unit": "angstrom" }
+        ],
+        "upper_bound_delta": [
+          { "value": 0.588, "unit": "angstrom" },
+          { "value": 0.618, "unit": "angstrom" },
+          { "value": 0.583, "unit": "angstrom" },
+          { "value": 0.791, "unit": "angstrom" },
+          { "value": 0.508, "unit": "angstrom" },
+          { "value": 0.708, "unit": "angstrom" },
+          { "value": 0.803, "unit": "angstrom" },
+          { "value": 0.544, "unit": "angstrom" },
+          { "value": 0.77, "unit": "angstrom" },
+          { "value": 0.838, "unit": "angstrom" },
+          { "value": 0.754, "unit": "angstrom" },
+          { "value": 0.612, "unit": "angstrom" },
+          { "value": 0.711, "unit": "angstrom" },
+          { "value": 0.629, "unit": "angstrom" },
+          { "value": 0.705, "unit": "angstrom" },
+          { "value": 0.772, "unit": "angstrom" },
+          { "value": 0.824, "unit": "angstrom" },
+          { "value": 0.593, "unit": "angstrom" },
+          { "value": 0.855, "unit": "angstrom" },
+          { "value": 0.759, "unit": "angstrom" },
+          { "value": 0.814, "unit": "angstrom" },
+          { "value": 0.839, "unit": "angstrom" },
+          { "value": 0.638, "unit": "angstrom" },
+          { "value": 0.605, "unit": "angstrom" },
+          { "value": 0.483, "unit": "angstrom" },
+          { "value": 0.696, "unit": "angstrom" },
+          { "value": 0.561, "unit": "angstrom" },
+          { "value": 0.834, "unit": "angstrom" },
+          { "value": 0.797, "unit": "angstrom" },
+          { "value": 0.591, "unit": "angstrom" },
+          { "value": 0.766, "unit": "angstrom" },
+          { "value": 0.54, "unit": "angstrom" },
+          { "value": 0.857, "unit": "angstrom" },
+          { "value": 0.834, "unit": "angstrom" },
+          { "value": 0.576, "unit": "angstrom" },
+          { "value": 0.658, "unit": "angstrom" },
+          { "value": 0.858, "unit": "angstrom" },
+          { "value": 0.753, "unit": "angstrom" },
+          { "value": 1.036, "unit": "angstrom" },
+          { "value": 0.637, "unit": "angstrom" },
+          { "value": 0.742, "unit": "angstrom" },
+          { "value": 0.763, "unit": "angstrom" },
+          { "value": 0.76, "unit": "angstrom" },
+          { "value": 0.77, "unit": "angstrom" },
+          { "value": 0.563, "unit": "angstrom" },
+          { "value": 0.719, "unit": "angstrom" },
+          { "value": 0.596, "unit": "angstrom" },
+          { "value": 0.628, "unit": "angstrom" }
+        ]
+      }
+    },
+    {
+      "name": "cyclo-(vRVRV)",
+      "sequence": [
+        { "position": 1, "three_letter_code": "VAL", "chirality": "D" },
+        { "position": 2, "three_letter_code": "ARG", "chirality": "L" },
+        { "position": 3, "three_letter_code": "VAL", "chirality": "L" },
+        { "position": 4, "three_letter_code": "ARG", "chirality": "L" },
+        { "position": 5, "three_letter_code": "VAL", "chirality": "L" }
+      ],
+      "experimental_conditions": {
+        "solvent": "90:10 H2O:D2O",
+        "ph": { "value": 4.65, "unit": "pH units" },
+        "temperature": { "value": 15, "unit": "degrees Celsius" },
+        "concentration": { "value": 2.0, "unit": "millimolar" },
+        "spectrometer_frequency": { "value": 600, "unit": "megahertz" }
+      },
+      "chemical_shifts": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S5"
+        },
+        "proton_shifts": {
+          "residue_index": [
+            1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4,
+            4, 5, 5, 5, 5
+          ],
+          "atom_name": [
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HG2",
+            "HG3",
+            "HD#",
+            "HE",
+            "HN",
+            "HA",
+            "HB",
+            "HG##",
+            "HN",
+            "HA",
+            "HB#",
+            "HG2",
+            "HG3",
+            "HD#",
+            "HE",
+            "HN",
+            "HA",
+            "HB",
+            "HG##"
+          ],
+          "shift": [
+            { "value": 8.824, "unit": "ppm" },
+            { "value": 3.949, "unit": "ppm" },
+            { "value": 1.962, "unit": "ppm" },
+            { "value": 0.909, "unit": "ppm" },
+            { "value": 0.994, "unit": "ppm" },
+            { "value": 9.062, "unit": "ppm" },
+            { "value": 4.178, "unit": "ppm" },
+            { "value": 1.817, "unit": "ppm" },
+            { "value": 1.95, "unit": "ppm" },
+            { "value": 1.743, "unit": "ppm" },
+            { "value": 1.659, "unit": "ppm" },
+            { "value": 3.236, "unit": "ppm" },
+            { "value": 7.285, "unit": "ppm" },
+            { "value": 7.728, "unit": "ppm" },
+            { "value": 4.211, "unit": "ppm" },
+            { "value": 2.132, "unit": "ppm" },
+            { "value": 0.937, "unit": "ppm" },
+            { "value": 8.473, "unit": "ppm" },
+            { "value": 3.923, "unit": "ppm" },
+            { "value": 2.009, "unit": "ppm" },
+            { "value": 1.619, "unit": "ppm" },
+            { "value": 1.675, "unit": "ppm" },
+            { "value": 3.226, "unit": "ppm" },
+            { "value": 7.288, "unit": "ppm" },
+            { "value": 8.029, "unit": "ppm" },
+            { "value": 4.091, "unit": "ppm" },
+            { "value": 1.987, "unit": "ppm" },
+            { "value": 0.914, "unit": "ppm" }
+          ]
+        },
+        "carbon_shifts": {
+          "residue_index": [1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5],
+          "atom_name": [
+            "CA",
+            "CB",
+            "CA",
+            "CB",
+            "CG",
+            "CD",
+            "CA",
+            "CB",
+            "CG1",
+            "CG2",
+            "CA",
+            "CB",
+            "CG",
+            "CD",
+            "CA",
+            "CB"
+          ],
+          "shift": [
+            { "value": 66.24, "unit": "ppm" },
+            { "value": 34.19, "unit": "ppm" },
+            { "value": 60.83, "unit": "ppm" },
+            { "value": 33.25, "unit": "ppm" },
+            { "value": 30.51, "unit": "ppm" },
+            { "value": 45.76, "unit": "ppm" },
+            { "value": 64.66, "unit": "ppm" },
+            { "value": 34.52, "unit": "ppm" },
+            { "value": 23.11, "unit": "ppm" },
+            { "value": 23.76, "unit": "ppm" },
+            { "value": 63.33, "unit": "ppm" },
+            { "value": 32.02, "unit": "ppm" },
+            { "value": 30.51, "unit": "ppm" },
+            { "value": 45.18, "unit": "ppm" },
+            { "value": 64.71, "unit": "ppm" },
+            { "value": 35.52, "unit": "ppm" }
+          ]
+        },
+        "nitrogen_shifts": {
+          "residue_index": [1, 2, 3, 4, 5],
+          "atom_name": ["N", "N", "N", "N", "N"],
+          "shift": [
+            { "value": 130.23, "unit": "ppm" },
+            { "value": 128.98, "unit": "ppm" },
+            { "value": 117.91, "unit": "ppm" },
+            { "value": 123.8, "unit": "ppm" },
+            { "value": 119.78, "unit": "ppm" }
+          ]
+        },
+        "amide_proton_temperature_coefficients": {
+          "residue_index": [1, 2, 3, 4, 5],
+          "coefficient": [
+            { "value": -9.3, "unit": "ppb per degree Celsius" },
+            { "value": -9.3, "unit": "ppb per degree Celsius" },
+            { "value": -4.7, "unit": "ppb per degree Celsius" },
+            { "value": -4.7, "unit": "ppb per degree Celsius" },
+            { "value": -1.1, "unit": "ppb per degree Celsius" }
+          ]
+        }
+      },
+      "j_couplings_and_torsional_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S21"
+        },
+        "residue_index": [1, 2, 3, 4, 5],
+        "ha_atom_name": ["HA", "HA", "HA", "HA", "HA"],
+        "j_coupling": [
+          { "value": 7.9, "unit": "hertz" },
+          { "value": 6.4, "unit": "hertz" },
+          { "value": 9.9, "unit": "hertz" },
+          { "value": 6.6, "unit": "hertz" },
+          { "value": 9.5, "unit": "hertz" }
+        ],
+        "phi_center": [
+          null,
+          null,
+          { "value": -120.0, "unit": "degrees" },
+          null,
+          { "value": -120.0, "unit": "degrees" }
+        ],
+        "phi_half_range": [
+          null,
+          null,
+          { "value": 30.0, "unit": "degrees" },
+          null,
+          { "value": 30.0, "unit": "degrees" }
+        ]
+      },
+      "observed_noes": null,
+      "noe_derived_distance_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S22"
+        },
+        "residue_index_1": [
+          1, 1, 1, 1, 1, 1, 1,
+
+          2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+
+          3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+
+          4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+
+          5, 5, 5, 5, 5, 5
+        ],
+        "atom_name_1": [
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HA",
+          "HA",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HA",
+          "HB2",
+          "HB3",
+          "HD#",
+
+          "HA",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HA",
+          "HN",
+          "HG#",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HA",
+          "HB2",
+          "HD#",
+          "HA",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HA",
+
+          "HN",
+          "HN"
+        ],
+        "residue_index_2": [
+          1, 1, 1, 1,
+
+          2, 3, 5, 1, 2,
+
+          2, 2, 2, 2, 2,
+
+          2, 2, 2, 2, 3,
+
+          3, 2, 2, 2, 3,
+
+          3, 3, 4, 4, 4,
+
+          5, 3, 3, 4, 4,
+
+          4, 4, 4, 4, 4,
+
+          4, 5, 5, 3, 4,
+
+          4, 5, 5, 5
+        ],
+        "atom_name_2": [
+          "HA",
+          "HB",
+          "HG1#",
+          "HG2#",
+          "HN",
+          "HN",
+          "HA",
+
+          "HG1#",
+          "HA",
+          "HD#",
+          "HG3",
+          "HB2",
+          "HB3",
+          "HG2",
+          "HE",
+          "HE",
+          "HE",
+          "HE",
+          "HN",
+          "HN",
+
+          "HB2",
+          "HB3",
+          "HG2",
+          "HA",
+          "HB",
+          "HG#",
+          "HN",
+          "HN",
+          "HE",
+          "HN",
+
+          "HB",
+          "HG#",
+          "HA",
+          "HD#",
+          "HG3",
+          "HB#",
+          "HG2",
+          "HE",
+          "HE",
+          "HE",
+          "HN",
+          "HN",
+
+          "HB",
+          "HG2",
+          "HG3",
+
+          "HN",
+          "HN",
+          "HG#"
+        ],
+        "target_distance": [
+          { "value": 3.199, "unit": "angstrom" },
+          { "value": 2.769, "unit": "angstrom" },
+          { "value": 3.626, "unit": "angstrom" },
+          { "value": 2.842, "unit": "angstrom" },
+          { "value": 2.356, "unit": "angstrom" },
+          { "value": 4.172, "unit": "angstrom" },
+          { "value": 2.407, "unit": "angstrom" },
+
+          { "value": 3.244, "unit": "angstrom" },
+          { "value": 3.742, "unit": "angstrom" },
+          { "value": 4.543, "unit": "angstrom" },
+          { "value": 3.223, "unit": "angstrom" },
+          { "value": 3.367, "unit": "angstrom" },
+          { "value": 3.027, "unit": "angstrom" },
+          { "value": 3.464, "unit": "angstrom" },
+          { "value": 4.403, "unit": "angstrom" },
+          { "value": 3.423, "unit": "angstrom" },
+          { "value": 3.526, "unit": "angstrom" },
+          { "value": 2.521, "unit": "angstrom" },
+          { "value": 3.674, "unit": "angstrom" },
+          { "value": 3.774, "unit": "angstrom" },
+
+          { "value": 2.755, "unit": "angstrom" },
+          { "value": 3.865, "unit": "angstrom" },
+          { "value": 4.848, "unit": "angstrom" },
+          { "value": 2.859, "unit": "angstrom" },
+          { "value": 3.246, "unit": "angstrom" },
+          { "value": 2.936, "unit": "angstrom" },
+          { "value": 2.689, "unit": "angstrom" },
+          { "value": 3.446, "unit": "angstrom" },
+          { "value": 4.069, "unit": "angstrom" },
+          { "value": 3.719, "unit": "angstrom" },
+
+          { "value": 2.65, "unit": "angstrom" },
+          { "value": 3.031, "unit": "angstrom" },
+          { "value": 2.553, "unit": "angstrom" },
+          { "value": 5.357, "unit": "angstrom" },
+          { "value": 4.078, "unit": "angstrom" },
+          { "value": 2.93, "unit": "angstrom" },
+          { "value": 3.827, "unit": "angstrom" },
+          { "value": 4.556, "unit": "angstrom" },
+          { "value": 3.079, "unit": "angstrom" },
+          { "value": 2.435, "unit": "angstrom" },
+          { "value": 3.754, "unit": "angstrom" },
+          { "value": 3.053, "unit": "angstrom" },
+
+          { "value": 4.669, "unit": "angstrom" },
+          { "value": 5.02, "unit": "angstrom" },
+          { "value": 4.596, "unit": "angstrom" },
+
+          { "value": 3.396, "unit": "angstrom" },
+          { "value": 2.787, "unit": "angstrom" },
+          { "value": 3.021, "unit": "angstrom" }
+        ],
+        "lower_bound_delta": [
+          { "value": 0.64, "unit": "angstrom" },
+          { "value": 0.554, "unit": "angstrom" },
+          { "value": 1.725, "unit": "angstrom" },
+          { "value": 1.568, "unit": "angstrom" },
+          { "value": 0.471, "unit": "angstrom" },
+          { "value": 0.834, "unit": "angstrom" },
+          { "value": 0.481, "unit": "angstrom" },
+
+          { "value": 1.649, "unit": "angstrom" },
+          { "value": 0.748, "unit": "angstrom" },
+          { "value": 1.909, "unit": "angstrom" },
+          { "value": 1.645, "unit": "angstrom" },
+          { "value": 0.673, "unit": "angstrom" },
+          { "value": 0.605, "unit": "angstrom" },
+          { "value": 1.693, "unit": "angstrom" },
+          { "value": 0.881, "unit": "angstrom" },
+          { "value": 0.685, "unit": "angstrom" },
+          { "value": 0.705, "unit": "angstrom" },
+          { "value": 1.504, "unit": "angstrom" },
+          { "value": 0.735, "unit": "angstrom" },
+          { "value": 0.555, "unit": "angstrom" },
+
+          { "value": 0.751, "unit": "angstrom" },
+          { "value": 0.773, "unit": "angstrom" },
+          { "value": 1.97, "unit": "angstrom" },
+          { "value": 0.572, "unit": "angstrom" },
+          { "value": 0.649, "unit": "angstrom" },
+          { "value": 2.587, "unit": "angstrom" },
+          { "value": 0.538, "unit": "angstrom" },
+          { "value": 0.689, "unit": "angstrom" },
+          { "value": 2.814, "unit": "angstrom" },
+          { "value": 0.744, "unit": "angstrom" },
+
+          { "value": 0.53, "unit": "angstrom" },
+          { "value": 2.606, "unit": "angstrom" },
+          { "value": 0.511, "unit": "angstrom" },
+          { "value": 2.071, "unit": "angstrom" },
+          { "value": 1.816, "unit": "angstrom" },
+          { "value": 1.586, "unit": "angstrom" },
+          { "value": 1.765, "unit": "angstrom" },
+          { "value": 0.911, "unit": "angstrom" },
+          { "value": 1.616, "unit": "angstrom" },
+          { "value": 1.487, "unit": "angstrom" },
+          { "value": 0.751, "unit": "angstrom" },
+          { "value": 0.611, "unit": "angstrom" },
+
+          { "value": 0.934, "unit": "angstrom" },
+          { "value": 2.004, "unit": "angstrom" },
+          { "value": 0.919, "unit": "angstrom" },
+
+          { "value": 0.679, "unit": "angstrom" },
+          { "value": 0.557, "unit": "angstrom" },
+          { "value": 2.604, "unit": "angstrom" }
+        ],
+        "upper_bound_delta": [
+          { "value": 0.64, "unit": "angstrom" },
+          { "value": 0.554, "unit": "angstrom" },
+          { "value": 0.725, "unit": "angstrom" },
+          { "value": 0.568, "unit": "angstrom" },
+          { "value": 0.471, "unit": "angstrom" },
+          { "value": 0.834, "unit": "angstrom" },
+          { "value": 0.481, "unit": "angstrom" },
+
+          { "value": 0.649, "unit": "angstrom" },
+          { "value": 0.748, "unit": "angstrom" },
+          { "value": 0.909, "unit": "angstrom" },
+          { "value": 0.645, "unit": "angstrom" },
+          { "value": 0.673, "unit": "angstrom" },
+          { "value": 0.605, "unit": "angstrom" },
+          { "value": 0.693, "unit": "angstrom" },
+          { "value": 0.881, "unit": "angstrom" },
+          { "value": 0.685, "unit": "angstrom" },
+          { "value": 0.705, "unit": "angstrom" },
+          { "value": 0.504, "unit": "angstrom" },
+          { "value": 0.735, "unit": "angstrom" },
+          { "value": 0.555, "unit": "angstrom" },
+
+          { "value": 0.751, "unit": "angstrom" },
+          { "value": 0.773, "unit": "angstrom" },
+          { "value": 0.97, "unit": "angstrom" },
+          { "value": 0.572, "unit": "angstrom" },
+          { "value": 0.649, "unit": "angstrom" },
+          { "value": 0.587, "unit": "angstrom" },
+          { "value": 0.538, "unit": "angstrom" },
+          { "value": 0.689, "unit": "angstrom" },
+          { "value": 0.814, "unit": "angstrom" },
+          { "value": 0.744, "unit": "angstrom" },
+
+          { "value": 0.53, "unit": "angstrom" },
+          { "value": 0.606, "unit": "angstrom" },
+          { "value": 0.511, "unit": "angstrom" },
+          { "value": 1.071, "unit": "angstrom" },
+          { "value": 0.816, "unit": "angstrom" },
+          { "value": 0.586, "unit": "angstrom" },
+          { "value": 0.765, "unit": "angstrom" },
+          { "value": 0.911, "unit": "angstrom" },
+          { "value": 0.616, "unit": "angstrom" },
+          { "value": 0.487, "unit": "angstrom" },
+          { "value": 0.751, "unit": "angstrom" },
+          { "value": 0.611, "unit": "angstrom" },
+
+          { "value": 0.934, "unit": "angstrom" },
+          { "value": 1.004, "unit": "angstrom" },
+          { "value": 0.919, "unit": "angstrom" },
+
+          { "value": 0.679, "unit": "angstrom" },
+          { "value": 0.557, "unit": "angstrom" },
+          { "value": 0.604, "unit": "angstrom" }
+        ]
+      }
+    },
+    {
+      "name": "cyclo-(vSSAV)",
+      "sequence": [
+        { "position": 1, "three_letter_code": "VAL", "chirality": "D" },
+        { "position": 2, "three_letter_code": "SER", "chirality": "L" },
+        { "position": 3, "three_letter_code": "SER", "chirality": "L" },
+        { "position": 4, "three_letter_code": "ALA", "chirality": "L" },
+        { "position": 5, "three_letter_code": "VAL", "chirality": "L" }
+      ],
+      "experimental_conditions": {
+        "solvent": "90:10 H2O:D2O",
+        "ph": { "value": 5.16, "unit": "pH units" },
+        "temperature": { "value": 15, "unit": "degrees Celsius" },
+        "concentration": { "value": 2.0, "unit": "millimolar" },
+        "spectrometer_frequency": { "value": 600, "unit": "megahertz" }
+      },
+      "chemical_shifts": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S6"
+        },
+        "proton_shifts": {
+          "residue_index": [
+            1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5, 5
+          ],
+          "atom_name": [
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HN",
+            "HA",
+            "HB#",
+            "HN",
+            "HA",
+            "HB#",
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#"
+          ],
+          "shift": [
+            { "value": 8.932, "unit": "ppm" },
+            { "value": 3.879, "unit": "ppm" },
+            { "value": 1.987, "unit": "ppm" },
+            { "value": 0.939, "unit": "ppm" },
+            { "value": 1.042, "unit": "ppm" },
+            { "value": 9.091, "unit": "ppm" },
+            { "value": 4.471, "unit": "ppm" },
+            { "value": 3.914, "unit": "ppm" },
+            { "value": 4.025, "unit": "ppm" },
+            { "value": 7.711, "unit": "ppm" },
+            { "value": 4.683, "unit": "ppm" },
+            { "value": 3.939, "unit": "ppm" },
+            { "value": 8.216, "unit": "ppm" },
+            { "value": 4.064, "unit": "ppm" },
+            { "value": 1.483, "unit": "ppm" },
+            { "value": 7.636, "unit": "ppm" },
+            { "value": 4.119, "unit": "ppm" },
+            { "value": 1.922, "unit": "ppm" },
+            { "value": 0.95, "unit": "ppm" },
+            { "value": 0.907, "unit": "ppm" }
+          ]
+        },
+        "carbon_shifts": {
+          "residue_index": [1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 5],
+          "atom_name": [
+            "CA",
+            "CB",
+            "CG1",
+            "CG2",
+            "CA",
+            "CB",
+            "CA",
+            "CB",
+            "CA",
+            "CB",
+            "CA",
+            "CB",
+            "CG1",
+            "CG2"
+          ],
+          "shift": [
+            { "value": 64.67, "unit": "ppm" },
+            { "value": 30.83, "unit": "ppm" },
+            { "value": 20.82, "unit": "ppm" },
+            { "value": 21.49, "unit": "ppm" },
+            { "value": 59.27, "unit": "ppm" },
+            { "value": 63.42, "unit": "ppm" },
+            { "value": 55.96, "unit": "ppm" },
+            { "value": 62.35, "unit": "ppm" },
+            { "value": 55.87, "unit": "ppm" },
+            { "value": 17.76, "unit": "ppm" },
+            { "value": 60.94, "unit": "ppm" },
+            { "value": 33.99, "unit": "ppm" },
+            { "value": 21.22, "unit": "ppm" },
+            { "value": 20.44, "unit": "ppm" }
+          ]
+        },
+        "nitrogen_shifts": {
+          "residue_index": [1, 2, 3, 4, 5],
+          "atom_name": ["N", "N", "N", "N", "N"],
+          "shift": [
+            { "value": 130.54, "unit": "ppm" },
+            { "value": 125.29, "unit": "ppm" },
+            { "value": 120.15, "unit": "ppm" },
+            { "value": 128.91, "unit": "ppm" },
+            { "value": 113.74, "unit": "ppm" }
+          ]
+        },
+        "amide_proton_temperature_coefficients": {
+          "residue_index": [1, 2, 3, 4, 5],
+          "coefficient": [
+            { "value": -7.9, "unit": "ppb per degree Celsius" },
+            { "value": -9.2, "unit": "ppb per degree Celsius" },
+            { "value": -3.1, "unit": "ppb per degree Celsius" },
+            { "value": -3.7, "unit": "ppb per degree Celsius" },
+            { "value": -4.2, "unit": "ppb per degree Celsius" }
+          ]
+        }
+      },
+      "j_couplings_and_torsional_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S23"
+        },
+        "residue_index": [1, 2, 3, 4, 5],
+        "ha_atom_name": ["HA", "HA", "HA", "HA", "HA"],
+        "j_coupling": [
+          { "value": 6.2, "unit": "hertz" },
+          { "value": 7.5, "unit": "hertz" },
+          { "value": 9.6, "unit": "hertz" },
+          { "value": 4.1, "unit": "hertz" },
+          { "value": 9.8, "unit": "hertz" }
+        ],
+        "phi_center": [
+          null,
+          null,
+          { "value": -120.0, "unit": "degrees" },
+          { "value": -60.0, "unit": "degrees" },
+          { "value": -120.0, "unit": "degrees" }
+        ],
+        "phi_half_range": [
+          null,
+          null,
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" }
+        ]
+      },
+      "observed_noes": null,
+      "noe_derived_distance_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S24"
+        },
+        "residue_index_1": [
+          1, 1, 1, 1, 1,
+
+          2, 2, 2, 2, 2,
+
+          2, 2, 2, 2, 3,
+
+          3, 4, 4, 4, 4,
+
+          4, 4, 4, 4, 4,
+
+          5, 5, 5, 5, 5,
+
+          5, 5, 5
+        ],
+        "atom_name_1": [
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HB3",
+          "HN",
+
+          "HA",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HB#",
+          "HA",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HA",
+
+          "HA",
+          "HN",
+          "HN"
+        ],
+        "residue_index_2": [
+          1, 1, 1, 1, 5,
+
+          2, 2, 2, 3, 3,
+
+          3, 3, 5, 1, 3,
+
+          3, 3, 3, 3, 4,
+
+          4, 5, 5, 5, 5,
+
+          3, 3, 5, 5, 5,
+
+          5, 5, 5
+        ],
+        "atom_name_2": [
+          "HA",
+          "HB",
+          "HG2#",
+          "HG1#",
+          "HA",
+
+          "HA",
+          "HB3",
+          "HB2",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HG1#",
+          "HG2#",
+          "HA",
+
+          "HB#",
+          "HA",
+          "HB#",
+          "HN",
+          "HA",
+
+          "HB#",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HB#",
+          "HN",
+          "HA",
+          "HB",
+          "HG1#",
+
+          "HG2#",
+          "HG2#",
+          "HG1#"
+        ],
+        "target_distance": [
+          { "value": 3.314, "unit": "angstrom" },
+          { "value": 2.639, "unit": "angstrom" },
+          { "value": 2.614, "unit": "angstrom" },
+          { "value": 3.031, "unit": "angstrom" },
+          { "value": 2.376, "unit": "angstrom" },
+
+          { "value": 3.014, "unit": "angstrom" },
+          { "value": 3.108, "unit": "angstrom" },
+          { "value": 2.234, "unit": "angstrom" },
+          { "value": 3.713, "unit": "angstrom" },
+          { "value": 2.705, "unit": "angstrom" },
+
+          { "value": 3.433, "unit": "angstrom" },
+          { "value": 2.809, "unit": "angstrom" },
+          { "value": 3.168, "unit": "angstrom" },
+          { "value": 3.168, "unit": "angstrom" },
+          { "value": 3.009, "unit": "angstrom" },
+
+          { "value": 2.871, "unit": "angstrom" },
+          { "value": 3.096, "unit": "angstrom" },
+          { "value": 2.358, "unit": "angstrom" },
+          { "value": 3.616, "unit": "angstrom" },
+          { "value": 2.991, "unit": "angstrom" },
+
+          { "value": 2.468, "unit": "angstrom" },
+          { "value": 2.95, "unit": "angstrom" },
+          { "value": 3.764, "unit": "angstrom" },
+          { "value": 2.664, "unit": "angstrom" },
+          { "value": 2.841, "unit": "angstrom" },
+
+          { "value": 3.575, "unit": "angstrom" },
+          { "value": 3.293, "unit": "angstrom" },
+          { "value": 2.686, "unit": "angstrom" },
+          { "value": 3.029, "unit": "angstrom" },
+          { "value": 2.63, "unit": "angstrom" },
+
+          { "value": 2.643, "unit": "angstrom" },
+          { "value": 3.161, "unit": "angstrom" },
+          { "value": 3.485, "unit": "angstrom" }
+        ],
+        "lower_bound_delta": [
+          { "value": 0.663, "unit": "angstrom" },
+          { "value": 0.528, "unit": "angstrom" },
+          { "value": 1.523, "unit": "angstrom" },
+          { "value": 1.606, "unit": "angstrom" },
+          { "value": 0.475, "unit": "angstrom" },
+
+          { "value": 0.603, "unit": "angstrom" },
+          { "value": 0.622, "unit": "angstrom" },
+          { "value": 0.447, "unit": "angstrom" },
+          { "value": 0.743, "unit": "angstrom" },
+          { "value": 0.541, "unit": "angstrom" },
+
+          { "value": 0.687, "unit": "angstrom" },
+          { "value": 0.562, "unit": "angstrom" },
+          { "value": 1.634, "unit": "angstrom" },
+          { "value": 1.634, "unit": "angstrom" },
+          { "value": 0.602, "unit": "angstrom" },
+
+          { "value": 1.574, "unit": "angstrom" },
+          { "value": 0.619, "unit": "angstrom" },
+          { "value": 1.472, "unit": "angstrom" },
+          { "value": 0.723, "unit": "angstrom" },
+          { "value": 0.598, "unit": "angstrom" },
+
+          { "value": 1.494, "unit": "angstrom" },
+          { "value": 0.59, "unit": "angstrom" },
+          { "value": 0.753, "unit": "angstrom" },
+          { "value": 0.533, "unit": "angstrom" },
+          { "value": 0.568, "unit": "angstrom" },
+
+          { "value": 1.715, "unit": "angstrom" },
+          { "value": 0.659, "unit": "angstrom" },
+          { "value": 0.537, "unit": "angstrom" },
+          { "value": 0.606, "unit": "angstrom" },
+          { "value": 1.526, "unit": "angstrom" },
+
+          { "value": 1.529, "unit": "angstrom" },
+          { "value": 1.632, "unit": "angstrom" },
+          { "value": 1.697, "unit": "angstrom" }
+        ],
+        "upper_bound_delta": [
+          { "value": 0.663, "unit": "angstrom" },
+          { "value": 0.528, "unit": "angstrom" },
+          { "value": 0.523, "unit": "angstrom" },
+          { "value": 0.606, "unit": "angstrom" },
+          { "value": 0.475, "unit": "angstrom" },
+
+          { "value": 0.603, "unit": "angstrom" },
+          { "value": 0.622, "unit": "angstrom" },
+          { "value": 0.447, "unit": "angstrom" },
+          { "value": 0.743, "unit": "angstrom" },
+          { "value": 0.541, "unit": "angstrom" },
+
+          { "value": 0.687, "unit": "angstrom" },
+          { "value": 0.562, "unit": "angstrom" },
+          { "value": 0.634, "unit": "angstrom" },
+          { "value": 0.634, "unit": "angstrom" },
+          { "value": 0.602, "unit": "angstrom" },
+
+          { "value": 0.574, "unit": "angstrom" },
+          { "value": 0.619, "unit": "angstrom" },
+          { "value": 0.472, "unit": "angstrom" },
+          { "value": 0.723, "unit": "angstrom" },
+          { "value": 0.598, "unit": "angstrom" },
+
+          { "value": 0.494, "unit": "angstrom" },
+          { "value": 0.59, "unit": "angstrom" },
+          { "value": 0.753, "unit": "angstrom" },
+          { "value": 0.533, "unit": "angstrom" },
+          { "value": 0.568, "unit": "angstrom" },
+
+          { "value": 0.715, "unit": "angstrom" },
+          { "value": 0.659, "unit": "angstrom" },
+          { "value": 0.537, "unit": "angstrom" },
+          { "value": 0.606, "unit": "angstrom" },
+          { "value": 0.526, "unit": "angstrom" },
+
+          { "value": 0.529, "unit": "angstrom" },
+          { "value": 0.632, "unit": "angstrom" },
+          { "value": 0.697, "unit": "angstrom" }
+        ]
+      }
+    },
+    {
+      "name": "cyclo-(RVRAANG)",
+      "sequence": [
+        { "position": 1, "three_letter_code": "ARG", "chirality": "L" },
+        { "position": 2, "three_letter_code": "VAL", "chirality": "L" },
+        { "position": 3, "three_letter_code": "ARG", "chirality": "L" },
+        { "position": 4, "three_letter_code": "ALA", "chirality": "L" },
+        { "position": 5, "three_letter_code": "ALA", "chirality": "L" },
+        { "position": 6, "three_letter_code": "ASN", "chirality": "L" },
+        { "position": 7, "three_letter_code": "GLY", "chirality": "L" }
+      ],
+      "experimental_conditions": {
+        "solvent": "90:10 H2O:D2O",
+        "ph": { "value": 5.11, "unit": "pH units" },
+        "temperature": { "value": 25, "unit": "degrees Celsius" },
+        "concentration": { "value": 2.0, "unit": "millimolar" },
+        "spectrometer_frequency": { "value": 600, "unit": "megahertz" }
+      },
+      "chemical_shifts": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S7"
+        },
+        "proton_shifts": {
+          "residue_index": [
+            1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4,
+            4, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7
+          ],
+          "atom_name": [
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HG2",
+            "HG3",
+            "HD#",
+            "HE",
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HG2",
+            "HG3",
+            "HD#",
+            "HE",
+            "HN",
+            "HA",
+            "HB#",
+            "HN",
+            "HA",
+            "HB#",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HD21",
+            "HD22",
+            "HN",
+            "HA2",
+            "HA3"
+          ],
+          "shift": [
+            { "value": 7.83, "unit": "ppm" },
+            { "value": 4.37, "unit": "ppm" },
+            { "value": 1.77, "unit": "ppm" },
+            { "value": 1.91, "unit": "ppm" },
+            { "value": 1.66, "unit": "ppm" },
+            { "value": 1.68, "unit": "ppm" },
+            { "value": 3.21, "unit": "ppm" },
+            { "value": 7.18, "unit": "ppm" },
+            { "value": 8.25, "unit": "ppm" },
+            { "value": 3.82, "unit": "ppm" },
+            { "value": 2.11, "unit": "ppm" },
+            { "value": 0.97, "unit": "ppm" },
+            { "value": 1.0, "unit": "ppm" },
+            { "value": 8.56, "unit": "ppm" },
+            { "value": 4.06, "unit": "ppm" },
+            { "value": 1.89, "unit": "ppm" },
+            { "value": 2.02, "unit": "ppm" },
+            { "value": 1.61, "unit": "ppm" },
+            { "value": 1.64, "unit": "ppm" },
+            { "value": 3.23, "unit": "ppm" },
+            { "value": 7.25, "unit": "ppm" },
+            { "value": 8.16, "unit": "ppm" },
+            { "value": 4.4, "unit": "ppm" },
+            { "value": 1.39, "unit": "ppm" },
+            { "value": 8.11, "unit": "ppm" },
+            { "value": 4.4, "unit": "ppm" },
+            { "value": 1.41, "unit": "ppm" },
+            { "value": 8.41, "unit": "ppm" },
+            { "value": 4.6, "unit": "ppm" },
+            { "value": 2.85, "unit": "ppm" },
+            { "value": 2.88, "unit": "ppm" },
+            { "value": 6.86, "unit": "ppm" },
+            { "value": 7.55, "unit": "ppm" },
+            { "value": 8.39, "unit": "ppm" },
+            { "value": 3.79, "unit": "ppm" },
+            { "value": 4.08, "unit": "ppm" }
+          ]
+        },
+        "carbon_shifts": null,
+        "nitrogen_shifts": null,
+        "amide_proton_temperature_coefficients": null
+      },
+      "j_couplings_and_torsional_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S25"
+        },
+        "residue_index": [1, 2, 3, 4, 5, 6, 7, 7],
+        "ha_atom_name": ["HA", "HA", "HA", "HA", "HA", "HA", "HA2", "HA3"],
+        "j_coupling": [
+          { "value": 7.8, "unit": "hertz" },
+          { "value": 6.0, "unit": "hertz" },
+          { "value": 6.6, "unit": "hertz" },
+          { "value": 6.6, "unit": "hertz" },
+          { "value": 6.3, "unit": "hertz" },
+          { "value": 7.3, "unit": "hertz" },
+          { "value": 6.1, "unit": "hertz" },
+          { "value": 6.5, "unit": "hertz" }
+        ],
+        "phi_center": [null, null, null, null, null, null, null, null],
+        "phi_half_range": [null, null, null, null, null, null, null, null]
+      },
+      "observed_noes": null,
+      "noe_derived_distance_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S26"
+        },
+        "residue_index_1": [
+          2, 2, 2, 2, 7,
+
+          7, 3, 3, 4, 4,
+
+          4, 5, 6, 6, 7,
+
+          6, 6, 1, 1, 6,
+
+          6, 6, 6, 4, 4,
+
+          3, 3, 3, 3, 3,
+
+          3, 3, 3, 1, 5,
+
+          5, 4, 5, 1, 1,
+
+          1, 2, 1,
+
+          1, 1, 3, 6, 6,
+
+          6, 3, 3, 7, 2,
+
+          6, 6, 6, 6, 6,
+
+          3
+        ],
+        "atom_name_1": [
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HD21",
+
+          "HD21",
+          "HD22",
+          "HD22",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HE",
+          "HE",
+          "HE",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HE",
+          "HE",
+
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HE",
+          "HD22",
+          "HD22",
+
+          "HD21",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HD21",
+          "HD22",
+          "HD22",
+          "HN",
+
+          "HA"
+        ],
+        "residue_index_2": [
+          2, 2, 2, 2, 7,
+
+          7, 2, 3, 3, 4,
+
+          4, 5, 5, 6, 6,
+
+          6, 6, 7, 7, 6,
+
+          6, 6, 6, 3, 3,
+
+          2, 3, 3, 3, 3,
+
+          2, 3, 3, 1, 5,
+
+          4, 2, 2, 1, 1,
+
+          1, 1, 1,
+
+          1, 3, 2, 2, 5,
+
+          5, 2, 4, 1, 1,
+
+          5, 6, 6, 1, 5,
+
+          4
+        ],
+        "atom_name_2": [
+          "HA",
+          "HB",
+          "HG1#",
+          "HG2#",
+          "HA3",
+
+          "HA2",
+          "HA",
+          "HA",
+          "HA",
+          "HA",
+
+          "HB#",
+          "HA",
+          "HA",
+          "HA",
+          "HA",
+
+          "HB3",
+          "HB2",
+          "HA3",
+          "HA2",
+          "HB3",
+
+          "HB2",
+          "HB3",
+          "HB2",
+          "HB3",
+          "HB2",
+
+          "HB",
+          "HB3",
+          "HB2",
+          "HG3",
+          "HG2",
+
+          "HG1#",
+          "HB2",
+          "HD3",
+          "HD3",
+          "HB#",
+
+          "HB#",
+          "HG1#",
+          "HG1#",
+          "HB3",
+          "HB2",
+
+          "HA",
+          "HA",
+          "HD3",
+
+          "HB2",
+          "HG3",
+          "HG1#",
+          "HG2#",
+          "HB#",
+
+          "HB#",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HA",
+          "HA",
+          "HD3",
+          "HB#",
+
+          "HB#"
+        ],
+        "target_distance": [
+          { "value": 2.8, "unit": "angstrom" },
+          { "value": 2.8, "unit": "angstrom" },
+          { "value": 3.4, "unit": "angstrom" },
+          { "value": 3.0, "unit": "angstrom" },
+          { "value": 4.1, "unit": "angstrom" },
+
+          { "value": 2.7, "unit": "angstrom" },
+          { "value": 2.6, "unit": "angstrom" },
+          { "value": 3.0, "unit": "angstrom" },
+          { "value": 2.9, "unit": "angstrom" },
+          { "value": 2.8, "unit": "angstrom" },
+
+          { "value": 2.9, "unit": "angstrom" },
+          { "value": 2.5, "unit": "angstrom" },
+          { "value": 2.7, "unit": "angstrom" },
+          { "value": 2.5, "unit": "angstrom" },
+          { "value": 2.7, "unit": "angstrom" },
+
+          { "value": 3.5, "unit": "angstrom" },
+          { "value": 3.5, "unit": "angstrom" },
+          { "value": 3.2, "unit": "angstrom" },
+          { "value": 4.7, "unit": "angstrom" },
+          { "value": 3.4, "unit": "angstrom" },
+
+          { "value": 3.4, "unit": "angstrom" },
+          { "value": 3.8, "unit": "angstrom" },
+          { "value": 3.9, "unit": "angstrom" },
+          { "value": 3.9, "unit": "angstrom" },
+          { "value": 4.2, "unit": "angstrom" },
+
+          { "value": 3.6, "unit": "angstrom" },
+          { "value": 3.8, "unit": "angstrom" },
+          { "value": 5.0, "unit": "angstrom" },
+          { "value": 3.8, "unit": "angstrom" },
+          { "value": 3.9, "unit": "angstrom" },
+
+          { "value": 4.2, "unit": "angstrom" },
+          { "value": 3.9, "unit": "angstrom" },
+          { "value": 3.1, "unit": "angstrom" },
+          { "value": 3.0, "unit": "angstrom" },
+          { "value": 2.6, "unit": "angstrom" },
+
+          { "value": 2.6, "unit": "angstrom" },
+          { "value": 4.5, "unit": "angstrom" },
+          { "value": 4.5, "unit": "angstrom" },
+          { "value": 4.0, "unit": "angstrom" },
+          { "value": 4.2, "unit": "angstrom" },
+
+          { "value": 3.1, "unit": "angstrom" },
+          { "value": 2.5, "unit": "angstrom" },
+          { "value": 5.3, "unit": "angstrom" },
+
+          { "value": 3.4, "unit": "angstrom" },
+          { "value": 3.7, "unit": "angstrom" },
+          { "value": 5.0, "unit": "angstrom" },
+          { "value": 5.1, "unit": "angstrom" },
+          { "value": 4.5, "unit": "angstrom" },
+
+          { "value": 4.6, "unit": "angstrom" },
+          { "value": 4.3, "unit": "angstrom" },
+          { "value": 3.9, "unit": "angstrom" },
+          { "value": 3.8, "unit": "angstrom" },
+          { "value": 4.1, "unit": "angstrom" },
+
+          { "value": 3.5, "unit": "angstrom" },
+          { "value": 4.3, "unit": "angstrom" },
+          { "value": 4.6, "unit": "angstrom" },
+          { "value": 5.0, "unit": "angstrom" },
+          { "value": 3.1, "unit": "angstrom" },
+
+          { "value": 4.7, "unit": "angstrom" }
+        ],
+        "lower_bound_delta": [
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.7, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 1.0, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 1.1, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 1.0, "unit": "angstrom" },
+          { "value": 1.0, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 1.0, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+
+          { "value": 0.9, "unit": "angstrom" }
+        ],
+        "upper_bound_delta": [
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.7, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 1.0, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.6, "unit": "angstrom" },
+          { "value": 0.5, "unit": "angstrom" },
+          { "value": 1.1, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 1.0, "unit": "angstrom" },
+          { "value": 1.0, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+          { "value": 0.8, "unit": "angstrom" },
+
+          { "value": 0.7, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 0.9, "unit": "angstrom" },
+          { "value": 1.0, "unit": "angstrom" },
+          { "value": 0.6, "unit": "angstrom" },
+
+          { "value": 0.9, "unit": "angstrom" }
+        ]
+      }
+    },
+    {
+      "name": "cyclo-(VGVSDFV)",
+      "sequence": [
+        { "position": 1, "three_letter_code": "VAL", "chirality": "L" },
+        { "position": 2, "three_letter_code": "GLY", "chirality": "L" },
+        { "position": 3, "three_letter_code": "VAL", "chirality": "L" },
+        { "position": 4, "three_letter_code": "SER", "chirality": "L" },
+        { "position": 5, "three_letter_code": "ASP", "chirality": "L" },
+        { "position": 6, "three_letter_code": "PHE", "chirality": "L" },
+        { "position": 7, "three_letter_code": "VAL", "chirality": "L" }
+      ],
+      "experimental_conditions": {
+        "solvent": "90:10 H2O:D2O",
+        "ph": { "value": 6.2, "unit": "pH units" },
+        "temperature": { "value": 25, "unit": "degrees Celsius" },
+        "concentration": { "value": 2.0, "unit": "millimolar" },
+        "spectrometer_frequency": { "value": 600, "unit": "megahertz" }
+      },
+      "chemical_shifts": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S8"
+        },
+        "proton_shifts": {
+          "residue_index": [
+            1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6,
+            6, 6, 6, 6, 6, 7, 7, 7, 7, 7
+          ],
+          "atom_name": [
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#",
+            "HN",
+            "HA2",
+            "HA3",
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HN",
+            "HA",
+            "HB2",
+            "HB3",
+            "HD#",
+            "HE#",
+            "HZ",
+            "HN",
+            "HA",
+            "HB",
+            "HG1#",
+            "HG2#"
+          ],
+          "shift": [
+            { "value": 8.599, "unit": "ppm" },
+            { "value": 3.86, "unit": "ppm" },
+            { "value": 2.0, "unit": "ppm" },
+            { "value": 1.069, "unit": "ppm" },
+            { "value": 0.952, "unit": "ppm" },
+            { "value": 8.859, "unit": "ppm" },
+            { "value": 3.704, "unit": "ppm" },
+            { "value": 4.306, "unit": "ppm" },
+            { "value": 8.374, "unit": "ppm" },
+            { "value": 4.188, "unit": "ppm" },
+            { "value": 1.844, "unit": "ppm" },
+            { "value": 0.952, "unit": "ppm" },
+            { "value": 0.884, "unit": "ppm" },
+            { "value": 9.043, "unit": "ppm" },
+            { "value": 4.884, "unit": "ppm" },
+            { "value": 3.934, "unit": "ppm" },
+            { "value": 4.312, "unit": "ppm" },
+            { "value": 8.682, "unit": "ppm" },
+            { "value": 4.302, "unit": "ppm" },
+            { "value": 2.062, "unit": "ppm" },
+            { "value": 2.282, "unit": "ppm" },
+            { "value": 7.954, "unit": "ppm" },
+            { "value": 4.674, "unit": "ppm" },
+            { "value": 2.791, "unit": "ppm" },
+            { "value": 3.34, "unit": "ppm" },
+            { "value": 7.396, "unit": "ppm" },
+            { "value": 7.25, "unit": "ppm" },
+            { "value": 7.333, "unit": "ppm" },
+            { "value": 7.293, "unit": "ppm" },
+            { "value": 4.218, "unit": "ppm" },
+            { "value": 1.915, "unit": "ppm" },
+            { "value": 0.904, "unit": "ppm" },
+            { "value": 0.892, "unit": "ppm" }
+          ]
+        },
+        "carbon_shifts": {
+          "residue_index": [
+            1, 1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7, 7
+          ],
+          "atom_name": [
+            "CA",
+            "CB",
+            "CG1",
+            "CG2",
+            "CA",
+            "CA",
+            "CB",
+            "CG1",
+            "CG2",
+            "CA",
+            "CB",
+            "CA",
+            "CB",
+            "CA",
+            "CB",
+            "CD#",
+            "CE#",
+            "CZ",
+            "CA",
+            "CB",
+            "CG1",
+            "CG2"
+          ],
+          "shift": [
+            { "value": 65.11, "unit": "ppm" },
+            { "value": 31.45, "unit": "ppm" },
+            { "value": 21.65, "unit": "ppm" },
+            { "value": 20.5, "unit": "ppm" },
+            { "value": 45.14, "unit": "ppm" },
+            { "value": 63.82, "unit": "ppm" },
+            { "value": 35.35, "unit": "ppm" },
+            { "value": 20.7, "unit": "ppm" },
+            { "value": 21.1, "unit": "ppm" },
+            { "value": 57.09, "unit": "ppm" },
+            { "value": 66.05, "unit": "ppm" },
+            { "value": 56.36, "unit": "ppm" },
+            { "value": 39.88, "unit": "ppm" },
+            { "value": 57.71, "unit": "ppm" },
+            { "value": 40.6, "unit": "ppm" },
+            { "value": 131.51, "unit": "ppm" },
+            { "value": 131.6, "unit": "ppm" },
+            { "value": 129.9, "unit": "ppm" },
+            { "value": 61.64, "unit": "ppm" },
+            { "value": 33.95, "unit": "ppm" },
+            { "value": 20.6, "unit": "ppm" },
+            { "value": 21.0, "unit": "ppm" }
+          ]
+        },
+        "nitrogen_shifts": null,
+        "amide_proton_temperature_coefficients": {
+          "residue_index": [1, 2, 3, 4, 5, 6, 7],
+          "coefficient": [
+            { "value": -7.3, "unit": "ppb per degree Celsius" },
+            { "value": -7.5, "unit": "ppb per degree Celsius" },
+            { "value": -3.2, "unit": "ppb per degree Celsius" },
+            { "value": -4.9, "unit": "ppb per degree Celsius" },
+            { "value": -7.2, "unit": "ppb per degree Celsius" },
+            { "value": -4.0, "unit": "ppb per degree Celsius" },
+            { "value": 0.5, "unit": "ppb per degree Celsius" }
+          ]
+        }
+      },
+      "j_couplings_and_torsional_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S27"
+        },
+        "residue_index": [1, 2, 2, 3, 4, 5, 6, 7],
+        "ha_atom_name": ["HA", "HA2", "HA3", "HA", "HA", "HA", "HA", "HA"],
+        "j_coupling": [
+          { "value": 2.7, "unit": "hertz" },
+          { "value": 5.5, "unit": "hertz" },
+          { "value": 7.3, "unit": "hertz" },
+          { "value": 10.6, "unit": "hertz" },
+          { "value": 7.4, "unit": "hertz" },
+          { "value": 3.8, "unit": "hertz" },
+          { "value": 9.4, "unit": "hertz" },
+          { "value": 10.0, "unit": "hertz" }
+        ],
+        "phi_center": [
+          { "value": -60.0, "unit": "degrees" },
+          null,
+          null,
+          { "value": -120.0, "unit": "degrees" },
+          null,
+          { "value": -60.0, "unit": "degrees" },
+          { "value": -120.0, "unit": "degrees" },
+          { "value": -120.0, "unit": "degrees" }
+        ],
+        "phi_half_range": [
+          { "value": 30.0, "unit": "degrees" },
+          null,
+          null,
+          { "value": 30.0, "unit": "degrees" },
+          null,
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" }
+        ]
+      },
+      "observed_noes": null,
+      "noe_derived_distance_restraints": {
+        "source": {
+          "paper": "Miao et al. 2024",
+          "doi": "10.1021/acs.jpcb.4c00157",
+          "table": "Table S28"
+        },
+        "residue_index_1": [
+          1, 1, 1, 1, 2,
+
+          2, 3, 3, 3, 3,
+
+          3, 4, 4, 4, 4,
+
+          4, 4, 4, 4, 5,
+
+          5, 5, 5, 5, 5,
+
+          5, 5, 6, 6, 6,
+
+          6, 6, 7, 7, 7,
+
+          7, 7, 7
+        ],
+        "atom_name_1": [
+          "HN",
+          "HA",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HB",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HB3",
+          "HN",
+          "HN",
+          "HA",
+
+          "HN",
+          "HA",
+          "HB2",
+          "HB3",
+          "HB2",
+
+          "HB3",
+          "HB3",
+          "HN",
+          "HN",
+          "HN",
+
+          "HB2",
+          "HB3",
+          "HN",
+          "HN",
+          "HN",
+
+          "HB",
+          "HB",
+          "HN"
+        ],
+        "residue_index_2": [
+          7, 1, 1, 1, 1,
+
+          2, 3, 2, 1, 2,
+
+          2, 3, 3, 3, 4,
+
+          4, 4, 7, 7, 5,
+
+          5, 6, 6, 6, 6,
+
+          6, 6, 6, 6, 6,
+
+          6, 6, 6, 6, 6,
+
+          7, 1, 1
+        ],
+        "atom_name_2": [
+          "HA",
+          "HN",
+          "HB",
+          "HG1#",
+          "HA",
+
+          "HA3",
+          "HN",
+          "HA2",
+          "HA",
+          "HN",
+
+          "HA3",
+          "HA",
+          "HB",
+          "HN",
+          "HA",
+
+          "HB3",
+          "HB2",
+          "HB",
+          "HN",
+          "HN",
+
+          "HB3",
+          "HN",
+          "HN",
+          "HN",
+          "HE#",
+
+          "HE#",
+          "HZ",
+          "HA",
+          "HB3",
+          "HD#",
+
+          "HE#",
+          "HE#",
+          "HN",
+          "HA",
+          "HB3",
+
+          "HN",
+          "HN",
+          "HN"
+        ],
+        "target_distance": [
+          { "value": 2.181, "unit": "angstrom" },
+          { "value": 2.792, "unit": "angstrom" },
+          { "value": 2.634, "unit": "angstrom" },
+          { "value": 2.77, "unit": "angstrom" },
+          { "value": 2.49, "unit": "angstrom" },
+
+          { "value": 2.812, "unit": "angstrom" },
+          { "value": 3.423, "unit": "angstrom" },
+          { "value": 3.961, "unit": "angstrom" },
+          { "value": 4.402, "unit": "angstrom" },
+          { "value": 3.547, "unit": "angstrom" },
+
+          { "value": 4.768, "unit": "angstrom" },
+          { "value": 3.906, "unit": "angstrom" },
+          { "value": 3.056, "unit": "angstrom" },
+          { "value": 2.721, "unit": "angstrom" },
+          { "value": 3.345, "unit": "angstrom" },
+
+          { "value": 3.897, "unit": "angstrom" },
+          { "value": 2.706, "unit": "angstrom" },
+          { "value": 3.746, "unit": "angstrom" },
+          { "value": 4.212, "unit": "angstrom" },
+          { "value": 3.422, "unit": "angstrom" },
+
+          { "value": 3.929, "unit": "angstrom" },
+          { "value": 3.327, "unit": "angstrom" },
+          { "value": 4.9, "unit": "angstrom" },
+          { "value": 4.061, "unit": "angstrom" },
+          { "value": 4.643, "unit": "angstrom" },
+
+          { "value": 4.083, "unit": "angstrom" },
+          { "value": 4.455, "unit": "angstrom" },
+          { "value": 6.114, "unit": "angstrom" },
+          { "value": 3.189, "unit": "angstrom" },
+          { "value": 3.49, "unit": "angstrom" },
+
+          { "value": 3.52, "unit": "angstrom" },
+          { "value": 3.43, "unit": "angstrom" },
+          { "value": 3.312, "unit": "angstrom" },
+          { "value": 4.16, "unit": "angstrom" },
+          { "value": 4.83, "unit": "angstrom" },
+
+          { "value": 3.378, "unit": "angstrom" },
+          { "value": 4.188, "unit": "angstrom" },
+          { "value": 4.241, "unit": "angstrom" }
+        ],
+        "lower_bound_delta": [
+          { "value": 0.436, "unit": "angstrom" },
+          { "value": 0.558, "unit": "angstrom" },
+          { "value": 0.527, "unit": "angstrom" },
+          { "value": 2.554, "unit": "angstrom" },
+          { "value": 0.498, "unit": "angstrom" },
+
+          { "value": 1.562, "unit": "angstrom" },
+          { "value": 0.685, "unit": "angstrom" },
+          { "value": 0.792, "unit": "angstrom" },
+          { "value": 0.88, "unit": "angstrom" },
+          { "value": 0.709, "unit": "angstrom" },
+
+          { "value": 1.954, "unit": "angstrom" },
+          { "value": 0.781, "unit": "angstrom" },
+          { "value": 0.611, "unit": "angstrom" },
+          { "value": 0.544, "unit": "angstrom" },
+          { "value": 0.669, "unit": "angstrom" },
+
+          { "value": 1.779, "unit": "angstrom" },
+          { "value": 1.541, "unit": "angstrom" },
+          { "value": 0.749, "unit": "angstrom" },
+          { "value": 0.842, "unit": "angstrom" },
+          { "value": 0.684, "unit": "angstrom" },
+
+          { "value": 1.786, "unit": "angstrom" },
+          { "value": 0.665, "unit": "angstrom" },
+          { "value": 1.98, "unit": "angstrom" },
+          { "value": 1.812, "unit": "angstrom" },
+          { "value": 2.929, "unit": "angstrom" },
+
+          { "value": 2.817, "unit": "angstrom" },
+          { "value": 1.891, "unit": "angstrom" },
+          { "value": 1.223, "unit": "angstrom" },
+          { "value": 1.638, "unit": "angstrom" },
+          { "value": 2.698, "unit": "angstrom" },
+
+          { "value": 2.704, "unit": "angstrom" },
+          { "value": 2.686, "unit": "angstrom" },
+          { "value": 0.662, "unit": "angstrom" },
+          { "value": 0.832, "unit": "angstrom" },
+          { "value": 1.966, "unit": "angstrom" },
+
+          { "value": 0.676, "unit": "angstrom" },
+          { "value": 0.838, "unit": "angstrom" },
+          { "value": 0.848, "unit": "angstrom" }
+        ],
+        "upper_bound_delta": [
+          { "value": 0.436, "unit": "angstrom" },
+          { "value": 0.558, "unit": "angstrom" },
+          { "value": 0.527, "unit": "angstrom" },
+          { "value": 2.554, "unit": "angstrom" },
+          { "value": 0.498, "unit": "angstrom" },
+          { "value": 1.562, "unit": "angstrom" },
+          { "value": 0.685, "unit": "angstrom" },
+          { "value": 0.792, "unit": "angstrom" },
+          { "value": 0.88, "unit": "angstrom" },
+          { "value": 0.709, "unit": "angstrom" },
+          { "value": 1.954, "unit": "angstrom" },
+          { "value": 0.781, "unit": "angstrom" },
+          { "value": 0.611, "unit": "angstrom" },
+          { "value": 0.544, "unit": "angstrom" },
+          { "value": 0.669, "unit": "angstrom" },
+          { "value": 1.779, "unit": "angstrom" },
+          { "value": 1.541, "unit": "angstrom" },
+          { "value": 0.749, "unit": "angstrom" },
+          { "value": 0.842, "unit": "angstrom" },
+          { "value": 0.684, "unit": "angstrom" },
+          { "value": 1.786, "unit": "angstrom" },
+          { "value": 0.665, "unit": "angstrom" },
+          { "value": 1.98, "unit": "angstrom" },
+          { "value": 1.812, "unit": "angstrom" },
+          { "value": 2.929, "unit": "angstrom" },
+          { "value": 2.817, "unit": "angstrom" },
+          { "value": 1.891, "unit": "angstrom" },
+          { "value": 1.223, "unit": "angstrom" },
+          { "value": 1.638, "unit": "angstrom" },
+          { "value": 2.698, "unit": "angstrom" },
+          { "value": 2.704, "unit": "angstrom" },
+          { "value": 2.686, "unit": "angstrom" },
+          { "value": 0.662, "unit": "angstrom" },
+          { "value": 0.832, "unit": "angstrom" },
+          { "value": 1.966, "unit": "angstrom" },
+          { "value": 0.676, "unit": "angstrom" },
+          { "value": 0.838, "unit": "angstrom" },
+          { "value": 0.848, "unit": "angstrom" }
+        ]
+      }
+    }
+  ]
+}

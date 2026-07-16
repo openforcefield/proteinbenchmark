@@ -522,7 +522,7 @@ class ProteinBenchmarkSystem:
                 traj_path = f"{replica_dir}/traj.xtc"
 
             align_trajectory(
-                topology_path=self.minimized_coords,
+                topology_path=self.protonated_pdb,
                 trajectory_path=traj_path,
                 output_prefix=f"{analysis_prefix}-reimaged",
                 output_selection='resname != "HOH" && resname != "NA" && resname != "CL"',

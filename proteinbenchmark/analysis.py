@@ -2351,13 +2351,9 @@ def compute_fraction_helix(
     for index, row in observable_df.iterrows():
         observable_resid = row["Resid"]
 
-        # observable_resid is 0-based, but some measured properties use 1-based
-        # residue indices due to the capped initial structure
-        capped_resid = observable_resid + 1
-        residue_dihedral_df = dihedral_df[dihedral_df["Resid"] == capped_resid]
-
         # Get frames where (phi, psi) is closer than 30 deg to ideal alpha helix
         # at (-63, -43)
+        residue_dihedral_df = dihedral_df[dihedral_df["Resid"] == observable_resid]
         helical_dihedrals = (
             (residue_dihedral_df["phi (deg)"] + 63) ** 2
             + (residue_dihedral_df["psi (deg)"] + 43) ** 2
@@ -2408,7 +2404,7 @@ def compute_fraction_helix(
 
         # Get mean chemical shift of backbone carbonyl carbon
         carbonyl_chemical_shift = chemical_shift_df[
-            chemical_shift_df["Resid"] == capped_resid
+            chemical_shift_df["Resid"] == observable_resid
         ]["Chemical Shift"]
 
         if len(carbonyl_chemical_shift) > 0:

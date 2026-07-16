@@ -1,0 +1,656 @@
+{
+  "$schema": "peptide-nmr-v1.0.0.schema.json",
+  "peptides": [
+    {
+      "name": "cyclo-(GNSRV)",
+      "sequence": [
+        { "position": 1, "three_letter_code": "GLY", "chirality": "L" },
+        { "position": 2, "three_letter_code": "ASN", "chirality": "L" },
+        { "position": 3, "three_letter_code": "SER", "chirality": "L" },
+        { "position": 4, "three_letter_code": "ARG", "chirality": "L" },
+        { "position": 5, "three_letter_code": "VAL", "chirality": "L" }
+      ],
+      "experimental_conditions": {
+        "solvent": "90:10 H2O:D2O",
+        "ph": null,
+        "temperature": { "value": 288, "unit": "Kelvin" },
+        "concentration": { "value": 3.5, "unit": "millimolar" },
+        "spectrometer_frequency": { "value": 600, "unit": "megahertz" }
+      },
+      "chemical_shifts": null,
+      "j_couplings_and_torsional_restraints": {
+        "source": {
+          "paper": "Slough et al. 2018",
+          "doi": "10.1021/acs.jpcb.8b01747",
+          "table": "Table S8"
+        },
+        "residue_index": [1, 2, 3, 4, 5],
+        "ha_atom_name": ["HA#", "HA", "HA", "HA", "HA"],
+        "j_coupling": [
+          { "value": 5.3, "unit": "hertz" },
+          { "value": 7.7, "unit": "hertz" },
+          { "value": 9.1, "unit": "hertz" },
+          { "value": 4.8, "unit": "hertz" },
+          { "value": 9.3, "unit": "hertz" }
+        ],
+        "phi_center": [
+          null,
+          null,
+          { "value": -120.0, "unit": "degrees" },
+          { "value": -60.0, "unit": "degrees" },
+          { "value": -120.0, "unit": "degrees" }
+        ],
+        "phi_half_range": [
+          null,
+          null,
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" },
+          { "value": 30.0, "unit": "degrees" }
+        ]
+      },
+      "observed_noes": {
+        "source": {
+          "paper": "Slough et al. 2018",
+          "doi": "10.1021/acs.jpcb.8b01747",
+          "table": "Table S7"
+        },
+        "residue_index_1": [
+          1, 1, 2, 4, 3, 3, 5,
+
+          1, 2, 4, 4,
+
+          4, 4,
+
+          2, 4, 4, 4, 5, 5, 5,
+
+          4, 4, 4,
+
+          2, 4,
+
+          3, 2, 1, 4, 5,
+
+          4, 4, 4, 5, 5,
+
+          4, 4, 4, 4,
+
+          5, 5
+        ],
+        "atom_name_1": [
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HE",
+          "HE",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HE",
+          "HE",
+          "HE",
+
+          "HN",
+          "HN",
+
+          "HA",
+          "HA",
+          "HA3",
+
+          "HA",
+          "HA",
+          "HA",
+          "HA",
+          "HA",
+          "HA",
+          "HA",
+
+          "HD#",
+          "HD#",
+          "HB2",
+          "HB2",
+
+          "HB",
+          "HB"
+        ],
+        "chemical_shift_1": [
+          { "value": 9.05, "unit": "ppm" },
+          { "value": 9.05, "unit": "ppm" },
+          { "value": 8.91, "unit": "ppm" },
+          { "value": 8.26, "unit": "ppm" },
+          { "value": 7.84, "unit": "ppm" },
+          { "value": 7.84, "unit": "ppm" },
+          { "value": 7.76, "unit": "ppm" },
+
+          { "value": 9.05, "unit": "ppm" },
+          { "value": 8.91, "unit": "ppm" },
+          { "value": 8.26, "unit": "ppm" },
+          { "value": 8.26, "unit": "ppm" },
+
+          { "value": 7.28, "unit": "ppm" },
+          { "value": 7.27, "unit": "ppm" },
+
+          { "value": 8.9, "unit": "ppm" },
+          { "value": 8.27, "unit": "ppm" },
+          { "value": 8.27, "unit": "ppm" },
+          { "value": 8.27, "unit": "ppm" },
+          { "value": 7.76, "unit": "ppm" },
+          { "value": 7.76, "unit": "ppm" },
+          { "value": 7.76, "unit": "ppm" },
+
+          { "value": 7.28, "unit": "ppm" },
+          { "value": 7.27, "unit": "ppm" },
+          { "value": 7.27, "unit": "ppm" },
+
+          { "value": 8.9, "unit": "ppm" },
+          { "value": 8.27, "unit": "ppm" },
+
+          { "value": 4.6, "unit": "ppm" },
+          { "value": 4.7, "unit": "ppm" },
+          { "value": 3.98, "unit": "ppm" },
+          { "value": 4.03, "unit": "ppm" },
+          { "value": 4.18, "unit": "ppm" },
+          { "value": 4.03, "unit": "ppm" },
+          { "value": 4.03, "unit": "ppm" },
+          { "value": 4.03, "unit": "ppm" },
+          { "value": 4.18, "unit": "ppm" },
+          { "value": 4.18, "unit": "ppm" },
+          { "value": 3.25, "unit": "ppm" },
+          { "value": 3.25, "unit": "ppm" },
+          { "value": 1.95, "unit": "ppm" },
+          { "value": 1.94, "unit": "ppm" },
+
+          { "value": 1.97, "unit": "ppm" },
+          { "value": 1.97, "unit": "ppm" }
+        ],
+        "residue_index_2": [
+          1, 1, 2, 4, 3, 3, 5,
+
+          5, 1, 3, 3,
+
+          4, 4,
+
+          2, 4, 4, 4, 5, 5, 5,
+
+          4, 4, 4,
+
+          3, 5,
+
+          3, 2, 1, 4, 5,
+
+          4, 4, 4, 5, 5,
+
+          4, 4, 4, 4,
+
+          5, 5
+        ],
+        "atom_name_2": [
+          "HA2",
+          "HA3",
+          "HA",
+          "HA",
+          "HA",
+          "HB#",
+          "HA",
+
+          "HA",
+          "HA3",
+          "HB#",
+          "HA",
+
+          "HA",
+          "HD#",
+
+          "HB#",
+          "HB2",
+          "HB3",
+          "HG#",
+          "HB",
+          "HG1#",
+          "HG2#",
+
+          "HB2",
+          "HB3",
+          "HG#",
+
+          "HN",
+          "HN",
+
+          "HB#",
+          "HB#",
+          "HA2",
+          "HD#",
+          "HB",
+          "HB2",
+          "HB3",
+          "HG#",
+          "HG1#",
+          "HG2#",
+          "HB3",
+          "HG#",
+          "HB3",
+          "HG#",
+
+          "HG1#",
+          "HG2#"
+        ],
+        "chemical_shift_2": [
+          { "value": 3.63, "unit": "ppm" },
+          { "value": 3.97, "unit": "ppm" },
+          { "value": 4.7, "unit": "ppm" },
+          { "value": 4.03, "unit": "ppm" },
+          { "value": 4.61, "unit": "ppm" },
+          { "value": 3.9, "unit": "ppm" },
+          { "value": 4.18, "unit": "ppm" },
+
+          { "value": 4.17, "unit": "ppm" },
+          { "value": 3.98, "unit": "ppm" },
+          { "value": 3.91, "unit": "ppm" },
+          { "value": 4.61, "unit": "ppm" },
+
+          { "value": 4.02, "unit": "ppm" },
+          { "value": 3.25, "unit": "ppm" },
+
+          { "value": 2.88, "unit": "ppm" },
+          { "value": 1.95, "unit": "ppm" },
+          { "value": 1.71, "unit": "ppm" },
+          { "value": 1.64, "unit": "ppm" },
+          { "value": 1.96, "unit": "ppm" },
+          { "value": 0.93, "unit": "ppm" },
+          { "value": 0.86, "unit": "ppm" },
+
+          { "value": 1.96, "unit": "ppm" },
+          { "value": 1.73, "unit": "ppm" },
+          { "value": 1.65, "unit": "ppm" },
+
+          { "value": 7.83, "unit": "ppm" },
+          { "value": 7.75, "unit": "ppm" },
+
+          { "value": 3.91, "unit": "ppm" },
+          { "value": 2.86, "unit": "ppm" },
+          { "value": 3.63, "unit": "ppm" },
+          { "value": 3.25, "unit": "ppm" },
+          { "value": 1.95, "unit": "ppm" },
+          { "value": 1.95, "unit": "ppm" },
+          { "value": 1.17, "unit": "ppm" },
+          { "value": 1.66, "unit": "ppm" },
+          { "value": 0.92, "unit": "ppm" },
+          { "value": 0.88, "unit": "ppm" },
+          { "value": 1.95, "unit": "ppm" },
+          { "value": 1.69, "unit": "ppm" },
+          { "value": 1.71, "unit": "ppm" },
+          { "value": 1.65, "unit": "ppm" },
+
+          { "value": 0.93, "unit": "ppm" },
+          { "value": 0.88, "unit": "ppm" }
+        ],
+        "strength": [
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+
+          "strong",
+          "strong",
+          "weak",
+          "strong",
+
+          "weak",
+          "strong",
+
+          "strong",
+          "strong",
+          "weak",
+          "weak",
+          "strong",
+          "strong",
+          "strong",
+
+          "weak",
+          "strong",
+          "strong",
+
+          "strong",
+          "strong",
+
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+
+          "strong",
+          "strong"
+        ]
+      },
+      "noe_derived_distance_restraints": null
+    },
+    {
+      "name": "cyclo-(GFDNV)",
+      "sequence": [
+        { "position": 1, "three_letter_code": "GLY", "chirality": "L" },
+        { "position": 2, "three_letter_code": "PHE", "chirality": "L" },
+        { "position": 3, "three_letter_code": "ASP", "chirality": "L" },
+        { "position": 4, "three_letter_code": "ASN", "chirality": "L" },
+        { "position": 5, "three_letter_code": "VAL", "chirality": "L" }
+      ],
+      "experimental_conditions": {
+        "solvent": "90:10 H2O:D2O",
+        "ph": null,
+        "temperature": { "value": 288, "unit": "Kelvin" },
+        "concentration": { "value": 3.5, "unit": "millimolar" },
+        "spectrometer_frequency": { "value": 600, "unit": "megahertz" }
+      },
+      "chemical_shifts": null,
+      "j_couplings_and_torsional_restraints": {
+        "source": {
+          "paper": "Slough et al. 2018",
+          "doi": "10.1021/acs.jpcb.8b01747",
+          "table": "Table S10"
+        },
+        "residue_index": [1, 2, 3, 4, 5],
+        "ha_atom_name": ["HA#", "HA", "HA", "HA", "HA"],
+        "j_coupling": [
+          { "value": 6.1, "unit": "hertz" },
+          { "value": 7.0, "unit": "hertz" },
+          { "value": 8.9, "unit": "hertz" },
+          { "value": 6.5, "unit": "hertz" },
+          { "value": 9.7, "unit": "hertz" }
+        ],
+        "phi_center": [
+          null,
+          null,
+          { "value": -120.0, "unit": "degrees" },
+          null,
+          { "value": -120.0, "unit": "degrees" }
+        ],
+        "phi_half_range": [
+          null,
+          null,
+          { "value": 30.0, "unit": "degrees" },
+          null,
+          { "value": 30.0, "unit": "degrees" }
+        ]
+      },
+      "observed_noes": {
+        "source": {
+          "paper": "Slough et al. 2018",
+          "doi": "10.1021/acs.jpcb.8b01747",
+          "table": "Table S9"
+        },
+        "residue_index_1": [
+          1, 4, 2, 4,
+
+          4, 3, 3, 5, 1, 1, 2,
+
+          1, 2, 5, 3, 4,
+
+          2, 2, 4, 3, 3, 2, 2, 2,
+
+          5, 5,
+
+          1,
+
+          2, 2, 4, 5, 5, 2, 5, 3
+        ],
+        "atom_name_1": [
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HD#",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+          "HD#",
+          "HD#",
+
+          "HN",
+          "HN",
+
+          "HA3",
+
+          "HA",
+          "HA",
+          "HA",
+          "HA",
+          "HA",
+          "HB3",
+          "HB",
+          "HB3"
+        ],
+        "chemical_shift_1": [
+          { "value": 8.7, "unit": "ppm" },
+          { "value": 8.61, "unit": "ppm" },
+          { "value": 8.64, "unit": "ppm" },
+          { "value": 8.61, "unit": "ppm" },
+
+          { "value": 8.61, "unit": "ppm" },
+          { "value": 7.98, "unit": "ppm" },
+          { "value": 7.98, "unit": "ppm" },
+          { "value": 7.9, "unit": "ppm" },
+          { "value": 8.7, "unit": "ppm" },
+          { "value": 8.7, "unit": "ppm" },
+          { "value": 7.32, "unit": "ppm" },
+
+          { "value": 8.7, "unit": "ppm" },
+          { "value": 8.64, "unit": "ppm" },
+          { "value": 7.9, "unit": "ppm" },
+          { "value": 7.98, "unit": "ppm" },
+          { "value": 8.61, "unit": "ppm" },
+
+          { "value": 8.65, "unit": "ppm" },
+          { "value": 8.64, "unit": "ppm" },
+          { "value": 8.61, "unit": "ppm" },
+          { "value": 7.98, "unit": "ppm" },
+          { "value": 7.98, "unit": "ppm" },
+          { "value": 8.64, "unit": "ppm" },
+          { "value": 7.31, "unit": "ppm" },
+          { "value": 7.3, "unit": "ppm" },
+
+          { "value": 7.9, "unit": "ppm" },
+          { "value": 7.9, "unit": "ppm" },
+
+          { "value": 3.96, "unit": "ppm" },
+
+          { "value": 4.5, "unit": "ppm" },
+          { "value": 4.51, "unit": "ppm" },
+          { "value": 4.33, "unit": "ppm" },
+          { "value": 4.11, "unit": "ppm" },
+          { "value": 4.1, "unit": "ppm" },
+          { "value": 3.2, "unit": "ppm" },
+          { "value": 2.04, "unit": "ppm" },
+          { "value": 2.94, "unit": "ppm" }
+        ],
+        "residue_index_2": [
+          5, 5, 3, 3,
+
+          3, 2, 2, 3, 5, 5, 5,
+
+          5, 1, 4, 2, 3,
+
+          2, 2, 4, 3, 3, 2, 2, 2,
+
+          5, 5,
+
+          1,
+
+          2, 2, 4, 5, 5, 2, 5, 3
+        ],
+        "atom_name_2": [
+          "HN",
+          "HN",
+          "HN",
+          "HN",
+
+          "HB2",
+          "HB3",
+          "HB2",
+          "HB3",
+          "HB",
+          "HG1#",
+          "HG2#",
+
+          "HA",
+          "HA3",
+          "HA",
+          "HA",
+          "HA",
+
+          "HB3",
+          "HB2",
+          "HB2",
+          "HB3",
+          "HB2",
+          "HD#",
+          "HB3",
+          "HB2",
+
+          "HG1#",
+          "HB",
+
+          "HA2",
+
+          "HB3",
+          "HB2",
+          "HB2",
+          "HB",
+          "HG1#",
+          "HB2",
+          "HG1#",
+          "HB2"
+        ],
+        "chemical_shift_2": [
+          { "value": 7.9, "unit": "ppm" },
+          { "value": 7.9, "unit": "ppm" },
+          { "value": 7.99, "unit": "ppm" },
+          { "value": 7.99, "unit": "ppm" },
+
+          { "value": 2.75, "unit": "ppm" },
+          { "value": 3.2, "unit": "ppm" },
+          { "value": 3.03, "unit": "ppm" },
+          { "value": 2.93, "unit": "ppm" },
+          { "value": 2.04, "unit": "ppm" },
+          { "value": 0.91, "unit": "ppm" },
+          { "value": 0.92, "unit": "ppm" },
+
+          { "value": 4.11, "unit": "ppm" },
+          { "value": 3.95, "unit": "ppm" },
+          { "value": 4.33, "unit": "ppm" },
+          { "value": 4.51, "unit": "ppm" },
+          { "value": 4.77, "unit": "ppm" },
+
+          { "value": 3.19, "unit": "ppm" },
+          { "value": 3.03, "unit": "ppm" },
+          { "value": 2.94, "unit": "ppm" },
+          { "value": 2.93, "unit": "ppm" },
+          { "value": 2.74, "unit": "ppm" },
+          { "value": 7.31, "unit": "ppm" },
+          { "value": 3.2, "unit": "ppm" },
+          { "value": 3.03, "unit": "ppm" },
+
+          { "value": 0.91, "unit": "ppm" },
+          { "value": 2.04, "unit": "ppm" },
+
+          { "value": 3.54, "unit": "ppm" },
+
+          { "value": 3.21, "unit": "ppm" },
+          { "value": 3.03, "unit": "ppm" },
+          { "value": 2.95, "unit": "ppm" },
+          { "value": 2.04, "unit": "ppm" },
+          { "value": 0.92, "unit": "ppm" },
+          { "value": 3.02, "unit": "ppm" },
+          { "value": 0.91, "unit": "ppm" },
+          { "value": 2.75, "unit": "ppm" }
+        ],
+        "strength": [
+          "weak",
+          "strong",
+          "strong",
+          "weak",
+
+          "strong",
+          "weak",
+          "weak",
+          "strong",
+          "weak",
+          "strong",
+          "weak",
+
+          "strong",
+          "strong",
+          "weak",
+          "strong",
+          "strong",
+
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+
+          "strong",
+          "strong",
+
+          "strong",
+
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong",
+          "strong"
+        ]
+      },
+      "noe_derived_distance_restraints": null
+    }
+  ]
+}
