@@ -39,7 +39,7 @@ import platform
 import sys
 
 if platform.system() == "Darwin":
-    multiprocessing.set_start_method("forkserver")
+    multiprocessing.set_start_method("fork")
 
 import argparse
 import shutil
@@ -240,7 +240,7 @@ def generate_conformers(
         # Must explicitly pass these — conformer_generator() defaults differ
         # from the CLI defaults when main() is called directly.
         disable_sidechains=False,
-        sidechain_method="mcsce",
+        sidechain_method="faspr",
         energy_threshold_backbone=100,
         energy_threshold_sidechains=250,
         random_seed=random_seed,
@@ -398,7 +398,7 @@ def select_diverse_conformers(
         # Pick the candidate farthest from its nearest selected neighbor.
         selected.append(int(np.argmax(min_dists)))
 
-    return sorted(selected)
+    return selected
 
 
 # ---------------------------------------------------------------------------
