@@ -52,7 +52,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import MDAnalysis as mda
-from MDAnalysis.analysis.rms import rmsd as mda_rmsd
 
 
 # ---------------------------------------------------------------------------
@@ -63,13 +62,19 @@ from MDAnalysis.analysis.rms import rmsd as mda_rmsd
 # the proteinbenchmark package.
 # ---------------------------------------------------------------------------
 
-TARGETS: dict[str, str] = {
-    "ab40": "DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVV",
-    "asyn": (
-        "MDVFMKGLSKAKEGVVAAAEKTKQGVAEAAGKTKEGVLYVGSKTKEGVVH"
-        "GVATVAEKTKEQVTNVGGAVVTGVTAVAQKTVEGAGSIAAATGFVKKDQL"
-        "GKNEEGAPQEGILEDMPVDPDNEAYEMPSEEGYQDYEPEA"
-    ),
+TARGETS: dict[str, dict] = {
+    "ab40": {
+        "sequence": "DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVV",
+        "experimental_rg": 12.0,
+    },
+    "asyn": {
+        "sequence": (
+            "MDVFMKGLSKAKEGVVAAAEKTKQGVAEAAGKTKEGVLYVGSKTKEGVVH"
+            "GVATVAEKTKEQVTNVGGAVVTGVTAVAQKTVEGAGSIAAATGFVKKDQL"
+            "GKNEEGAPQEGILEDMPVDPDNEAYEMPSEEGYQDYEPEA"
+        ),
+        "experimental_rg": 31.0,
+    },
 }
 
 
@@ -282,181 +287,42 @@ def compute_rg(pdb_path: Path) -> float:
     return u.atoms.radius_of_gyration()
 
 
-def compute_pairwise_rmsd(pdb_paths: list[Path]) -> np.ndarray:
-    """
-    Compute the symmetric pairwise CA-RMSD matrix for a set of conformers.
-
-    Each pair is optimally superimposed before computing RMSD (Kabsch
-    alignment via MDAnalysis ``rms.rmsd`` with ``superposition=True``).
-
-    Parameters
-    ----------
-    pdb_paths
-        List of PDB file paths.
-
-    Returns
-    -------
-    (N, N) symmetric distance matrix in angstroms.
-    """
-    n = len(pdb_paths)
-    if n == 0:
-        return np.empty((0, 0), dtype=np.float64)
-
-    # Pre-extract CA coordinates from every conformer.
-    ca_coords: list[np.ndarray] = []
-    for path in pdb_paths:
-        u = mda.Universe(str(path))
-        ca = u.select_atoms("name CA")
-        if ca.n_atoms == 0:
-            sys.exit(f"[rmsd] No CA atoms found in {path.name}.")
-        # Copy coordinates so the Universe can be garbage-collected.
-        ca_coords.append(ca.positions.copy())
-
-    # Verify all conformers have the same number of CA atoms.
-    n_ca = ca_coords[0].shape[0]
-    for i, coords in enumerate(ca_coords):
-        if coords.shape[0] != n_ca:
-            sys.exit(
-                f"[rmsd] Conformer {pdb_paths[i].name} has {coords.shape[0]} "
-                f"CA atoms, expected {n_ca}."
-            )
-
-    # Build the symmetric RMSD matrix.
-    rmsd_matrix = np.zeros((n, n), dtype=np.float64)
-    for i in range(n):
-        for j in range(i + 1, n):
-            # mda_rmsd returns the RMSD in angstroms after optimal
-            # superposition (center=True, superposition=True).
-            r = mda_rmsd(
-                ca_coords[i],
-                ca_coords[j],
-                center=True,
-                superposition=True,
-            )
-            rmsd_matrix[i, j] = r
-            rmsd_matrix[j, i] = r
-
-    return rmsd_matrix
-
-
 # ---------------------------------------------------------------------------
-# 4. Diversity selection
+# 4. Plotting
 # ---------------------------------------------------------------------------
 
 
-def select_diverse_conformers(
-    pdb_paths: list[Path],
-    n_select: int,
-    rmsd_matrix: np.ndarray,
-) -> list[int]:
-    """
-    Select *n_select* maximally diverse conformers using a greedy
-    farthest-point (max-min) algorithm on the pairwise RMSD matrix.
-
-    This is a greedy heuristic that approximately maximizes the minimum
-    pairwise RMSD among the selected set.  The selected conformers are
-    diverse initialization structures for MD, not a statistically
-    representative IDP ensemble.
-
-    Procedure:
-      1. Seed with the conformer that has the largest mean RMSD to all others
-         (the most "globally outlying" structure).
-      2. Iteratively add the conformer whose minimum distance to the
-         already-selected set is largest.
-
-    If fewer conformers are available than requested, all indices are returned.
-
-    Parameters
-    ----------
-    pdb_paths
-        List of conformer PDB paths (only used for length).
-    n_select
-        Number of representatives to pick.
-    rmsd_matrix
-        (N, N) symmetric RMSD distance matrix.
-
-    Returns
-    -------
-    List of integer indices into *pdb_paths* for the selected conformers.
-    """
-    n = len(pdb_paths)
-    if n <= n_select:
-        print(
-            f"[select] Only {n} conformers available, returning all "
-            f"(requested {n_select})."
-        )
-        return list(range(n))
-
-    # Seed: pick the conformer with the highest mean RMSD to all others.
-    selected: list[int] = [int(np.argmax(rmsd_matrix.mean(axis=1)))]
-
-    for _ in range(n_select - 1):
-        # For each candidate, find its minimum distance to the selected set.
-        min_dists = rmsd_matrix[:, selected].min(axis=1)
-        # Exclude already-selected conformers from consideration.
-        min_dists[selected] = -1.0
-        # Pick the candidate farthest from its nearest selected neighbor.
-        selected.append(int(np.argmax(min_dists)))
-
-    return selected
-
-
-# ---------------------------------------------------------------------------
-# 5. Plotting
-# ---------------------------------------------------------------------------
-
-
-def plot_summary(
+def plot_rg(
     rg_values: np.ndarray,
-    rmsd_matrix: np.ndarray,
     selected_indices: list[int],
+    experimental_rg: float,
     target: str,
     plot_dir: Path,
 ) -> None:
     """
-    Two summary plots:
-      1. Rg vs. conformer index with selected representatives highlighted.
-      2. Pairwise CA-RMSD heatmap with selected conformers marked.
-
-    Parameters
-    ----------
-    rg_values
-        Array of Rg values (angstroms), one per conformer.
-    rmsd_matrix
-        (N, N) symmetric pairwise CA-RMSD matrix in angstroms.
-    selected_indices
-        Indices of the selected diverse conformers.
-    target
-        Target name (used in titles and filenames).
-    plot_dir
-        Directory to save PNG figures (300 dpi).
+    Scatter plot of Rg vs. conformer index with the selected conformer
+    highlighted and the experimental Rg shown as a horizontal line.
     """
     sel = np.array(selected_indices)
 
-    # --- Plot 1: Rg scatter ---
     fig, ax = plt.subplots(figsize=(8, 4))
     indices = np.arange(len(rg_values))
 
     ax.scatter(
-        indices,
-        rg_values,
-        s=20,
-        color="0.6",
-        edgecolors="none",
+        indices, rg_values, s=20, color="0.6", edgecolors="none",
         label="all conformers",
     )
     ax.scatter(
-        sel,
-        rg_values[sel],
-        s=80,
-        color="tab:red",
-        edgecolors="black",
-        linewidths=0.5,
-        zorder=5,
-        label="selected representatives",
+        sel, rg_values[sel], s=80, color="tab:red", edgecolors="black",
+        linewidths=0.5, zorder=5, label="selected",
     )
+    ax.axhline(
+        experimental_rg, color="tab:blue", linestyle="--", linewidth=1,
+        label=f"experimental Rg ({experimental_rg:.0f} Å)",
+    )
+
     ax.set_xlabel("Conformer index")
-    ax.set_ylabel("Radius of gyration (angstrom)")
+    ax.set_ylabel("Radius of gyration (Å)")
     ax.set_title(f"{target}: Rg across generated conformers")
     ax.legend(frameon=False)
     fig.tight_layout()
@@ -466,68 +332,9 @@ def plot_summary(
     plt.close(fig)
     print(f"[plot] Saved Rg plot to {rg_path}")
 
-    # --- Plot 2: Pairwise RMSD heatmap of the 5 selected conformers ---
-    sel_rmsd = rmsd_matrix[np.ix_(sel, sel)]
-    fig, ax = plt.subplots(figsize=(5, 4.5))
-    im = ax.imshow(sel_rmsd, cmap="viridis", origin="lower")
-    cbar = fig.colorbar(im, ax=ax, shrink=0.8)
-    cbar.set_label("CA-RMSD (angstrom)")
-
-    # Label ticks as conf1..conf5
-    tick_labels = [f"conf{i+1}" for i in range(len(sel))]
-    ax.set_xticks(range(len(sel)))
-    ax.set_xticklabels(tick_labels, rotation=45, ha="right")
-    ax.set_yticks(range(len(sel)))
-    ax.set_yticklabels(tick_labels)
-
-    # Annotate cells with RMSD values
-    for i in range(len(sel)):
-        for j in range(len(sel)):
-            ax.text(j, i, f"{sel_rmsd[i, j]:.1f}", ha="center", va="center",
-                    fontsize=8, color="white" if sel_rmsd[i, j] > sel_rmsd.max() * 0.5 else "black")
-
-    ax.set_title(f"{target}: pairwise CA-RMSD of selected conformers")
-    fig.tight_layout()
-
-    rmsd_path = plot_dir / f"{target}_rmsd_matrix.png"
-    fig.savefig(str(rmsd_path), dpi=300)
-    plt.close(fig)
-    print(f"[plot] Saved RMSD matrix to {rmsd_path}")
-
 
 # ---------------------------------------------------------------------------
-# 6. Summary table
-# ---------------------------------------------------------------------------
-
-
-def print_summary_table(
-    pdb_paths: list[Path],
-    rg_values: np.ndarray,
-    rmsd_matrix: np.ndarray,
-    selected_indices: list[int],
-) -> None:
-    """
-    Print a formatted table of selected conformers with Rg and mean RMSD to
-    all other conformers.
-    """
-    # Mean RMSD of each conformer to every other conformer in the full set.
-    n = rmsd_matrix.shape[0]
-    mean_rmsd_all = rmsd_matrix.sum(axis=1) / (n - 1) if n > 1 else np.zeros(n)
-
-    header = f"{'Conf':>12s}  {'Rg (A)':>8s}  {'Mean RMSD (A)':>14s}  {'File':>s}"
-    print()
-    print(header)
-    print("-" * len(header))
-    for rank, idx in enumerate(selected_indices, start=1):
-        print(
-            f"  {rank:>8d}    {rg_values[idx]:8.2f}  {mean_rmsd_all[idx]:14.2f}  "
-            f"{pdb_paths[idx].name}"
-        )
-    print()
-
-
-# ---------------------------------------------------------------------------
-# Helpers
+# 5. Helpers
 # ---------------------------------------------------------------------------
 
 
@@ -576,12 +383,6 @@ def main() -> None:
         type=int,
         default=100,
         help="Number of conformers to generate per target (default: 100).",
-    )
-    parser.add_argument(
-        "--n-select",
-        type=int,
-        default=5,
-        help="Number of diverse representatives to select (default: 5).",
     )
     parser.add_argument(
         "--random-seed",
@@ -645,8 +446,6 @@ def main() -> None:
 
     if args.n_conformers < 1:
         parser.error("--n-conformers must be at least 1.")
-    if args.n_select < 1:
-        parser.error("--n-select must be at least 1.")
 
     # Resolve the database path.
     if args.build_database:
@@ -666,9 +465,12 @@ def main() -> None:
     args.work_dir.mkdir(parents=True, exist_ok=True)
 
     for target in targets_to_run:
-        sequence = TARGETS[target]
+        target_info = TARGETS[target]
+        sequence = target_info["sequence"]
+        exp_rg = target_info["experimental_rg"]
         print(f"\n{'='*60}")
         print(f"Processing target: {target} ({len(sequence)} residues)")
+        print(f"Experimental Rg: {exp_rg:.1f} angstrom")
         print(f"{'='*60}")
 
         # --- Step 1: generate conformers ---
@@ -689,31 +491,25 @@ def main() -> None:
             f"{rg_values.max():.2f} angstrom"
         )
 
-        # --- Step 3: compute pairwise CA-RMSD matrix ---
-        print("[analysis] Computing pairwise CA-RMSD matrix ...")
-        rmsd_matrix = compute_pairwise_rmsd(pdb_paths)
-        triu_vals = rmsd_matrix[np.triu_indices_from(rmsd_matrix, k=1)]
-        mean_rmsd = triu_vals.mean() if triu_vals.size > 0 else 0.0
-        print(f"[analysis] Mean pairwise RMSD: {mean_rmsd:.2f} angstrom")
+        # --- Step 3: select the conformer closest to experimental Rg ---
+        best_idx = int(np.argmin(np.abs(rg_values - exp_rg)))
+        selected = [best_idx]
+        print(
+            f"[select] Conformer {pdb_paths[best_idx].name}: "
+            f"Rg = {rg_values[best_idx]:.2f} angstrom "
+            f"(target {exp_rg:.1f}, delta = {abs(rg_values[best_idx] - exp_rg):.2f})"
+        )
 
-        # --- Step 4: select diverse representatives ---
-        n_select = min(args.n_select, len(pdb_paths))
-        selected = select_diverse_conformers(pdb_paths, n_select, rmsd_matrix)
-
-        # --- Step 5: copy selected PDBs to output directory ---
+        # --- Step 4: copy selected PDB to output directory ---
         output_dir = args.output_dir.resolve()
-        for rank, idx in enumerate(selected, start=1):
-            dest = output_dir / f"{target}_conf{rank}.pdb"
-            shutil.copy2(pdb_paths[idx], dest)
-            print(f"[output] {pdb_paths[idx].name} -> {dest}")
+        dest = output_dir / f"{target}.pdb"
+        shutil.copy2(pdb_paths[best_idx], dest)
+        print(f"[output] {pdb_paths[best_idx].name} -> {dest}")
 
-        # --- Step 6: print summary table ---
-        print_summary_table(pdb_paths, rg_values, rmsd_matrix, selected)
-
-        # --- Step 7: summary plots (Rg scatter + RMSD heatmap) ---
+        # --- Step 5: Rg scatter plot ---
         plot_dir = (args.plot_dir or args.output_dir).resolve()
         plot_dir.mkdir(parents=True, exist_ok=True)
-        plot_summary(rg_values, rmsd_matrix, selected, target, plot_dir)
+        plot_rg(rg_values, selected, exp_rg, target, plot_dir)
 
 
 if __name__ == "__main__":
