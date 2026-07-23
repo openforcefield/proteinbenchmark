@@ -1,25 +1,28 @@
 #!/usr/bin/env python
 """
-Generate diverse IDP conformer ensembles using IDPConformerGenerator.
+Generate IDP starting conformers using IDPConformerGenerator.
+
+Generates N conformers for each IDP target using backbone torsion angles
+sampled from PDB fragment statistics (Teixeira et al. 2022, J. Phys. Chem. A,
+126:5985), with FASPR sidechain packing.  Selects one conformer per target
+whose Rg is closest to the experimental value.
 
 Pipeline:
-  1. (Optional) Build a torsion-angle database from culled PDB structures.
-  2. Generate N conformers for a target IDP sequence via ``idpconfgen build``.
-  3. Compute radius of gyration (Rg) and pairwise CA-RMSD for every conformer.
-  4. Select K diverse representatives via greedy farthest-point sampling.
-  5. Copy selected PDBs to the output directory and write a summary.
+  1. (Optional) Build a torsion-angle database from PISCES-culled PDB structures.
+  2. Generate N conformers via ``idpconfgen build`` with ``--dany --dloop-off``.
+  3. Compute radius of gyration (Rg) for every conformer.
+  4. Select the conformer closest to the experimental Rg.
+  5. Copy the selected PDB to the output directory.
 
 Requires the ``idpcg`` pixi environment (see ``devtools/idpcg/pixi.toml``).
 
-On macOS, multiprocessing must use 'forkserver' (not the default 'spawn') to
-avoid deadlocks.  'spawn' deadlocks on numba JIT pickling; 'fork' deadlocks
-on stale locks when creating successive Pools.  'forkserver' starts a clean
-server process before any threads exist, avoiding both failure modes.
-The set_start_method call below must happen before any other import.
+On macOS, multiprocessing uses 'fork' to avoid deadlocks with
+IDPConformerGenerator's internal Pool usage.  The set_start_method call
+must happen before importing IDPConformerGenerator or numba.
 
 Usage examples
 --------------
-Generate 100 ab40 conformers, select 5 diverse ones::
+Generate 100 ab40 conformers, select one closest to experimental Rg::
 
     python generate_idp_conformers.py --target ab40 --database db.json
 
@@ -27,9 +30,9 @@ Run both targets::
 
     python generate_idp_conformers.py --all --database db.json
 
-Build a database first (requires DSSP)::
+Build the torsion database and generate conformers::
 
-    python generate_idp_conformers.py --build-database --database-dir ./db_workdir
+    python generate_idp_conformers.py --all --build-database --database-dir ./idpcg_database
 """
 
 from __future__ import annotations
@@ -119,7 +122,7 @@ def build_database(database_dir: Path, n_workers: int = -1) -> Path:
     # Stage a: download PDB structures from a PISCES culled list.
     # The culled list (Dunbrack lab, 90% seq identity, ≤2.0 Å, R≤0.25)
     # is the same one used in the IDPConformerGenerator paper (Teixeira 2022).
-    # It ships with the drksh3 example and is copied into devtools/idpcg/.
+    # Expected at database_dir.parent (i.e. alongside the database directory).
     cull_list = database_dir.parent / "cullpdb_pc90_res2.0_R0.25_d201015_chains24003"
     if not cull_list.exists():
         sys.exit(
@@ -228,7 +231,7 @@ def generate_conformers(
     )
 
     # Call idpconfgen.cli_build.main() directly instead of via subprocess so
-    # that the forkserver start method (set at module level) is inherited.
+    # that the fork start method (set at module level) is inherited.
     # --dany samples from all DSSP classes (Teixeira 2022, §3.2).
     # --dloop-off is required when --dany is active (mutual exclusion group).
     from idpconfgen.cli_build import main as idpcg_build
@@ -493,7 +496,7 @@ def main() -> None:
 
         # --- Step 3: select the conformer closest to experimental Rg ---
         best_idx = int(np.argmin(np.abs(rg_values - exp_rg)))
-        # selected = [best_idx]
+        selected = [best_idx]
         print(
             f"[select] Conformer {pdb_paths[best_idx].name}: "
             f"Rg = {rg_values[best_idx]:.2f} angstrom "
@@ -506,10 +509,10 @@ def main() -> None:
         shutil.copy2(pdb_paths[best_idx], dest)
         print(f"[output] {pdb_paths[best_idx].name} -> {dest}")
 
-        # # --- Step 5: Rg scatter plot ---
-        # plot_dir = (args.plot_dir or args.output_dir).resolve()
-        # plot_dir.mkdir(parents=True, exist_ok=True)
-        # plot_rg(rg_values, selected, exp_rg, target, plot_dir)
+        # --- Step 5: Rg scatter plot ---
+        plot_dir = (args.plot_dir or args.output_dir).resolve()
+        plot_dir.mkdir(parents=True, exist_ok=True)
+        plot_rg(rg_values, selected, exp_rg, target, plot_dir)
 
 
 if __name__ == "__main__":
