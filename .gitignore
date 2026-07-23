@@ -111,8 +111,11 @@ ENV/
 # just for myself -- I visualized various pdbs and saved them below
 _images/
 
-# IDPConformerGenerator pixi environment and large database
+# IDPConformerGenerator pixi environment and large/generated files
 devtools/idpcg/.pixi/
 devtools/idpcg/idpcg_database/
 devtools/idpcg/idpcg_workdir/
 devtools/idpcg/sscalc*
+devtools/idpcg/cullpdb_*
+devtools/idpcg/pixi.lock
+devtools/idpcg/README.md

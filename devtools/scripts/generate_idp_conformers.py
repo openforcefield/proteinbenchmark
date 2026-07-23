@@ -493,7 +493,7 @@ def main() -> None:
 
         # --- Step 3: select the conformer closest to experimental Rg ---
         best_idx = int(np.argmin(np.abs(rg_values - exp_rg)))
-        selected = [best_idx]
+        # selected = [best_idx]
         print(
             f"[select] Conformer {pdb_paths[best_idx].name}: "
             f"Rg = {rg_values[best_idx]:.2f} angstrom "
@@ -506,10 +506,10 @@ def main() -> None:
         shutil.copy2(pdb_paths[best_idx], dest)
         print(f"[output] {pdb_paths[best_idx].name} -> {dest}")
 
-        # --- Step 5: Rg scatter plot ---
-        plot_dir = (args.plot_dir or args.output_dir).resolve()
-        plot_dir.mkdir(parents=True, exist_ok=True)
-        plot_rg(rg_values, selected, exp_rg, target, plot_dir)
+        # # --- Step 5: Rg scatter plot ---
+        # plot_dir = (args.plot_dir or args.output_dir).resolve()
+        # plot_dir.mkdir(parents=True, exist_ok=True)
+        # plot_rg(rg_values, selected, exp_rg, target, plot_dir)
 
 
 if __name__ == "__main__":
