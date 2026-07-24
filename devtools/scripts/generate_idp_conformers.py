@@ -49,10 +49,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import MDAnalysis as mda
 
@@ -291,53 +287,7 @@ def compute_rg(pdb_path: Path) -> float:
 
 
 # ---------------------------------------------------------------------------
-# 4. Plotting
-# ---------------------------------------------------------------------------
-
-
-def plot_rg(
-    rg_values: np.ndarray,
-    selected_indices: list[int],
-    experimental_rg: float,
-    target: str,
-    plot_dir: Path,
-) -> None:
-    """
-    Scatter plot of Rg vs. conformer index with the selected conformer
-    highlighted and the experimental Rg shown as a horizontal line.
-    """
-    sel = np.array(selected_indices)
-
-    fig, ax = plt.subplots(figsize=(8, 4))
-    indices = np.arange(len(rg_values))
-
-    ax.scatter(
-        indices, rg_values, s=20, color="0.6", edgecolors="none",
-        label="all conformers",
-    )
-    ax.scatter(
-        sel, rg_values[sel], s=80, color="tab:red", edgecolors="black",
-        linewidths=0.5, zorder=5, label="selected",
-    )
-    ax.axhline(
-        experimental_rg, color="tab:blue", linestyle="--", linewidth=1,
-        label=f"experimental Rg ({experimental_rg:.0f} Å)",
-    )
-
-    ax.set_xlabel("Conformer index")
-    ax.set_ylabel("Radius of gyration (Å)")
-    ax.set_title(f"{target}: Rg across generated conformers")
-    ax.legend(frameon=False)
-    fig.tight_layout()
-
-    rg_path = plot_dir / f"{target}_rg_summary.png"
-    fig.savefig(str(rg_path), dpi=300)
-    plt.close(fig)
-    print(f"[plot] Saved Rg plot to {rg_path}")
-
-
-# ---------------------------------------------------------------------------
-# 5. Helpers
+# 4. Helpers
 # ---------------------------------------------------------------------------
 
 
@@ -433,12 +383,6 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "--plot-dir",
-        type=Path,
-        default=None,
-        help="Directory for summary plots (default: same as --output-dir).",
-    )
-    parser.add_argument(
         "--work-dir",
         type=Path,
         default=Path("idpcg_workdir"),
@@ -496,7 +440,6 @@ def main() -> None:
 
         # --- Step 3: select the conformer closest to experimental Rg ---
         best_idx = int(np.argmin(np.abs(rg_values - exp_rg)))
-        selected = [best_idx]
         print(
             f"[select] Conformer {pdb_paths[best_idx].name}: "
             f"Rg = {rg_values[best_idx]:.2f} angstrom "
@@ -509,10 +452,6 @@ def main() -> None:
         shutil.copy2(pdb_paths[best_idx], dest)
         print(f"[output] {pdb_paths[best_idx].name} -> {dest}")
 
-        # --- Step 5: Rg scatter plot ---
-        plot_dir = (args.plot_dir or args.output_dir).resolve()
-        plot_dir.mkdir(parents=True, exist_ok=True)
-        plot_rg(rg_values, selected, exp_rg, target, plot_dir)
 
 
 if __name__ == "__main__":
