@@ -104,3 +104,18 @@ ENV/
 # profraw files from LLVM? Unclear exactly what triggers this
 # There are reports this comes from LLVM profiling, but also Xcode 9.
 *profraw
+
+# Mac
+.DS_Store
+
+# just for myself -- I visualized various pdbs and saved them below
+_images/
+
+# IDPConformerGenerator pixi environment and large/generated files
+devtools/idpcg/.pixi/
+devtools/idpcg/idpcg_database/
+devtools/idpcg/idpcg_workdir/
+devtools/idpcg/sscalc*
+devtools/idpcg/cullpdb_*
+devtools/idpcg/pixi.lock
+devtools/idpcg/README.md

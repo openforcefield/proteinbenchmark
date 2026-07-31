@@ -1,0 +1,26 @@
+[project]
+name = "idpcg"
+version = "0.1.0"
+description = "Environment for generating IDP conformers with IDPConformerGenerator"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "osx-64", "linux-64"]
+
+[dependencies]
+python = ">=3.10,<3.12"
+numpy = "<2"
+numba = "*"
+scipy = "<2"
+matplotlib-base = "<4"
+setuptools = "<80"
+pybind11 = ">=2.9.2,<2.13.6"
+pip = "*"
+cxx-compiler = "*"
+dssp = ">=3,<4"
+mdanalysis = "*"
+
+# IDPConformerGenerator is not on PyPI or conda-forge.  It must be installed
+# from git with --no-build-isolation so that the pybind11 C++ extension can
+# find the conda-provided compiler and headers.
+[tasks]
+install-idpcg = { cmd = "pip install --no-build-isolation --no-deps git+https://github.com/julie-forman-kay-lab/IDPConformerGenerator.git@e25a7d683b278532a3288f156edd8fba5f3a286c" }
+generate = { cmd = "python ../../devtools/scripts/generate_idp_conformers.py", depends-on = ["install-idpcg"] }
