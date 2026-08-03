@@ -72,6 +72,7 @@ benchmark_targets = {
     "ab40": {
         "target_type": "disordered",
         "aa_sequence": ("DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVV"),
+        "initial_pdb": Path(pdb_directory, "ab40.pdb"),
         "pressure": 1.0 * unit.atmosphere,
         "temperature": 277.0 * unit.kelvin,
         "ph": 7.0,
@@ -232,6 +233,7 @@ benchmark_targets = {
             "GVATVAEKTKEQVTNVGGAVVTGVTAVAQKTVEGAGSIAAATGFVKKDQL"
             "GKNEEGAPQEGILEDMPVDPDNEAYEMPSEEGYQDYEPEA"
         ),
+        "initial_pdb": Path(pdb_directory, "asyn.pdb"),
         "pressure": 1.0 * unit.atmosphere,
         "temperature": 288.0 * unit.kelvin,
         "ph": 6.0,
@@ -248,6 +250,7 @@ benchmark_targets = {
             "GVATVAEKTKEQVTNVGGAVVTGVTAVAQKTVEGAGSIAAATGFVKKDQL"
             "GKNEEGAPQEGILEDMPVDPDNEAYEMPSEEGYQDYEPEA"
         ),
+        "initial_pdb": Path(pdb_directory, "asyn.pdb"),
         "pressure": 1.0 * unit.atmosphere,
         "temperature": 288.0 * unit.kelvin,
         "ph": 7.4,
