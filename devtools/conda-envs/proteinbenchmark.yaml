@@ -1,13 +1,14 @@
-name: tmp-openff-proteinbenchmark
+name: openff-proteinbenchmark-pablo
 channels:
   - conda-forge
 dependencies:
   - pip
-  - python
+  - python>=3.11
+  #- setuptools<81.0.0
     
   # System setup
   - pip:
-    - git+https://github.com/deGrootLab/pmx@develop
+    #- git+https://github.com/deGrootLab/pmx@develop
     - git+https://github.com/Electrostatics/pdb2pqr@master#egg=pdb2pqr
     - git+https://github.com/openforcefield/openff-pablo.git@v0.2.2
 
