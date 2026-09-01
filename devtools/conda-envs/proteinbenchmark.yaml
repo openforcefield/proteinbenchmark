@@ -9,7 +9,7 @@ dependencies:
   # System setup
   - pip:
     #- git+https://github.com/deGrootLab/pmx@develop
-    - git+https://github.com/Electrostatics/pdb2pqr@master#egg=pdb2pqr
+    - git+https://github.com/Electrostatics/pdb2pqr@main#egg=pdb2pqr
     - git+https://github.com/openforcefield/openff-pablo.git@v0.2.2
 
   # MM calculations
