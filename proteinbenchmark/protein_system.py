@@ -568,25 +568,6 @@ class ProteinBenchmarkSystem:
             if fragment_index > 0:
                 merge_csvs(h_bond_geometries)
 
-        # Compute chemical shifts
-        chemical_shifts = f"{analysis_prefix}-chemical-shifts.dat"
-
-        if "chemical_shifts" in target_observables and not exists_and_not_empty(chemical_shifts):
-            print(f"Computing chemical shifts for system {self.system_name} {replica}")
-
-            # fragment_index = compute_chemical_shifts_shiftx2(
-            fragment_index = compute_chemical_shifts_sparta_plus(
-                topology_path=reimaged_topology,
-                trajectory_path=reimaged_trajectory,
-                frame_length=frame_length,
-                output_path=chemical_shifts,
-                #ph=self.target_parameters["ph"],
-                #temperature=self.target_parameters["temperature"],
-            )
-
-            if fragment_index > 0:
-                merge_csvs(chemical_shifts)
-
         # Dihedral cluster assignments
         dihedral_clusters = f"{analysis_prefix}-dihedral-clusters.dat"
 
@@ -605,6 +586,25 @@ class ProteinBenchmarkSystem:
             return
 
         target_observables = self.target_parameters["observables"]
+
+        # Compute chemical shifts
+        chemical_shifts = f"{analysis_prefix}-chemical-shifts.dat"
+
+        if "chemical_shifts" in target_observables and not exists_and_not_empty(chemical_shifts):
+            print(f"Computing chemical shifts for system {self.system_name} {replica}")
+
+            # fragment_index = compute_chemical_shifts_shiftx2(
+            fragment_index = compute_chemical_shifts_sparta_plus(
+                topology_path=reimaged_topology,
+                trajectory_path=reimaged_trajectory,
+                frame_length=frame_length,
+                output_path=chemical_shifts,
+                #ph=self.target_parameters["ph"],
+                #temperature=self.target_parameters["temperature"],
+            )
+
+            if fragment_index > 0:
+                merge_csvs(chemical_shifts)
 
         # Scalar couplings
         scalar_couplings = f"{analysis_prefix}-scalar-couplings.dat"
