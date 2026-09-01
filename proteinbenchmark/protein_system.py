@@ -690,10 +690,17 @@ class ProteinBenchmarkSystem:
                     f"{self.system_name} {replica}"
                 )
 
+                time_series_output_path = (
+                    f"{analysis_prefix}-residual-dipolar-couplings-time-series.dat"
+                    if time_series_analysis
+                    else None
+                )
+
                 compute_residual_dipolar_couplings(
                     observable_path=experimental_observables,
                     internuclear_vector_geometries_path=internuclear_vector_geometries,
                     output_path=residual_dipolar_couplings,
+                    time_series_output_path=time_series_output_path,
                 )
 
         # Nuclear Overhauser effect upper distances

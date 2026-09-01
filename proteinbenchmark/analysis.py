@@ -1953,6 +1953,7 @@ def compute_residual_dipolar_couplings(
     observable_path: str,
     internuclear_vector_geometries_path: str,
     output_path: str,
+    time_series_output_path: str | None = None,
 ):
     """
     Compute residual dipolar couplings (RDCs) from internuclear vector
@@ -1966,6 +1967,8 @@ def compute_residual_dipolar_couplings(
         The path to the time series of internuclear vector geometries.
     output_path
         The path to write the computed internuclear geometries.
+    time_series_output_path
+        The path to write the time series of computed scalar couplings.
     """
 
     # Read internculear vectors and experimental observables for RDCs
@@ -2003,12 +2006,12 @@ def compute_residual_dipolar_couplings(
 
     # Construct the RDC scaling factors and the structural matrix from the
     # internuclear vector geometries
+    N_frame = internuclear_vector_geometry_df["Frame"].unique().shape[0]
+    structural_matrix_by_frame = numpy.zeros((observable_df.shape[0], 5, N_frame))
     rdc_scaling_factors = numpy.zeros(observable_df.shape[0])
-    structural_matrix = numpy.zeros((observable_df.shape[0], 5))
 
     for index, row in observable_df.iterrows():
         if row["Observable"] == "1d_cb_hb":
-            atom_j = row["Atom_j"]
             internuclear_vector_list = [
                 [row["Resid_i"], row["Atom_i"], row["Resid_j"], "HB2"],
                 [row["Resid_i"], row["Atom_i"], row["Resid_j"], "HB3"],
@@ -2026,6 +2029,10 @@ def compute_residual_dipolar_couplings(
                 [row["Resid_i"], row["Atom_i"], row["Resid_j"], row["Atom_j"]],
             ]
 
+        coupling_type_K = numpy.abs(
+            K * gyromagnetic_ratio_product[row["Observable"]]
+        ).m_as(unit.hertz)
+
         for resid_i, atom_i, resid_j, atom_j in internuclear_vector_list:
             internuclear_vector_df = internuclear_vector_geometry_df[
                 (internuclear_vector_geometry_df["Resid_i"] == resid_i)
@@ -2035,67 +2042,52 @@ def compute_residual_dipolar_couplings(
             ]
 
             # rdc_scaling_factor = K / < R^3 >
-            coupling_type_K = numpy.abs(
-                K * gyromagnetic_ratio_product[row["Observable"]]
-            ).m_as(unit.hertz)
             rdc_scaling_factor = coupling_type_K * numpy.mean(
                 numpy.power(internuclear_vector_df["Internuclear Distance"], -3.0)
             )
 
-            rdc_scaling_factors[index] += rdc_scaling_factor
+            if row["Observable"] in {"1d_cb_hb", "1d_nd2_hd2", "1d_ne2_he2"}:
+                rdc_scaling_factors[index] += 0.5 * rdc_scaling_factor
+
+            else:
+                rdc_scaling_factors[index] += rdc_scaling_factor
 
             # < cos^2 alpha_x >
-            cos_x_squared = numpy.mean(
-                numpy.square(internuclear_vector_df["Internuclear Vector x"])
-            )
+            cos_x_squared = numpy.square(internuclear_vector_df["Internuclear Vector x"])
 
-            # A_zz term: < cos^2 alpha_z > - < cos^2 alpha_x >
-            structural_matrix[index, 0] += rdc_scaling_factor * (
-                numpy.mean(
-                    numpy.square(internuclear_vector_df["Internuclear Vector z"])
-                )
-                - cos_x_squared
-            )
+            # M_zz term: < cos^2 alpha_z > - < cos^2 alpha_x >
+            M_zz = numpy.square(internuclear_vector_df["Internuclear Vector z"]) - cos_x_squared
 
-            # A_yy term: < cos^2 alpha_y > - < cos^2 alpha_x >
-            structural_matrix[index, 1] += rdc_scaling_factor * (
-                numpy.mean(
-                    numpy.square(internuclear_vector_df["Internuclear Vector y"])
-                )
-                - cos_x_squared
-            )
+            # M_yy term: < cos^2 alpha_y > - < cos^2 alpha_x >
+            M_yy = numpy.square(internuclear_vector_df["Internuclear Vector y"]) - cos_x_squared
 
-            # A_zy term: 2 < cos alpha_z cos alpha_y >
-            structural_matrix[index, 2] += (
+            # M_zy term: 2 < cos alpha_z cos alpha_y >
+            M_zy = (
                 2
-                * rdc_scaling_factor
-                * numpy.mean(
-                    internuclear_vector_df["Internuclear Vector z"]
-                    * internuclear_vector_df["Internuclear Vector y"]
-                )
+                * internuclear_vector_df["Internuclear Vector z"]
+                * internuclear_vector_df["Internuclear Vector y"]
             )
 
-            # A_zx term: 2 < cos alpha_z cos alpha_x >
-            structural_matrix[index, 3] += (
+            # M_zx term: 2 < cos alpha_z cos alpha_x >
+            M_zx = (
                 2
-                * rdc_scaling_factor
-                * numpy.mean(
-                    internuclear_vector_df["Internuclear Vector z"]
-                    * internuclear_vector_df["Internuclear Vector x"]
-                )
+                * internuclear_vector_df["Internuclear Vector z"]
+                * internuclear_vector_df["Internuclear Vector x"]
             )
 
-            # A_yx term: 2 < cos alpha_y cos alpha_x >
-            structural_matrix[index, 4] += (
+            # M_yx term: 2 < cos alpha_y cos alpha_x >
+            M_yx = (
                 2
-                * rdc_scaling_factor
-                * numpy.mean(
-                    internuclear_vector_df["Internuclear Vector y"]
-                    * internuclear_vector_df["Internuclear Vector x"]
-                )
+                * internuclear_vector_df["Internuclear Vector y"]
+                * internuclear_vector_df["Internuclear Vector x"]
+            )
+
+            structural_matrix_by_frame[index] += rdc_scaling_factor * numpy.array(
+                [M_zz, M_yy, M_zy, M_zx, M_yx],
             )
 
     observable_df["RDC Scaling"] = rdc_scaling_factors
+    structural_matrix = structural_matrix_by_frame.mean(axis=2)
 
     # For each alignment medium, estimate the alignment tensor from experimental
     # RDCs and then calculate RDCs from the alignment tensor
@@ -2113,6 +2105,9 @@ def compute_residual_dipolar_couplings(
             "cond",
         ],
     }
+
+    if time_series_output_path is not None:
+        observable_time_series = dict()
 
     for column in observable_df.columns:
         if not column.startswith("Experiment"):
@@ -2170,7 +2165,25 @@ def compute_residual_dipolar_couplings(
         )
 
         # Compute RDCs from structural matrix and alignment tensor
-        computed_rdcs = structural_matrix[rows_to_calculate] @ alignment_tensor
+        if time_series_output_path is None:
+            computed_rdcs = structural_matrix[rows_to_calculate] @ alignment_tensor
+        else:
+            computed_rdcs_by_frame = (
+                structural_matrix_by_frame[rows_to_calculate].transpose((2, 0, 1))
+                @ alignment_tensor
+            )
+            computed_rdcs = computed_rdcs_by_frame.mean(axis=0)
+
+            for row_index in rows_to_calculate:
+                observable = observable_df.loc[row_index, "Observable"]
+                resid_i = int(observable_df.loc[row_index, "Resid_i"])
+                atom_i = observable_df.loc[row_index, "Atom_i"]
+                resid_j = int(observable_df.loc[row_index, "Resid_j"])
+                atom_j = observable_df.loc[row_index, "Atom_j"]
+                medium_index = column.replace("Experiment ", "")
+
+                key = f"{observable}-{resid_i}-{atom_i}-{resid_j}-{atom_j}-{medium_index}"
+                observable_time_series[key] = computed_rdcs_by_frame[:, row_index]
 
         # Compute Q factor
         Q_factor = numpy.sqrt(
@@ -2196,6 +2209,9 @@ def compute_residual_dipolar_couplings(
         alignment_tensor_estimation[computed_column] = numpy.concatenate(
             [alignment_tensor, alignment_eigenvalues, [Q_factor, condition_number]]
         )
+
+    if time_series_output_path is not None:
+        pandas.DataFrame(observable_time_series).to_csv(time_series_output_path)
 
     residual_dipolar_coupling_df = pandas.concat(
         [observable_df, pandas.DataFrame(alignment_tensor_estimation)]
