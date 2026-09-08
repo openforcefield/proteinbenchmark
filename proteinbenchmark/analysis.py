@@ -2174,16 +2174,15 @@ def compute_residual_dipolar_couplings(
             )
             computed_rdcs = computed_rdcs_by_frame.mean(axis=0)
 
-            for row_index in rows_to_calculate:
+            for observable_index, row_index in enumerate(observable_df.index[rows_to_calculate]):
                 observable = observable_df.loc[row_index, "Observable"]
                 resid_i = int(observable_df.loc[row_index, "Resid_i"])
                 atom_i = observable_df.loc[row_index, "Atom_i"]
                 resid_j = int(observable_df.loc[row_index, "Resid_j"])
                 atom_j = observable_df.loc[row_index, "Atom_j"]
-                medium_index = column.replace("Experiment ", "")
 
-                key = f"{observable}-{resid_i}-{atom_i}-{resid_j}-{atom_j}-{medium_index}"
-                observable_time_series[key] = computed_rdcs_by_frame[:, row_index]
+                key = f"{observable}-{resid_i}-{atom_i}-{resid_j}-{atom_j}-{column}"
+                observable_time_series[key] = computed_rdcs_by_frame[:, observable_index]
 
         # Compute Q factor
         Q_factor = numpy.sqrt(
