@@ -418,7 +418,8 @@ force_fields = {
     },
     "null-0.0.3-4-mer-aaqaa3-1e3-qm-freeze-aaqaa3-1e3-opc3": {
         "force_field_file": Path(
-            ff_directory, "null-0.0.3-4-mer-aaqaa3-1e3-qm-freeze-aaqaa3-1e3-opc3-NAGL.offxml"
+            ff_directory,
+            "null-0.0.3-4-mer-aaqaa3-1e3-qm-freeze-aaqaa3-1e3-opc3-NAGL.offxml",
         ),
         "water_model": "opc3",
         "water_model_file": Path(ff_directory, "opc3-1.0.0.offxml"),
@@ -1058,7 +1059,9 @@ force_fields = {
         "water_model_file": Path(ff_directory, "tip4p_fb-1.0.0.offxml"),
     },
     "rosemary-3.0.0-alpha1b-nmr-1e3-opc3": {
-        "force_field_file": Path(ff_directory, "rosemary-3.0.0-alpha1b-nmr-1e3-opc3.offxml"),
+        "force_field_file": Path(
+            ff_directory, "rosemary-3.0.0-alpha1b-nmr-1e3-opc3.offxml"
+        ),
         "water_model": "opc3",
         "water_model_file": "opc3-1.0.0.offxml",
     },
