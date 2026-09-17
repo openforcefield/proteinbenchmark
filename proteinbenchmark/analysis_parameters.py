@@ -219,14 +219,105 @@ WIRMER_KARPLUS_PARAMETERS = {
 
 # Karplus parameters for backbone scalar couplings from
 # Ding K, Gronenborn AM. (2004). J. Am. Chem. Soc. 126, 6232-6233.
+DING_KARPLUS_RESIDUE_MAP = {
+    residue: "ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL"
+    for residue in [
+        "ALA",
+        "ARG",
+        "ASH",
+        "ASN",
+        "ASP",
+        "CYS",
+        "CYX",
+        "GLH",
+        "GLN",
+        "GLU",
+        "GLY",
+        "HID",
+        "HIE",
+        "HIP",
+        "HIS",
+        "ILE",
+        "LEU",
+        "LYN",
+        "LYS",
+        "MET",
+        "PHE",
+        "PRO",
+        "SER",
+        "THR",
+        "TRP",
+        "TYR",
+        "VAL",
+    ]
+}
+
 DING_KARPLUS_PARAMETERS = {
     "2j_n_ca": {
         "dihedral": "prev_psi",
-        "delta": 0.0,
-        "A": -0.66 / unit.second,
-        "B": -1.52 / unit.second,
-        "C": 7.85 / unit.second,
-        "sigma": 0.50 / unit.second,
+        "ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL": {
+            "delta": 0.0,
+            "A": -0.66 / unit.second,
+            "B": -1.52 / unit.second,
+            "C": 7.85 / unit.second,
+            "sigma": 0.50 / unit.second,
+        },
+    },
+}
+
+# Karplus parameters for backbone scalar couplings from
+# Mantsyzov AB, Maltsev AS, Ying J, Shen Y, Hummer G, Bax A. (2014).
+#     Protein Sci. 23, 1275-1290.",
+MANTSYZOV_KARPLUS_RESIDUE_MAP = {
+    residue: "ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR"
+    for residue in [
+        "ALA",
+        "ARG",
+        "ASH",
+        "ASN",
+        "ASP",
+        "CYS",
+        "CYX",
+        "GLH",
+        "GLN",
+        "GLU",
+        "GLY",
+        "HID",
+        "HIE",
+        "HIP",
+        "HIS",
+        "LEU",
+        "LYN",
+        "LYS",
+        "MET",
+        "PHE",
+        "PRO",
+        "TRP",
+        "TYR",
+    ]
+}
+MANTSYZOV_KARPLUS_RESIDUE_MAP["ILE"] = "ILE,SER,THR,VAL"
+MANTSYZOV_KARPLUS_RESIDUE_MAP["SER"] = "ILE,SER,THR,VAL"
+MANTSYZOV_KARPLUS_RESIDUE_MAP["THR"] = "ILE,SER,THR,VAL"
+MANTSYZOV_KARPLUS_RESIDUE_MAP["VAL"] = "ILE,SER,THR,VAL"
+
+MANTSYZOV_KARPLUS_PARAMETERS = {
+    "2j_n_ca": {
+        "dihedral": "prev_psi",
+        "ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,LEU,LYS,MET,PHE,PRO,TRP,TYR": {
+            "delta": 0.0,
+            "A": -0.66 / unit.second,
+            "B": -1.51 / unit.second,
+            "C": 8.15 / unit.second,
+            "sigma": 0.50 / unit.second,
+        },
+        "ILE,SER,THR,VAL": {
+            "delta": 0.0,
+            "A": -0.66 / unit.second,
+            "B": -1.51 / unit.second,
+            "C": 7.65 / unit.second,
+            "sigma": 0.50 / unit.second,
+        },
     },
 }
 
@@ -296,6 +387,19 @@ VOGELI_KARPLUS_PARAMETERS = {
         "B": -1.26 / unit.second,
         "C": 0.63 / unit.second,
         "sigma": 0.42 / unit.second,
+    },
+}
+
+# Karplus parameters for backbone scalar couplings from
+# Li F, Lee JH, Grishaev A, Ying J, Bax A. (2015). ChemPhysChem 16, 572-578.
+LI_KARPLUS_PARAMETERS = {
+    "3j_co_co": {
+        "dihedral": "phi",
+        "delta": 0.0,
+        "A": 1.61 / unit.second,
+        "B": -0.93 / unit.second,
+        "C": 0.55 / unit.second,
+        "sigma": 0.12 / unit.second,
     },
 }
 
@@ -795,12 +899,14 @@ def get_karplus_extrema(karplus_dict: KarplusDict):
 # Get extrema of Karplus parameters
 for karplus_parameters in [
     VOGELI_KARPLUS_PARAMETERS,
+    LI_KARPLUS_PARAMETERS,
     SCHMIDT_KARPLUS_PARAMETERS,
     HU_KARPLUS_PARAMETERS,
     CASE_DFT1_KARPLUS_PARAMETERS,
     CASE_DFT2_KARPLUS_PARAMETERS,
     WIRMER_KARPLUS_PARAMETERS,
     DING_KARPLUS_PARAMETERS,
+    MANTSYZOV_KARPLUS_PARAMETERS,
     PEREZ_KARPLUS_PARAMETERS,
     CHOU_KARPLUS_PARAMETERS,
 ]:
@@ -809,6 +915,7 @@ for karplus_parameters in [
             continue
 
         elif observable in {
+            "2j_n_ca",
             "3j_n_cg1",
             "3j_n_cg2",
             "3j_co_cg1",
