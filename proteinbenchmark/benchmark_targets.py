@@ -292,7 +292,10 @@ benchmark_targets = {
         "ionic_strength": 0.02 * unit.molar,
         "observables": {
             "scalar_coulpings": {
-                "experimental_datasets": ["maltsev_biochem_2012", "mantsyzov_prosci_2014"],
+                "experimental_datasets": [
+                    "maltsev_biochem_2012",
+                    "mantsyzov_prosci_2014",
+                ],
             },
         },
     },

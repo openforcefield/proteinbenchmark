@@ -13,10 +13,7 @@ import openmmtools.mcmc
 import openmmtools.multistate
 from openff.toolkit import Quantity
 from openff.units import ensure_quantity
-from openmm import (
-    app,
-    unit,
-)
+from openmm import app, unit
 
 from proteinbenchmark.utilities import exists_and_not_empty, read_xml, write_xml
 
@@ -485,9 +482,9 @@ class OpenMMHrexEnsemble:
             effective_temperatures[-1].value_in_unit(openmm.unit.kelvin),
             t_max.value_in_unit(openmm.unit.kelvin),
         ), f"{effective_temperatures[-1]} != {t_max}"
-        assert len(effective_temperatures) == n_replicas, (
-            f"{len(effective_temperatures)} != {n_replicas}"
-        )
+        assert (
+            len(effective_temperatures) == n_replicas
+        ), f"{len(effective_temperatures)} != {n_replicas}"
 
         tempered_atom_idcs = set(tempered_atom_idcs)
 

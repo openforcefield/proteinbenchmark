@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy
 import openmm
 import pandas
-from openmm import app, System
+from openmm import System, app
 
 package_data_directory = Path(Path(__file__).parent.absolute(), "data")
 
@@ -53,7 +53,7 @@ def exists_and_not_empty(file_name):
 def extract_noe_upper_distances(
     input_path: str,
     output_path: str,
-    remove_pseudoatom_corrections: bool=False,
+    remove_pseudoatom_corrections: bool = False,
 ):
     """Extract NOE upper distance boundaries from an NMR STAR file."""
 
