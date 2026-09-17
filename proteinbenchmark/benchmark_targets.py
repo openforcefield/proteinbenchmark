@@ -78,8 +78,35 @@ benchmark_targets = {
         "ph": 7.0,
         "ionic_strength": 0.050 * unit.molar,
         "observables": {
-            "3j_co_co": "roche_biochem_2016",
-            "3j_hn_ha": "roche_biochem_2016",
+            "residual_dipolar_couplings": {
+                "experimental_datasets": ["yan_jacs_2008"],
+                "observable_path": Path(
+                    observable_directory, "ab40", "ab40-residual-dipolar-couplings.dat"
+                ),
+            },
+            "scalar_couplings": {
+                "experimental_datasets": ["roche_biochem_2016"],
+                "observable_path": Path(
+                    observable_directory, "ab40", "ab40-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
+    "ab40-rdc-backbone": {
+        "target_type": "disordered",
+        "aa_sequence": ("DAEFRHDSGYEVHHQKLVFFAEDVGSNKGAIIGLMVGGVV"),
+        "initial_pdb": Path(pdb_directory, "ab40.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 273.3 * unit.kelvin,
+        "ph": 7.2,
+        "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "residual_dipolar_couplings": {
+                "experimental_datasets": ["yan_jacs_2008"],
+                "observable_path": Path(
+                    observable_directory, "ab40", "ab40-residual-dipolar-couplings.dat"
+                ),
+            },
         },
     },
     "ala3": {
@@ -237,10 +264,36 @@ benchmark_targets = {
         "pressure": 1.0 * unit.atmosphere,
         "temperature": 288.0 * unit.kelvin,
         "ph": 6.0,
-        "ionic_strength": 0.050 * unit.molar,
+        "ionic_strength": 0.05 * unit.molar,
         "observables": {
-            "3j_co_co": "lee_jacs_2015",
-            "3j_ha_hb": "lee_jacs_2015",
+            "scalar_couplings": {
+                "experimental_datasets": [
+                    "maltsev_biochem_2012",
+                    "mantsyzov_prosci_2014",
+                    "lee_jacs_2015",
+                ],
+                "observable_path": Path(
+                    observable_directory, "asyn", "asyn-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
+    "asyn-3j-hn-ha": {
+        "target_type": "disordered",
+        "aa_sequence": (
+            "MDVFMKGLSKAKEGVVAAAEKTKQGVAEAAGKTKEGVLYVGSKTKEGVVH"
+            "GVATVAEKTKEQVTNVGGAVVTGVTAVAQKTVEGAGSIAAATGFVKKDQL"
+            "GKNEEGAPQEGILEDMPVDPDNEAYEMPSEEGYQDYEPEA"
+        ),
+        "initial_pdb": Path(pdb_directory, "asyn.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 288.0 * unit.kelvin,
+        "ph": 6.0,
+        "ionic_strength": 0.02 * unit.molar,
+        "observables": {
+            "scalar_coulpings": {
+                "experimental_datasets": ["maltsev_biochem_2012", "mantsyzov_prosci_2014"],
+            },
         },
     },
     "asyn-cs": {
@@ -438,7 +491,6 @@ benchmark_targets = {
                 "experimental_datasets": ["cornilescu_jacs_1999_b"],
                 "observable_path": Path(observable_directory, "gb3", "gb3-3j-n-co.dat"),
             },
-            "backbone_rdc": "ulmer_jacs_2003",
         },
     },
     "gb3-test": {
@@ -1016,6 +1068,16 @@ experimental_datasets = {
             "Dror RO, Shaw DE. (2010). Proteins 78, 1950-1958.",
         ],
     },
+    "maltsev_biochem_2012": {
+        "references": [
+            "Maltsev AS, Ying J, Bax A. (2012). Biochem. 51, 5004-5013.",
+        ],
+    },
+    "mantsyzov_prosci_2014": {
+        "references": [
+            "Mantsyzov AB, Maltsev AS, Ying J, Shen Y, Hummer G, Bax A. (2014). Protein Sci. 23, 1275-1290.",
+        ],
+    },
     "miclet_jbnmr_2005": {
         "references": [
             "Miclet E, Boisbouvier J, Bax A. (2005). J. Biomol. NMR 31, 201-216.",
@@ -1084,6 +1146,11 @@ experimental_datasets = {
     "wang_jacs_1996": {
         "references": [
             "Wang AC, Bax A. (1996). J. Am. Chem. Soc. 118, 2483-2494.",
+        ],
+    },
+    "yan_jacs_2008": {
+        "references": [
+            "Yan Y, McCallum SA, Wang C. (2008). J. Am. Chem. Soc. 130, 5394-5395.",
         ],
     },
     "yao_jacs_2010": {

@@ -1,0 +1,26 @@
+Observable Resid_i Resname_i Atom_i Resid_j Resname_j Atom_j Experiment_1 Uncertainty_1
+1d_n_h       4     PHE          N     4     PHE          H     0.69
+1d_n_h       5     ARG          N     5     ARG          H     1.68
+1d_n_h       7     ASP          N     7     ASP          H     0.80
+1d_n_h       9     GLY          N     9     GLY          H     1.54
+1d_n_h      11     GLU          N    11     GLU          H     5.34
+1d_n_h      12     VAL          N    12     VAL          H     2.34
+1d_n_h      15     GLN          N    15     GLN          H     0.80
+1d_n_h      16     LYS          N    16     LYS          H     6.63
+1d_n_h      17     LEU          N    17     LEU          H     4.57
+1d_n_h      19     PHE          N    19     PHE          H     3.82
+1d_n_h      20     PHE          N    20     PHE          H     2.59
+1d_n_h      21     ALA          N    21     ALA          H     3.37
+1d_n_h      22     GLU          N    22     GLU          H     4.62
+1d_n_h      23     ASP          N    23     ASP          H     3.83
+1d_n_h      25     GLY          N    25     GLY          H     1.02
+1d_n_h      26     SER          N    26     SER          H    -0.15
+1d_n_h      27     ASN          N    27     ASN          H     0.84
+1d_n_h      29     GLY          N    29     GLY          H     2.15
+1d_n_h      30     ALA          N    30     ALA          H     1.31
+1d_n_h      32     ILE          N    32     ILE          H     3.95
+1d_n_h      33     GLY          N    33     GLY          H     2.77
+1d_n_h      34     LEU          N    34     LEU          H     2.33
+1d_n_h      35     MET          N    35     MET          H     3.82
+1d_n_h      36     VAL          N    36     VAL          H     4.31
+1d_n_h      37     GLY          N    37     GLY          H     2.88
