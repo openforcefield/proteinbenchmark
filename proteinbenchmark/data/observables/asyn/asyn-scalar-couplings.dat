@@ -1,0 +1,415 @@
+Observable Resid Resname Experiment Uncertainty
+3j_co_co       2   ASP       0.80
+1j_n_ca        3   VAL      10.48       0.01
+2j_n_ca        3   VAL       8.54       0.01
+3j_co_co       3   VAL       0.76
+3j_hn_ha       3   VAL       7.25       0.03
+1j_n_ca        4   PHE      10.73       0.01
+2j_n_ca        4   PHE       7.26       0.01
+3j_co_co       4   PHE       0.71
+3j_hn_ha       4   PHE       7.13       0.03
+1j_n_ca        5   MET      10.63       0.01
+2j_n_ca        5   MET       7.70       0.01
+3j_co_co       5   MET       0.83
+3j_hn_ha       5   MET       7.13       0.03
+1j_n_ca        6   LYS      10.65       0.01
+2j_n_ca        6   LYS       7.95       0.01
+3j_co_co       6   LYS       0.72
+3j_hn_ha       6   LYS       6.11       0.03
+1j_n_ca        7   GLY      11.65       0.01
+2j_n_ca        7   GLY       8.06       0.01
+3j_co_co       7   GLY       0.66
+1j_n_ca        8   LEU      10.84       0.01
+2j_n_ca        8   LEU       8.17       0.01
+3j_co_co       8   LEU       0.70
+3j_hn_ha       8   LEU       7.01       0.03
+1j_n_ca        9   SER      11.52       0.01
+2j_n_ca        9   SER       7.79       0.01
+3j_co_co       9   SER       0.83
+3j_hn_ha       9   SER       6.53       0.03
+1j_n_ca       10   LYS      10.71       0.01
+2j_n_ca       10   LYS       7.69       0.01
+1j_n_ca       11   ALA      11.04       0.01
+2j_n_ca       11   ALA       7.62       0.01
+3j_hn_ha      11   ALA       5.30       0.03
+1j_n_ca       12   LYS      10.68       0.01
+2j_n_ca       12   LYS       8.35       0.01
+3j_hn_ha      12   LYS       6.64       0.03
+2j_n_ca       13   GLU       7.81       0.01
+3j_hn_ha      13   GLU       6.18       0.03
+1j_n_ca       14   GLY      11.63       0.01
+2j_n_ca       14   GLY       8.34       0.01
+1j_n_ca       15   VAL      10.85       0.01
+2j_n_ca       15   VAL       8.32       0.01
+3j_hn_ha      15   VAL       7.37       0.03
+1j_n_ca       16   VAL      10.10       0.01
+2j_n_ca       16   VAL       8.33       0.01
+3j_hn_ha      16   VAL       7.63       0.03
+1j_n_ca       17   ALA      10.80       0.01
+2j_n_ca       17   ALA       7.72       0.01
+3j_co_co      17   ALA       0.75
+3j_hn_ha      17   ALA       5.45       0.03
+1j_n_ca       18   ALA      10.74       0.01
+2j_n_ca       18   ALA       8.31       0.01
+3j_co_co      18   ALA       0.76
+3j_hn_ha      18   ALA       5.22       0.03
+1j_n_ca       19   ALA      10.74       0.01
+2j_n_ca       19   ALA       7.95       0.01
+3j_co_co      19   ALA       0.72
+3j_hn_ha      19   ALA       5.28       0.03
+1j_n_ca       20   GLU      10.69       0.01
+2j_n_ca       20   GLU       7.86       0.01
+3j_co_co      20   GLU       0.66
+3j_hn_ha      20   GLU       6.13       0.03
+1j_n_ca       21   LYS      10.40       0.01
+2j_n_ca       21   LYS       7.90       0.01
+3j_co_co      21   LYS       0.76
+3j_hn_ha      21   LYS       6.53       0.03
+1j_n_ca       22   THR      11.51       0.01
+2j_n_ca       22   THR       7.77       0.01
+3j_co_co      22   THR       0.83
+3j_hn_ha      22   THR       6.99       0.03
+1j_n_ca       23   LYS      10.65       0.01
+2j_n_ca       23   LYS       7.54       0.01
+3j_hn_ha      23   LYS       6.65       0.03
+3j_hn_ha      24   GLN       6.69       0.03
+1j_n_ca       25   GLY      11.75       0.01
+2j_n_ca       25   GLY       8.35       0.01
+1j_n_ca       26   VAL      10.77       0.01
+2j_n_ca       26   VAL       8.39       0.01
+3j_co_co      26   VAL       0.86
+3j_hn_ha      26   VAL       7.12       0.03
+1j_n_ca       27   ALA      10.71       0.01
+2j_n_ca       27   ALA       7.40       0.01
+3j_co_co      27   ALA       0.70
+3j_hn_ha      27   ALA       5.58       0.03
+1j_n_ca       28   GLU      10.60       0.01
+2j_n_ca       28   GLU       8.03       0.01
+3j_hn_ha      28   GLU       6.08       0.03
+1j_n_ca       29   ALA      10.62       0.01
+2j_n_ca       29   ALA       7.67       0.01
+2j_n_ca       30   ALA       8.06       0.01
+1j_n_ca       31   GLY      11.65       0.01
+2j_n_ca       31   GLY       8.15       0.01
+3j_co_co      31   GLY       0.71
+1j_n_ca       32   LYS      10.91       0.01
+2j_n_ca       32   LYS       7.95       0.01
+3j_co_co      32   LYS       0.85
+3j_hn_ha      32   LYS       7.01       0.03
+1j_n_ca       33   THR      11.70       0.01
+2j_n_ca       33   THR       8.01       0.01
+3j_hn_ha      33   THR       7.22       0.03
+2j_n_ca       34   LYS       7.72       0.01
+1j_n_ca       35   GLU      11.00       0.01
+2j_n_ca       35   GLU       7.73       0.01
+3j_hn_ha      35   GLU       6.30       0.03
+1j_n_ca       36   GLY      11.66       0.01
+2j_n_ca       36   GLY       8.21       0.01
+1j_n_ca       37   VAL      10.87       0.01
+2j_n_ca       37   VAL       8.29       0.01
+3j_co_co      37   VAL       0.86
+3j_hn_ha      37   VAL       7.50       0.03
+1j_n_ca       38   LEU      10.54       0.01
+2j_n_ca       38   LEU       7.65       0.01
+3j_co_co      38   LEU       0.73
+3j_hn_ha      38   LEU       7.04       0.03
+1j_n_ca       39   TYR      10.88       0.01
+3j_co_co      39   TYR       0.97
+3j_hn_ha      39   TYR       7.47       0.03
+1j_n_ca       40   VAL      10.40       0.01
+2j_n_ca       40   VAL       7.94       0.01
+3j_co_co      40   VAL       1.15 
+3j_hn_ha      40   VAL       8.01       0.03
+1j_n_ca       41   GLY      11.93       0.01
+2j_n_ca       41   GLY       7.74       0.01
+3j_co_co      41   GLY       0.83
+1j_n_ca       42   SER      11.64       0.01
+3j_hn_ha      42   SER       6.49       0.03
+1j_n_ca       43   LYS      10.59       0.01
+2j_n_ca       43   LYS       7.64       0.01
+3j_hn_ha      43   LYS       7.00       0.03
+1j_n_ca       44   THR      11.69       0.01
+2j_n_ca       44   THR       7.77       0.01
+3j_hn_ha      44   THR       7.26       0.03
+1j_n_ca       45   LYS      10.55       0.01
+2j_n_ca       45   LYS       7.69       0.01
+3j_hn_ha      45   LYS       6.65       0.03
+1j_n_ca       46   GLU      11.09       0.01
+2j_n_ca       46   GLU       7.76       0.01
+3j_hn_ha      46   GLU       6.37       0.03
+1j_n_ca       47   GLY      11.70       0.01
+2j_n_ca       47   GLY       8.26       0.01
+3j_co_co      48   VAL       0.76
+3j_hn_ha      48   VAL       7.58       0.03
+1j_n_ca       49   VAL      10.13       0.01
+2j_n_ca       49   VAL       8.29       0.01
+1j_n_ca       50   HIS      11.15       0.01
+2j_n_ca       50   HIS       8.17       0.01
+3j_hn_ha      50   HIS       7.59       0.03
+1j_n_ca       51   GLY      11.83       0.01
+2j_n_ca       51   GLY       8.67       0.01
+1j_n_ca       52   VAL      10.90       0.01
+2j_n_ca       52   VAL       8.72       0.01
+1j_n_ca       53   ALA      10.94       0.01
+2j_n_ca       53   ALA       7.73       0.01
+3j_co_co      53   ALA       0.72
+3j_hn_ha      53   ALA       5.79       0.03
+1j_n_ca       54   THR      11.62       0.01
+2j_n_ca       54   THR       8.61       0.01
+3j_hn_ha      54   THR       7.56       0.03
+1j_n_ca       56   ALA      10.82       0.01
+2j_n_ca       56   ALA       7.68       0.01
+3j_co_co      56   ALA       0.73
+3j_hn_ha      56   ALA       5.61       0.03
+1j_n_ca       57   GLU      10.90       0.01
+2j_n_ca       57   GLU       8.32       0.01
+3j_co_co      57   GLU       0.71
+3j_hn_ha      57   GLU       6.15       0.03
+1j_n_ca       58   LYS      10.59       0.01
+2j_n_ca       58   LYS       8.13       0.01
+3j_co_co      58   LYS       0.83
+3j_hn_ha      58   LYS       6.57       0.03
+1j_n_ca       59   THR      11.59       0.01
+2j_n_ca       59   THR       8.06       0.01
+3j_co_co      59   THR       0.82
+3j_hn_ha      59   THR       7.01       0.03
+1j_n_ca       60   LYS      10.69       0.01
+2j_n_ca       60   LYS       7.67       0.01
+2j_n_ca       61   GLU       7.81       0.01
+3j_hn_ha      61   GLU       6.17       0.03
+3j_hn_ha      62   GLN       7.01       0.03
+3j_hn_ha      63   VAL       7.70       0.03
+1j_n_ca       64   THR      11.43       0.01
+2j_n_ca       64   THR       7.90       0.01
+3j_hn_ha      64   THR       7.87       0.03
+1j_n_ca       65   ASN      10.91       0.01
+2j_n_ca       65   ASN       7.77       0.01
+3j_co_co      65   ASN       0.96
+3j_hn_ha      65   ASN       7.51       0.03
+1j_n_ca       66   VAL      10.31       0.01
+2j_n_ca       66   VAL       8.26       0.01
+3j_co_co      66   VAL       0.92
+3j_hn_ha      66   VAL       7.34       0.03
+1j_n_ca       67   GLY      11.52       0.01
+2j_n_ca       67   GLY       7.58       0.01
+3j_co_co      67   GLY       0.75
+1j_n_ca       68   GLY      11.96       0.01
+2j_n_ca       68   GLY       8.56       0.01
+1j_n_ca       69   ALA      11.19       0.01
+2j_n_ca       69   ALA       8.35       0.01
+3j_co_co      69   ALA       0.72
+3j_hn_ha      69   ALA       5.83       0.03
+1j_n_ca       70   VAL      10.85       0.01
+2j_n_ca       70   VAL       8.29       0.01
+3j_co_co      70   VAL       0.86
+3j_hn_ha      70   VAL       7.53       0.03
+1j_n_ca       71   VAL      10.32       0.01
+2j_n_ca       71   VAL       8.03       0.01
+3j_co_co      71   VAL       1.11
+3j_hn_ha      71   VAL       8.15       0.03
+1j_n_ca       72   THR      11.50       0.01
+2j_n_ca       72   THR       7.98       0.01
+3j_co_co      72   THR       1.02
+3j_hn_ha      72   THR       7.70       0.03
+1j_n_ca       73   GLY      11.73       0.01
+2j_n_ca       73   GLY       7.91       0.01
+1j_n_ca       74   VAL      10.76       0.01
+2j_n_ca       74   VAL       8.51       0.01
+1j_n_ca       75   THR      11.44       0.01
+2j_n_ca       75   THR       7.80       0.01
+3j_co_co      75   THR       0.94
+3j_hn_ha      75   THR       7.62       0.03
+1j_n_ca       76   ALA      10.87       0.01
+2j_n_ca       76   ALA       7.62       0.01
+3j_co_co      76   ALA       0.80
+3j_hn_ha      76   ALA       5.87       0.03
+1j_n_ca       77   VAL      10.63       0.01
+2j_n_ca       77   VAL       8.39       0.01
+3j_co_co      77   VAL       0.92
+3j_hn_ha      77   VAL       7.45       0.03
+1j_n_ca       78   ALA      10.96       0.01
+2j_n_ca       78   ALA       7.70       0.01
+3j_co_co      78   ALA       0.71
+3j_hn_ha      78   ALA       5.62       0.03
+1j_n_ca       79   GLN      10.96       0.01
+2j_n_ca       79   GLN       8.43       0.01
+3j_co_co      79   GLN       0.82
+3j_hn_ha      79   GLN       6.79       0.03
+1j_n_ca       80   LYS      10.79       0.01
+2j_n_ca       80   LYS       8.31       0.01
+3j_co_co      80   LYS       0.84
+3j_hn_ha      80   LYS       6.71       0.03
+1j_n_ca       81   THR      11.61       0.01
+2j_n_ca       81   THR       8.28       0.01
+3j_co_co      81   THR       0.93
+3j_hn_ha      81   THR       7.52       0.03
+2j_n_ca       82   VAL       7.87       0.01
+3j_co_co      82   VAL       0.97
+3j_hn_ha      82   VAL       7.65       0.03
+1j_n_ca       83   GLU      10.83       0.01
+2j_n_ca       83   GLU       7.73       0.01
+3j_co_co      83   GLU       0.77
+3j_hn_ha      83   GLU       6.19       0.03
+1j_n_ca       84   GLY      11.69       0.01
+2j_n_ca       84   GLY       8.41       0.01
+3j_co_co      84   GLY       0.80
+1j_n_ca       85   ALA      10.77       0.01
+2j_n_ca       85   ALA       8.21       0.01
+3j_co_co      85   ALA       0.70
+3j_hn_ha      85   ALA       5.64       0.03
+1j_n_ca       86   GLY      11.72       0.01
+2j_n_ca       86   GLY       7.95       0.01
+3j_co_co      86   GLY       0.72
+1j_n_ca       87   SER      11.58       0.01
+2j_n_ca       87   SER       8.36       0.01
+3j_co_co      87   SER       0.93
+3j_hn_ha      87   SER       6.82       0.03
+1j_n_ca       88   ILE      10.37       0.01
+2j_n_ca       88   ILE       7.59       0.01
+3j_co_co      88   ILE       0.89
+3j_hn_ha      88   ILE       7.46       0.03
+1j_n_ca       89   ALA      10.78       0.01
+2j_n_ca       89   ALA       7.28       0.01
+3j_hn_ha      89   ALA       5.57       0.03
+1j_n_ca       90   ALA      10.91       0.01
+2j_n_ca       90   ALA       8.09       0.01
+3j_hn_ha      90   ALA       5.62       0.03
+1j_n_ca       91   ALA      10.75       0.01
+2j_n_ca       91   ALA       8.01       0.01
+3j_hn_ha      91   ALA       5.77       0.03
+1j_n_ca       92   THR      11.44       0.01
+2j_n_ca       92   THR       8.15       0.01
+3j_hn_ha      92   THR       7.50       0.03
+1j_n_ca       93   GLY      11.63       0.01
+2j_n_ca       93   GLY       7.45       0.01
+1j_n_ca       94   PHE      11.27       0.01
+2j_n_ca       94   PHE       8.29       0.01
+3j_co_co      94   PHE       0.93
+3j_hn_ha      94   PHE       6.92       0.03
+1j_n_ca       95   VAL      10.68       0.01
+2j_n_ca       95   VAL       7.97       0.01
+3j_hn_ha      95   VAL       8.04       0.03
+1j_n_ca       96   LYS      10.78       0.01
+2j_n_ca       96   LYS       7.98       0.01
+3j_hn_ha      96   LYS       6.51       0.03
+2j_n_ca       97   LYS       8.39       0.01
+1j_n_ca       98   ASP      10.94       0.01
+2j_n_ca       98   ASP       7.85       0.01
+3j_co_co      98   ASP       0.72
+3j_hn_ha      98   ASP       6.72       0.03
+1j_n_ca       99   GLN      10.59       0.01
+2j_n_ca       99   GLN       7.91       0.01
+3j_co_co      99   GLN       0.89
+3j_hn_ha      99   GLN       7.23       0.03
+2j_n_ca      100   LEU       7.60       0.01
+3j_co_co     100   LEU       0.71
+3j_hn_ha     100   LEU       6.80       0.03
+1j_n_ca      101   GLY      11.76       0.01
+2j_n_ca      101   GLY       7.91       0.01
+3j_co_co     101   GLY       0.70
+1j_n_ca      102   LYS      10.95       0.01
+2j_n_ca      102   LYS       8.43       0.01
+3j_co_co     102   LYS       0.90
+3j_hn_ha     102   LYS       6.83       0.03
+1j_n_ca      103   ASN      11.02       0.01
+2j_n_ca      103   ASN       7.97       0.01
+3j_co_co     103   ASN       0.87
+3j_hn_ha     103   ASN       7.20       0.03
+1j_n_ca      104   GLU      10.64       0.01
+2j_n_ca      104   GLU       8.02       0.01
+3j_hn_ha     104   GLU       6.79       0.03
+1j_n_ca      105   GLU      10.66       0.01
+2j_n_ca      105   GLU       7.66       0.01
+3j_hn_ha     105   GLU       6.39       0.03
+1j_n_ca      106   GLY      11.70       0.01
+2j_n_ca      106   GLY       7.99       0.01
+3j_co_co     106   GLY       0.77
+1j_n_ca      107   ALA      11.54       0.01
+2j_n_ca      107   ALA       8.16       0.01
+3j_hn_ha     107   ALA       5.92       0.03
+1j_n_ca      109   GLN      10.72       0.01
+2j_n_ca      109   GLN       9.05       0.01
+3j_co_co     109   GLN       0.89
+3j_hn_ha     109   GLN       6.94       0.03
+1j_n_ca      110   GLU      10.86       0.01
+2j_n_ca      110   GLU       8.08       0.01
+3j_co_co     110   GLU       0.83
+3j_hn_ha     110   GLU       6.52       0.03
+1j_n_ca      111   GLY      11.72       0.01
+2j_n_ca      111   GLY       8.34       0.01
+1j_n_ca      112   ILE      10.84       0.01
+2j_n_ca      112   ILE       8.44       0.01
+3j_hn_ha     112   ILE       7.75       0.03
+1j_n_ca      113   LEU      10.54       0.01
+2j_n_ca      113   LEU       7.75       0.01
+3j_hn_ha     113   LEU       7.16       0.03
+1j_n_ca      114   GLU      10.83       0.01
+2j_n_ca      114   GLU       8.02       0.01
+3j_hn_ha     114   GLU       6.72       0.03
+1j_n_ca      115   ASP      10.88       0.01
+2j_n_ca      115   ASP       8.07       0.01
+3j_co_co     115   ASP       0.83
+3j_hn_ha     115   ASP       6.85       0.03
+3j_hn_ha     116   MET       7.17       0.03
+3j_co_co     118   VAL       0.95
+3j_hn_ha     118   VAL       7.68       0.03
+1j_n_ca      119   ASP      10.89       0.01
+2j_n_ca      119   ASP       7.88       0.01
+3j_hn_ha     119   ASP       6.79       0.03
+1j_n_ca      121   ASP      10.56       0.01
+2j_n_ca      121   ASP       7.66       0.01
+3j_hn_ha     121   ASP       7.14       0.03
+1j_n_ca      122   ASN      10.95       0.01
+2j_n_ca      122   ASN       7.54       0.01
+3j_hn_ha     122   ASN       7.29       0.03
+1j_n_ca      123   GLU      10.53       0.01
+2j_n_ca      123   GLU       7.71       0.01
+3j_co_co     123   GLU       0.73
+3j_hn_ha     123   GLU       6.55       0.03
+1j_n_ca      124   ALA      10.66       0.01
+2j_n_ca      124   ALA       7.54       0.01
+3j_co_co     124   ALA       0.76
+3j_hn_ha     124   ALA       6.23       0.03
+1j_n_ca      125   TYR      11.13       0.01
+2j_n_ca      125   TYR       7.95       0.01
+3j_hn_ha     125   TYR       7.09       0.03
+1j_n_ca      126   GLU      10.85       0.01
+2j_n_ca      126   GLU       7.95       0.01
+3j_hn_ha     126   GLU       7.29       0.03
+3j_hn_ha     127   MET       6.62       0.03
+1j_n_ca      129   SER      11.63       0.01
+2j_n_ca      129   SER       9.06       0.01
+3j_co_co     129   SER       0.92
+3j_hn_ha     129   SER       6.65       0.03
+1j_n_ca      130   GLU      10.66       0.01
+2j_n_ca      130   GLU       7.85       0.01
+3j_hn_ha     130   GLU       6.86       0.03
+1j_n_ca      131   GLU      10.66       0.01
+2j_n_ca      131   GLU       7.67       0.01
+3j_hn_ha     131   GLU       6.41       0.03
+1j_n_ca      132   GLY      11.67       0.01
+2j_n_ca      132   GLY       8.11       0.01
+1j_n_ca      133   TYR      11.22       0.01
+2j_n_ca      133   TYR       8.38       0.01
+3j_co_co     133   TYR       0.95
+3j_hn_ha     133   TYR       6.77       0.03
+1j_n_ca      134   GLN      10.89       0.01
+2j_n_ca      134   GLN       7.93       0.01
+3j_co_co     134   GLN       1.14
+3j_hn_ha     134   GLN       7.55       0.03
+1j_n_ca      135   ASP      10.84       0.01
+2j_n_ca      135   ASP       8.13       0.01
+3j_hn_ha     135   ASP       6.97       0.03
+1j_n_ca      136   TYR      11.27       0.01
+2j_n_ca      136   TYR       7.95       0.01
+3j_hn_ha     136   TYR       7.17       0.03
+1j_n_ca      137   GLU      10.81       0.01
+2j_n_ca      137   GLU       7.97       0.01
+3j_hn_ha     137   GLU       7.63       0.03
+1j_n_ca      139   GLU      10.73       0.01
+2j_n_ca      139   GLU       8.86       0.01
+3j_co_co     139   GLU       0.72
+3j_hn_ha     139   GLU       6.71       0.03
+1j_n_ca      140   ALA      10.44       0.01
+2j_n_ca      140   ALA       7.57       0.01
+3j_hn_ha     140   ALA       6.65       0.03

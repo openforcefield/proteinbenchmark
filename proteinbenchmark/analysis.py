@@ -91,11 +91,13 @@ def align_trajectory(
     def reimage_coordinate(
         coordinate: loos.GCoord,
         box_vectors: numpy.typing.ArrayLike,
-        #inverse_box_vectors: numpy.typing.ArrayLike,
+        # inverse_box_vectors: numpy.typing.ArrayLike,
     ):
         """Reimage a coordinate using arbitrary periodic box vectors."""
 
-        reimaged_coordinate = numpy.array([coordinate.x(), coordinate.y(), coordinate.z()])
+        reimaged_coordinate = numpy.array(
+            [coordinate.x(), coordinate.y(), coordinate.z()]
+        )
 
         for i in range(3)[::-1]:
             n = numpy.floor(numpy.abs(reimaged_coordinate[i]) / box_vectors[i, i] + 0.5)
@@ -105,22 +107,21 @@ def align_trajectory(
 
             reimaged_coordinate -= n * box_vectors[i]
 
-        #scaled_coordinate = numpy.dot(
+        # scaled_coordinate = numpy.dot(
         #    inverse_box_vectors,
         #    numpy.array([coordinate.x(), coordinate.y(), coordinate.z()]),
-        #)
+        # )
 
-        #reimaged_scaled_coordinate = scaled_coordinate - numpy.round(scaled_coordinate)
-        #reimaged_coordinate = numpy.dot(box_vectors, reimaged_scaled_coordinate)
+        # reimaged_scaled_coordinate = scaled_coordinate - numpy.round(scaled_coordinate)
+        # reimaged_coordinate = numpy.dot(box_vectors, reimaged_scaled_coordinate)
 
         return loos.GCoord(*reimaged_coordinate)
-
 
     def reimage_molecule(
         molecule: loos.AtomicGroup,
         box_vectors: numpy.typing.ArrayLike,
-        #inverse_box_vectors: numpy.typing.ArrayLike,
-        reimage_by_atom: bool=False,
+        # inverse_box_vectors: numpy.typing.ArrayLike,
+        reimage_by_atom: bool = False,
     ):
         """
         Reimage a molecule using arbitrary periodic box vectors.
@@ -143,14 +144,14 @@ def align_trajectory(
 
             for atom in molecule:
                 atom.coords(
-                    #reimage_coordinate(atom.coords(), box_vectors, inverse_box_vectors)
+                    # reimage_coordinate(atom.coords(), box_vectors, inverse_box_vectors)
                     reimage_coordinate(atom.coords(), box_vectors)
                 )
 
         else:
             # Reimage the molecule centroid
             centroid = molecule.centroid()
-            #reimaged_centroid = reimage_coordinate(centroid, box_vectors, inverse_box_vectors)
+            # reimaged_centroid = reimage_coordinate(centroid, box_vectors, inverse_box_vectors)
             reimaged_centroid = reimage_coordinate(centroid, box_vectors)
             offset = reimaged_centroid - centroid
 
@@ -205,22 +206,24 @@ def align_trajectory(
             # Reimage by molecule. LOOS assumes a triclinic box, so do reimaging
             # manually here using the box vectors for the rhombic dodecahedron.
             d = frame.periodicBox()[0]
-            box_vectors = numpy.array([
-                [d, 0, 0],
-                [0, d, 0],
-                [d / 2, d / 2, d / numpy.sqrt(2)],
-            ])
+            box_vectors = numpy.array(
+                [
+                    [d, 0, 0],
+                    [0, d, 0],
+                    [d / 2, d / 2, d / numpy.sqrt(2)],
+                ]
+            )
 
-            #sqrt_2_over_d = numpy.sqrt(2) / d
-            #inverse_box_vectors = numpy.array([
+            # sqrt_2_over_d = numpy.sqrt(2) / d
+            # inverse_box_vectors = numpy.array([
             #    [1 / d, 0, 0],
             #    [0, 1 / d, 0],
             #    [-sqrt_2_over_d / 2, -sqrt_2_over_d / 2, sqrt_2_over_d],
-            #]) 
+            # ])
 
-            #output_atoms.centerAtOrigin()
+            # output_atoms.centerAtOrigin()
 
-            #for molecule in output_molecules:
+            # for molecule in output_molecules:
             #    reimage_molecule(molecule, box_vectors, inverse_box_vectors, reimage_by_atom=True)
 
             # Move the first molecule to the origin, then do a first pass at
@@ -229,14 +232,14 @@ def align_trajectory(
             output_atoms.translate(-output_molecules[0].centroid())
 
             for molecule in output_molecules:
-                #reimage_molecule(molecule, box_vectors, inverse_box_vectors)
+                # reimage_molecule(molecule, box_vectors, inverse_box_vectors)
                 reimage_molecule(molecule, box_vectors)
 
             # Center all molecules at the origin and reimage again
             output_atoms.centerAtOrigin()
 
             for molecule in output_molecules:
-                #reimage_molecule(molecule, box_vectors, inverse_box_vectors)
+                # reimage_molecule(molecule, box_vectors, inverse_box_vectors)
                 reimage_molecule(molecule, box_vectors)
 
         # Align frame onto reference
@@ -1533,7 +1536,7 @@ def compute_scalar_couplings(
     observable_path: str,
     dihedrals_path: str,
     output_path: str,
-    karplus: str = "vogeli",
+    karplus: str = "vogeli,li,mantsyzov",
     time_series_output_path: str | None = None,
     subsample_time_series: bool = False,
 ):
@@ -1557,34 +1560,44 @@ def compute_scalar_couplings(
     """
 
     # Get Karplus parameters for scalar couplings associated with phi
-    karplus = karplus.lower()
+    karplus = karplus.lower().split(",")
 
-    if karplus == "vogeli":
+    if "vogeli" in karplus:
         karplus_parameters = VOGELI_KARPLUS_PARAMETERS
-    elif karplus == "schmidt":
+    elif "schmidt" in karplus:
         karplus_parameters = SCHMIDT_KARPLUS_PARAMETERS
-    elif karplus == "hu":
+    elif "hu" in karplus:
         karplus_parameters = HU_KARPLUS_PARAMETERS
-    elif karplus == "case_dft1":
+    elif "case_dft1" in karplus:
         karplus_parameters = CASE_DFT1_KARPLUS_PARAMETERS
-    elif karplus == "case_dft2":
+    elif "case_dft2" in karplus:
         karplus_parameters = CASE_DFT2_KARPLUS_PARAMETERS
 
     else:
         raise ValueError(
-            "Argument `karplus` must be one of\n    vogeli\n    schmidt\n    hu"
-            "\n    case_dft1\n    case_dft2"
+            "Argument `karplus` must contain one of\n    vogeli\n    schmidt"
+            "\n    hu\n    case_dft1\n    case_dft2"
         )
+
+    if "li" in karplus:
+        karplus_parameters.update(LI_KARPLUS_PARAMETERS)
 
     # Get Karplus parameters for scalar couplings associated with psi
     karplus_parameters.update(WIRMER_KARPLUS_PARAMETERS)
-    karplus_parameters.update(DING_KARPLUS_PARAMETERS)
     karplus_parameters.update(HENNIG_KARPLUS_PARAMETERS)
+
+    if "mantsyzov" in karplus:
+        karplus_parameters.update(MANTSYZOV_KARPLUS_PARAMETERS)
+        karplus_2j_n_ca_residue_map = MANTSYZOV_KARPLUS_RESIDUE_MAP
+
+    else:
+        karplus_parameters.update(DING_KARPLUS_PARAMETERS)
+        karplus_2j_n_ca_residue_map = DING_KARPLUS_RESIDUE_MAP
 
     # Get Karplus parameters for scalar couplings associated with chi1
     karplus_parameters.update(PEREZ_KARPLUS_PARAMETERS)
 
-    if karplus != "schmidt":
+    if "schmidt" not in karplus:
         karplus_parameters.update(CHOU_KARPLUS_PARAMETERS)
 
     # Load data for experimental observables
@@ -1672,8 +1685,12 @@ def compute_scalar_couplings(
                 & (dihedral_df["Resid"] == dihedral_resid)
             ]
 
-            # Get residue specific parameters for sidechains
-            if observable in {"3j_n_cg1", "3j_n_cg2", "3j_co_cg1", "3j_co_cg2"}:
+            # Get residue specific parameters for Karplus models that split by residue
+            if observable == "2j_n_ca":
+                dihedral_resname = karplus_2j_n_ca_residue_map[row["Resname"]]
+                observable_parameters = observable_parameters[dihedral_resname]
+
+            elif observable in {"3j_n_cg1", "3j_n_cg2", "3j_co_cg1", "3j_co_cg2"}:
                 dihedral_resname = row["Resname"]
                 observable_parameters = observable_parameters[dihedral_resname]
 
@@ -2366,9 +2383,13 @@ def compute_fraction_helix(
     for index, row in observable_df.iterrows():
         observable_resid = row["Resid"]
 
+        # observable_resid is 0-based, but some measured properties use 1-based
+        # residue indices due to the capped initial structure
+        capped_resid = observable_resid + 1
+        residue_dihedral_df = dihedral_df[dihedral_df["Resid"] == capped_resid]
+
         # Get frames where (phi, psi) is closer than 30 deg to ideal alpha helix
         # at (-63, -43)
-        residue_dihedral_df = dihedral_df[dihedral_df["Resid"] == observable_resid]
         helical_dihedrals = (
             (residue_dihedral_df["phi (deg)"] + 63) ** 2
             + (residue_dihedral_df["psi (deg)"] + 43) ** 2
@@ -2419,7 +2440,7 @@ def compute_fraction_helix(
 
         # Get mean chemical shift of backbone carbonyl carbon
         carbonyl_chemical_shift = chemical_shift_df[
-            chemical_shift_df["Resid"] == observable_resid
+            chemical_shift_df["Resid"] == capped_resid
         ]["Chemical Shift"]
 
         if len(carbonyl_chemical_shift) > 0:
