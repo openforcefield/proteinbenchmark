@@ -103,6 +103,19 @@ pdb_id = "193L"
 initial_pdb_path = Path(f"hewl-{pdb_id}.pdb")
 get_rcsb_file(pdb_id, initial_pdb_path)
 
+# Human rhinovirus serotype 14 3C protease (HRV3C)
+pdb_id = "2IN2"
+nmr_model = 1
+initial_pdb_path = Path(f"hrv3c-{pdb_id}-{nmr_model}.pdb")
+get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
+
+# Human rhinovirus serotype 14 3C protease complex with covalent
+# Ace-LEALFQ-ethylpropionate inhibitor (HRV3C-LEALFQ)
+pdb_id = "2B0F"
+nmr_model = 1
+initial_pdb_path = Path(f"hrv3c-lealfq-{pdb_id}-{nmr_model}.pdb")
+get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
+
 # NESG target MrR110B
 pdb_id = "2K5V"
 nmr_model = 1
@@ -125,6 +138,19 @@ get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
 pdb_id = "2KCV"
 nmr_model = 1
 initial_pdb_path = Path(f"srr115c-{pdb_id}-model-{nmr_model}.pdb")
+get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
+
+# Staphylococcus aureus sortase DeltaN59, residues 60-206 (SrtA)
+pdb_id = "1IJA"
+nmr_model = 1
+initial_pdb_path = Path(f"srta-{pdb_id}-{nmr_model}.pdb")
+get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
+
+# Staphylococcus aureus sortase DeltaN59, residues 60-206, complex with covalent
+# (PHQ)LPA(B27) peptide inhibitor (SrtA-LPAT)
+pdb_id = "2KID"
+nmr_model = 1
+initial_pdb_path = Path(f"srta-lpat-{pdb_id}-{nmr_model}.pdb")
 get_rcsb_file(pdb_id, initial_pdb_path, model=nmr_model)
 
 # NESG target StR65
