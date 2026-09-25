@@ -1065,6 +1065,34 @@ force_fields = {
         "water_model": "opc3",
         "water_model_file": "opc3-1.0.0.offxml",
     },
+    "rosemary-3.0.0-alpha1b-nmr-1e3-rdc-1e3-opc3": {
+        "force_field_file": Path(
+            ff_directory, "rosemary-3.0.0-alpha1b-nmr-1e3-rdc-1e3-opc3.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": "opc3-1.0.0.offxml",
+    },
+    "rosemary-3.0.0-alpha1b-nmr-1e3-rdc-1e4-opc3": {
+        "force_field_file": Path(
+            ff_directory, "rosemary-3.0.0-alpha1b-nmr-1e3-rdc-1e4-opc3.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": "opc3-1.0.0.offxml",
+    },
+    "rosemary-3.0.0-alpha1b-nmr-1e3-rdc-2-1e4-opc3": {
+        "force_field_file": Path(
+            ff_directory, "rosemary-3.0.0-alpha1b-nmr-1e3-rdc-2-1e4-opc3.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": "opc3-1.0.0.offxml",
+    },
+    "rosemary-3.0.0-alpha1b-nmr-1e3-rdc-3-1e4-opc3": {
+        "force_field_file": Path(
+            ff_directory, "rosemary-3.0.0-alpha1b-nmr-1e3-rdc-3-1e4-opc3.offxml"
+        ),
+        "water_model": "opc3",
+        "water_model_file": "opc3-1.0.0.offxml",
+    },
     "rosemary-3.0.0-alpha1b-opc": {
         "force_field_file": Path(ff_directory, "openff_no_water-3.0.0-alpha1b.offxml"),
         "water_model": "opc",
