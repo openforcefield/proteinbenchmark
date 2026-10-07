@@ -383,6 +383,14 @@ benchmark_targets = {
         "temperature": 293.0 * unit.kelvin,
         "ph": 6.5,
         "ionic_strength": 0.100 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "ccr55", "ccr55-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "cln025": {
         "target_type": "peptide",
@@ -410,6 +418,14 @@ benchmark_targets = {
         "temperature": 298.0 * unit.kelvin,
         "ph": 6.5,
         "ionic_strength": 0.225 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "ctr148a", "ctr148a-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "dhr29b": {
         "target_type": "folded",
@@ -418,6 +434,14 @@ benchmark_targets = {
         "temperature": 293.0 * unit.kelvin,
         "ph": 4.5,
         "ionic_strength": 0.230 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "dhr29b", "dhr29b-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "dhr8c": {
         "target_type": "folded",
@@ -426,6 +450,14 @@ benchmark_targets = {
         "temperature": 293.0 * unit.kelvin,
         "ph": 4.5,
         "ionic_strength": 0.200 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "dhr8c", "dhr8c-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "er382a": {
         "target_type": "folded",
@@ -434,6 +466,14 @@ benchmark_targets = {
         "temperature": 293.0 * unit.kelvin,
         "ph": 6.5,
         "ionic_strength": 0.100 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "er382a", "er382a-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "gag": {
         "target_type": "peptide",
@@ -790,6 +830,14 @@ benchmark_targets = {
         "temperature": 298.0 * unit.kelvin,
         "ph": 6.5,
         "ionic_strength": 0.100 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "mrr110b", "mrr110b-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "psr293": {
         "target_type": "folded",
@@ -798,6 +846,14 @@ benchmark_targets = {
         "temperature": 293.0 * unit.kelvin,
         "ph": 4.5,
         "ionic_strength": 0.100 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "psr293", "psr293-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "sr478": {
         "target_type": "folded",
@@ -806,6 +862,14 @@ benchmark_targets = {
         "temperature": 298.0 * unit.kelvin,
         "ph": 4.5,
         "ionic_strength": 0.100 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "sr478", "sr478-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "srr115c": {
         "target_type": "folded",
@@ -814,6 +878,14 @@ benchmark_targets = {
         "temperature": 298.0 * unit.kelvin,
         "ph": 6.5,
         "ionic_strength": 0.0 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "srr115c", "srr115c-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "str65": {
         "target_type": "folded",
@@ -822,6 +894,14 @@ benchmark_targets = {
         "temperature": 293.0 * unit.kelvin,
         "ph": 6.5,
         "ionic_strength": 0.100 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "str65", "str65-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
     "ubq": {
         "target_type": "folded",
@@ -831,6 +911,12 @@ benchmark_targets = {
         "ph": 4.7,
         "ionic_strength": 0.0 * unit.molar,
         "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["cornilescu_jacs_1998"],
+                "observable_path": Path(
+                    observable_directory, "ubq", "ubq-noe-upper-distances.dat"
+                ),
+            },
             "residual_dipolar_couplings": {
                 "experimental_datasets": [
                     "ottinger_jacs_1998",
@@ -981,6 +1067,14 @@ benchmark_targets = {
         "temperature": 298.0 * unit.kelvin,
         "ph": 6.5,
         "ionic_strength": 0.100 * unit.molar,
+        "observables": {
+            "noe_upper_distances": {
+                "experimental_datasets": ["mao_jacs_2014"],
+                "observable_path": Path(
+                    observable_directory, "xcr50", "xcr50-noe-upper-distances.dat"
+                ),
+            },
+        },
     },
 }
 
@@ -1012,6 +1106,12 @@ experimental_datasets = {
     "cordier_jacs_1999": {
         "references": [
             "Cordier F, Grzesiek S. (1999). J. Am. Chem. Soc. 121, 1601-1602.",
+        ],
+    },
+    "cornilescu_jacs_1998": {
+        "references": [
+            "Cornilescu G, Marquardt JL, Ottiger M, Bax A. (1998). J. Am. Chem. "
+            "Soc. 120, 6836-6837.",
         ],
     },
     "cornilescu_jacs_1999_a": {
@@ -1079,6 +1179,12 @@ experimental_datasets = {
     "mantsyzov_prosci_2014": {
         "references": [
             "Mantsyzov AB, Maltsev AS, Ying J, Shen Y, Hummer G, Bax A. (2014). Protein Sci. 23, 1275-1290.",
+        ],
+    },
+    "mao_jacs_2014": {
+        "references": [
+            "Mao B, Tejero R, Baker D, Montelione GT. (2014). J. Am. Chem. Soc. "
+            "136, 1893-1906.",
         ],
     },
     "miclet_jbnmr_2005": {

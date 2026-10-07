@@ -729,9 +729,9 @@ def measure_noe_distances(
                             f"{atom_resid} for NOE distance {index}."
                         )
 
-                    atom_selections[atom_full_name] = atom_selection[0]
+                    atom_selections[atom_full_name] = atom_selection
 
-                pseudoatom_atom_list.append(atom_selections[atom_full_name])
+                pseudoatom_atom_list.extend(atom_selections[atom_full_name])
 
             atom_list.append(pseudoatom_atom_list)
 
