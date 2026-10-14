@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy
 import openmm
 from openff.pablo import STD_CCD_CACHE, topology_from_pdb
-from openff.toolkit import ForceField, Molecule, Topology
+from openff.toolkit import ForceField
 from openff.units import unit
 from openmm import app
 from openmm import unit as openmm_unit
@@ -598,16 +598,19 @@ def assign_parameters(
         # Set up NH2 cap
         from openff.pablo import ResidueDefinition
         from openff.pablo.chem import PEPTIDE_BOND
-        residue_library = residue_library.with_([
-            ResidueDefinition.from_smiles(
-                mapped_smiles="[H:2][N:1]([H:3])[H:4]",
-                atom_names={1: "N", 2: "HN1", 3: "HN2", 4: "HN3"},
-                residue_name="NH2",
-                description="Amide cap",
-                linking_bond=PEPTIDE_BOND,
-                leaving_atoms=[4],
-            )
-        ])
+
+        residue_library = residue_library.with_(
+            [
+                ResidueDefinition.from_smiles(
+                    mapped_smiles="[H:2][N:1]([H:3])[H:4]",
+                    atom_names={1: "N", 2: "HN1", 3: "HN2", 4: "HN3"},
+                    residue_name="NH2",
+                    description="Amide cap",
+                    linking_bond=PEPTIDE_BOND,
+                    leaving_atoms=[4],
+                )
+            ]
+        )
 
         # Set up OpenMM water virtual site
         residue_library = residue_library.with_virtual_sites(
