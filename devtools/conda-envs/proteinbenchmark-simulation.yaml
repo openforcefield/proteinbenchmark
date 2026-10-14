@@ -2,12 +2,12 @@ name: openff-proteinbenchmark-simulation
 channels:
   - conda-forge
 dependencies:
-  - python
+  - python>=3.12
     
   # MM calculations
   - ambertools
   - openff-forcefields
-  - openff-toolkit>=0.17.0
+  - openff-toolkit>=0.17.1
   - openff-units
   - openmm>=8.1.1
   - openmmforcefields>=0.12.0
