@@ -590,7 +590,10 @@ class ProteinBenchmarkSystem:
         # Compute chemical shifts
         chemical_shifts = f"{analysis_prefix}-chemical-shifts.dat"
 
-        if "chemical_shifts" in target_observables and not exists_and_not_empty(chemical_shifts):
+        if (
+            ("chemical_shifts" in target_observables or "fraction_helix" in target_observables)
+            and not exists_and_not_empty(chemical_shifts)
+        ):
             print(f"Computing chemical shifts for system {self.system_name} {replica}")
 
             # fragment_index = compute_chemical_shifts_shiftx2(
