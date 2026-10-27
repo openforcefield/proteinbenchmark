@@ -6,10 +6,6 @@ from pathlib import Path
 import numpy
 import openmm
 import pandas
-from openff.pablo import STD_CCD_CACHE, ResidueDefinition
-from openff.pablo.ccd import CcdCache
-from openff.pablo.chem import DISULFIDE_BOND, PEPTIDE_BOND
-from openff.pablo.residue import BondDefinition
 from openmm import System, app
 
 package_data_directory = Path(Path(__file__).parent.absolute(), "data")
@@ -419,6 +415,10 @@ def extract_noe_upper_distances(
 
 def get_pablo_residue_library() -> CcdCache:
     """Set up Pablo residue library."""
+    from openff.pablo import STD_CCD_CACHE, ResidueDefinition
+    from openff.pablo.ccd import CcdCache
+    from openff.pablo.chem import DISULFIDE_BOND, PEPTIDE_BOND
+    from openff.pablo.residue import BondDefinition
 
     residue_library = STD_CCD_CACHE
 

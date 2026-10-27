@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy
 import openmm
-from openff.pablo import STD_CCD_CACHE, topology_from_pdb
 from openff.toolkit import ForceField
 from openff.units import unit
 from openmm import app
@@ -253,6 +252,7 @@ def solvate(
         List of paths to OpenMM XMLs to load for the OpenMM ForceField passed to
         Modeller.add_solvent()
     """
+    from openff.pablo import topology_from_pdb
 
     # Check arguments
     if (solvent_padding is None) == (n_solvent is None):
@@ -541,6 +541,7 @@ def assign_parameters(
         List of paths to OpenMM XMLs to load for the OpenMM ForceField passed to
         Modeller.add_solvent()
     """
+    from openff.pablo import topology_from_pdb
 
     # Check arguments
     if not nonbonded_cutoff.is_compatible_with(unit.nanometer):
