@@ -10,6 +10,7 @@ from openmm import unit as openmm_unit
 
 from proteinbenchmark.force_fields import force_fields
 from proteinbenchmark.utilities import (
+    get_pablo_residue_library,
     read_xml,
     remove_model_lines,
     write_pdb,
@@ -226,8 +227,9 @@ def solvate(
     protonated_pdb_file: str,
     solvated_pdb_file: str,
     water_model: str,
-    solvent_padding: unit.Quantity = None,
-    n_solvent: int = None,
+    solvent_padding: unit.Quantity | None = None,
+    n_solvent: int | None = None,
+    additional_openmm_ffxmls: list[str] | None = None,
 ):
     """
     Add water and salt ions. Exactly one of solvent_padding or n_solvent must be
@@ -247,6 +249,9 @@ def solvate(
         The padding distance used to setup the solvent box.
     n_solvent
         The number of solvent molecules used to setup the solvent box.
+    additional_openmm_ffxmls
+        List of paths to OpenMM XMLs to load for the OpenMM ForceField passed to
+        Modeller.add_solvent()
     """
 
     # Check arguments
@@ -293,16 +298,34 @@ def solvate(
         )
 
     # Use Amber ff14SB as a reference for building solvent coordinates
-    force_field = app.ForceField(
-        force_fields[modeller_force_field]["force_field_file"],
-        force_fields[modeller_force_field]["water_model_file"],
-    )
+    if additional_openmm_ffxmls is None:
+        force_field = app.ForceField(
+            force_fields[modeller_force_field]["force_field_file"],
+            force_fields[modeller_force_field]["water_model_file"],
+        )
+
+    else:
+        force_field = app.ForceField(
+            force_fields[modeller_force_field]["force_field_file"],
+            *additional_openmm_ffxmls,
+            force_fields[modeller_force_field]["water_model_file"],
+        )
 
     # Set up solute topology and positions
-    solute_pdb = app.PDBFile(protonated_pdb_file)
-    modeller = app.Modeller(solute_pdb.topology, solute_pdb.positions)
+    openff_topology = topology_from_pdb(
+        protonated_pdb_file,
+        residue_library=get_pablo_residue_library(),
+    )
+
+    openmm_topology = openff_topology.to_openmm()
+    openmm_positions = openff_topology.get_positions().to_openmm()
+
+    # Create disulfide bonds based on OpenMM's proximity detection
+    openmm_topology.createDisulfideBonds(openmm_positions)
 
     # Add water in a rhombic dodecahedral box with no ions
+    modeller = app.Modeller(openmm_topology, openmm_positions)
+
     if solvent_padding is not None:
         modeller.addSolvent(
             forcefield=force_field,
@@ -483,6 +506,7 @@ def assign_parameters(
     water_model_file: str = None,
     hydrogen_mass: unit.Quantity = 3.0 * unit.dalton,
     setup_prefix: str = None,
+    additional_openmm_ffxmls: list[str] | None = None,
 ):
     """
     Assign parameters to the solvated topology.
@@ -511,6 +535,11 @@ def assign_parameters(
         The path to the force field containing the water model.
     hydrogen_mass
         The mass of solute hydrogen atoms for hydrogen mass repartitioning.
+    setup_prefix
+        String prefix for path to setup files.
+    additional_openmm_ffxmls
+        List of paths to OpenMM XMLs to load for the OpenMM ForceField passed to
+        Modeller.add_solvent()
     """
 
     # Check arguments
@@ -521,12 +550,11 @@ def assign_parameters(
     if not hydrogen_mass.is_compatible_with(unit.dalton):
         raise ValueError("hydrogen_mass does not have units of Mass")
 
+    """
     solvated_pdb = app.PDBFile(solvated_pdb_file)
     openmm_topology = solvated_pdb.topology
 
     # Check bond between OXT and HO for protonated C terminus
-    protonated_c_term_residues = set()
-
     for chain in openmm_topology.chains():
         for residue in chain.residues():
             # Check for both OXT and HO atoms in the same residue
@@ -541,8 +569,6 @@ def assign_parameters(
                     ho = atom
 
             if oxt is not None and ho is not None:
-                protonated_c_term_residues.add(residue.name)
-
                 # Check that there is a bond between these atoms
                 for bond in openmm_topology.bonds():
                     if (bond[0] == oxt and bond[1] == ho) or (
@@ -553,12 +579,14 @@ def assign_parameters(
                 else:
                     # Create a bond between these atoms
                     openmm_topology.addBond(oxt, ho)
+    """
 
     # Set up force field
     ff_extension = Path(force_field_file).suffix
     if ff_extension == ".offxml":
         ff_type = "smirnoff"
         ff_class = ForceField
+        ff_args = [force_field_file]
 
     elif ff_extension == ".pt":
         ff_type = "espaloma"
@@ -567,71 +595,31 @@ def assign_parameters(
         # template generator from openmmforcefields
         ff_class = app.ForceField
         espaloma_model_file = str(force_field_file)
-        force_field_file = water_model_file
-        water_model_file = None
+        ff_args = list()
 
     else:
         ff_type = "openmm"
         ff_class = app.ForceField
+        ff_args = [force_field_file]
 
-    if water_model_file is None:
-        force_field = ff_class(force_field_file)
-        print(f"Force field read from\n    {force_field_file}")
+        if additional_openmm_ffxmls is not None:
+            ff_args.extend(additional_openmm_ffxmls)
 
-    else:
-        force_field = ff_class(force_field_file, water_model_file)
-        print(
-            f"Force field read from\n    {force_field_file}"
-            f"\n    and {water_model_file}"
-        )
+    if water_model_file is not None:
+        ff_args.append(water_model_file)
+
+    force_field = ff_class(*ff_args)
+    print("Force field read from\n    " + "\n    ".join([str(ff) for ff in ff_args]))
 
     # Create the parametrized system from the solvated topology
-    if ff_type in {"smirnoff", "espaloma"}:
-        # Set up Pablo residue library
+    openff_topology = topology_from_pdb(
+        solvated_pdb_file,
+        residue_library=get_pablo_residue_library(),
+    )
 
-        # Set up atom name synonyms for pmx atom names in caps
-        residue_library = STD_CCD_CACHE.with_(
-            resdef.with_synonyms({"H1": ["HH31"], "H2": ["HH32"], "H3": ["HH33"]})
-            for resdef in STD_CCD_CACHE["ACE"]
-        )
-
-        # Set up NH2 cap
-        from openff.pablo import ResidueDefinition
-        from openff.pablo.chem import PEPTIDE_BOND
-
-        residue_library = residue_library.with_(
-            [
-                ResidueDefinition.from_smiles(
-                    mapped_smiles="[H:2][N:1]([H:3])[H:4]",
-                    atom_names={1: "N", 2: "HN1", 3: "HN2", 4: "HN3"},
-                    residue_name="NH2",
-                    description="Amide cap",
-                    linking_bond=PEPTIDE_BOND,
-                    leaving_atoms=[4],
-                )
-            ]
-        )
-
-        # Set up OpenMM water virtual site
-        residue_library = residue_library.with_virtual_sites(
-            "HOH",
-            virtual_sites=["M"],
-        )
-
-        if len(protonated_c_term_residues) > 0:
-            # Add residues with protonated C termini
-            for residue_name in protonated_c_term_residues:
-                residue_library = residue_library.with_varied_protonation(
-                    residue_name,
-                    basic=[("OXT", "HO")],
-                )
+    openmm_topology = openff_topology.to_openmm()
 
     if ff_type == "smirnoff":
-        openff_topology = topology_from_pdb(
-            solvated_pdb_file,
-            residue_library=residue_library,
-        )
-
         openmm_system = force_field.create_openmm_system(openff_topology)
 
         # Repartition hydrogen mass to bonded heavy atom
@@ -642,7 +630,7 @@ def assign_parameters(
             _hydrogen = app.element.hydrogen
             for atom1, atom2 in openmm_topology.bonds():
                 if atom1.element == _hydrogen:
-                    (atom1, atom2) = (atom2, atom1)
+                    atom1, atom2 = (atom2, atom1)
                 if (
                     atom2.element == _hydrogen
                     and atom1.element not in {_hydrogen, None}
@@ -664,7 +652,7 @@ def assign_parameters(
 
             openff_solute_topology = topology_from_pdb(
                 protonated_pdb_file,
-                residue_library=residue_library,
+                residue_library=get_pablo_residue_library(),
             )
 
             # Set up template generator with espaloma model

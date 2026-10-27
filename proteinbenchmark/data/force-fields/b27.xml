@@ -1,0 +1,69 @@
+<ForceField>
+  <Residues>
+    <Residue name="CYX" override="1">
+      <Atom name="N" type="protein-N" charge="-0.4884"/>
+      <Atom name="H" type="protein-H" charge="0.3480"/>
+      <Atom name="CA" type="protein-CX" charge="0.0552"/>
+      <Atom name="HA" type="protein-H1" charge="0.0852"/>
+      <Atom name="CB" type="protein-2C" charge="-0.0089"/>
+      <Atom name="HB2" type="protein-H1" charge="0.0967"/>
+      <Atom name="HB3" type="protein-H1" charge="0.0967"/>
+      <Atom name="SG" type="protein-S" charge="-0.1805"/>
+      <Atom name="C" type="protein-C" charge="0.5906"/>
+      <Atom name="O" type="protein-O" charge="-0.5946"/>
+      <Bond atomName1="N" atomName2="H"/>
+      <Bond atomName1="N" atomName2="CA"/>
+      <Bond atomName1="CA" atomName2="HA"/>
+      <Bond atomName1="CA" atomName2="CB"/>
+      <Bond atomName1="CA" atomName2="C"/>
+      <Bond atomName1="CB" atomName2="HB2"/>
+      <Bond atomName1="CB" atomName2="HB3"/>
+      <Bond atomName1="CB" atomName2="SG"/>
+      <Bond atomName1="C" atomName2="O"/>
+      <ExternalBond atomName="SG"/>
+      <ExternalBond atomName="N"/>
+      <ExternalBond atomName="C"/>
+    </Residue>
+    <Residue name="B27">
+      <Atom name="N" type="protein-N" charge="-0.5170875"/>
+      <Atom name="H" type="protein-H" charge="0.3293125"/>
+      <Atom name="CA" type="protein-CX" charge="0.0735125"/>
+      <Atom name="HA" type="protein-H1" charge="0.1045125"/>
+      <Atom name="CB" type="protein-3C" charge="0.1631125"/>
+      <Atom name="HB" type="protein-H1" charge="0.0365125"/>
+      <Atom name="CG2" type="protein-CT" charge="-0.0952875"/>
+      <Atom name="HG2" type="protein-HC" charge="0.0515125"/>
+      <Atom name="HG2A" type="protein-HC" charge="0.0515125"/>
+      <Atom name="HG2B" type="protein-HC" charge="0.0515125"/>
+      <Atom name="OG1" type="protein-OH" charge="-0.6571875"/>
+      <Atom name="HOG1" type="protein-HO" charge="0.4478125"/>
+      <Atom name="C" type="protein-CT" charge="0.0064125"/>
+      <Atom name="HX" type="protein-H1" charge="0.0960125"/>
+      <Atom name="HXA" type="protein-H1" charge="0.0960125"/>
+      <Atom name="SG" type="protein-S" charge="-0.2381875"/>
+      <Bond atomName1="N" atomName2="H"/>
+      <Bond atomName1="N" atomName2="CA"/>
+      <Bond atomName1="CA" atomName2="HA"/>
+      <Bond atomName1="CA" atomName2="CB"/>
+      <Bond atomName1="CA" atomName2="C"/>
+      <Bond atomName1="CB" atomName2="HB"/>
+      <Bond atomName1="CB" atomName2="CG2"/>
+      <Bond atomName1="CB" atomName2="OG1"/>
+      <Bond atomName1="CG2" atomName2="HG2"/>
+      <Bond atomName1="CG2" atomName2="HG2A"/>
+      <Bond atomName1="CG2" atomName2="HG2B"/>
+      <Bond atomName1="OG1" atomName2="HOG1"/>
+      <Bond atomName1="C" atomName2="HX"/>
+      <Bond atomName1="C" atomName2="HXA"/>
+      <Bond atomName1="C" atomName2="SG"/>
+      <ExternalBond atomName="N"/>
+      <ExternalBond atomName="SG"/>
+    </Residue>
+  </Residues>
+  <HarmonicAngleForce>
+    <Angle class1="protein-3C" class2="protein-CX" class3="protein-CT" angle="1.911135530933791" k="334.72"/>
+  </HarmonicAngleForce>
+  <PeriodicTorsionForce ordering="amber">
+     <Proper class1="protein-2C" class2="protein-S" class3="protein-S" class4="protein-CT" periodicity1="2" phase1="0.0" k1="14.644" periodicity2="3" phase2="0.0" k2="2.5104"/>
+  </PeriodicTorsionForce>
+</ForceField>

@@ -6,6 +6,10 @@ from pathlib import Path
 import numpy
 import openmm
 import pandas
+from openff.pablo import STD_CCD_CACHE, ResidueDefinition
+from openff.pablo.ccd import CcdCache
+from openff.pablo.chem import DISULFIDE_BOND, PEPTIDE_BOND
+from openff.pablo.residue import BondDefinition
 from openmm import System, app
 
 package_data_directory = Path(Path(__file__).parent.absolute(), "data")
@@ -379,9 +383,8 @@ def extract_noe_upper_distances(
             distance,
         ) in noe_upper_distances:
             # Skip bad Thr wildcard
-            if (
-                (resname_i == "THR" and atom_i == "HG*")
-                or (resname_j == "THR" and atom_j == "HG*")
+            if (resname_i == "THR" and atom_i == "HG*") or (
+                resname_j == "THR" and atom_j == "HG*"
             ):
                 continue
 
@@ -412,6 +415,170 @@ def extract_noe_upper_distances(
                 f"{pseudoatom_i:4s}   {resid_j:3d}     {resname_j:3s}       "
                 f"{pseudoatom_j:4s}   {raw_distance:4.1f}"
             )
+
+
+def get_pablo_residue_library() -> CcdCache:
+    """Set up Pablo residue library."""
+
+    residue_library = STD_CCD_CACHE
+
+    # Get residue definitions from the CCD
+    for residue_name in ["CA", "NH2"]:
+        if residue_name not in residue_library:
+            residue_library.get_from_ccd(residue_name)
+
+    # Set up atom name synonyms for pmx atom names in caps
+    residue_library = residue_library.with_(
+        resdef.with_synonyms({"H1": ["HH31"], "H2": ["HH32"], "H3": ["HH33"]})
+        for resdef in residue_library["ACE"]
+    )
+
+    for residue_name in ["ALA", "GLY", "VAL"]:
+        residue_library = residue_library.with_varied_protonation(
+            residue_name,
+            basic=[("OXT", "HO")],
+        )
+
+    # Set up OpenMM water virtual site
+    residue_library = residue_library.with_virtual_sites(
+        "HOH",
+        virtual_sites=["M"],
+    )
+
+    # Set up cysteine with crosslink to carboxy terminus
+    carboxy_crosslink = BondDefinition(
+        atom1="SG",
+        atom2="CX5",
+        order=1,
+        aromatic=False,
+        stereo=None,
+    )
+    residue_library = residue_library.with_(
+        resdef.replace(
+            description=f"{resdef.description} CARBOXY CROSSLINK",
+            crosslink=carboxy_crosslink,
+        )
+        for resdef in residue_library["CYS"]
+    )
+
+    # Set up non-canonical residues
+    residue_library = residue_library.with_(
+        [
+            # YTF from HRV3C-LEALFQ (PDB 2B0F)
+            ResidueDefinition.from_smiles(
+                mapped_smiles=(
+                    "[C:1]([C:2]([O:3][C:4](=[O:5])[C:6]([C:7]([C@:8]([C:9]([C:10]"
+                    "([C:11](=[O:12])[N:13]([H:29])[H:30])([H:27])[H:28])([H:25])"
+                    "[H:26])([N:14]([H:31])[H:32])[H:24])([H:22])[H:23])([H:20])"
+                    "[H:21])([H:18])[H:19])([H:15])([H:16])[H:17]"
+                ),
+                atom_names={
+                    1: "CJ2",
+                    2: "CJ1",
+                    3: "OX9",
+                    4: "CX7",
+                    5: "OX8",
+                    6: "CX6",
+                    7: "CX5",
+                    8: "CA",
+                    9: "CB",
+                    10: "CG",
+                    11: "CD",
+                    12: "OE1",
+                    13: "NE2",
+                    14: "N",
+                    15: "H6",
+                    16: "H7",
+                    17: "H8",
+                    18: "H4",
+                    19: "H5",
+                    20: "H3",
+                    21: "H31",
+                    22: "H1",
+                    23: "H11",
+                    24: "HA",
+                    25: "HB2",
+                    26: "HB3",
+                    27: "HG2",
+                    28: "HG3",
+                    29: "HE21",
+                    30: "HE22",
+                    31: "H",
+                    32: "H2",
+                },
+                residue_name="YTF",
+                description="ethyl (4~{S})-4,7-bis(azanyl)-7-oxidanylidene-heptanoate",
+                linking_bond=PEPTIDE_BOND,
+                crosslink=carboxy_crosslink.flipped(),
+                leaving_atoms=[23, 32],
+            ),
+            # PHQ from SRTA-LPAT (PDB 2KID)
+            ResidueDefinition.from_smiles(
+                mapped_smiles=(
+                    "[c:1]1([H:12])[c:2]([H:13])[c:3]([H:14])[c:4]([C:7]([O:8][C:9]"
+                    "(=[O:10])[Cl:11])([H:17])[H:18])[c:5]([H:15])[c:6]1[H:16]"
+                ),
+                atom_names={
+                    1: "C6",
+                    2: "C5",
+                    3: "C4",
+                    4: "C3",
+                    5: "C8",
+                    6: "C7",
+                    7: "C2",
+                    8: "O2",
+                    9: "C",
+                    10: "O1",
+                    11: "CL1",
+                    12: "H61",
+                    13: "H51",
+                    14: "H41",
+                    15: "H81",
+                    16: "H71",
+                    17: "H21",
+                    18: "H22",
+                },
+                residue_name="PHQ",
+                description="benzyl chlorocarbonate",
+                linking_bond=PEPTIDE_BOND,
+                leaving_atoms=[11],
+            ).with_synonyms({"C": ["C1"]}),
+            # B27 from SRTA-LPAT (PDB 2KID)
+            ResidueDefinition.from_smiles(
+                mapped_smiles=(
+                    "[C:1]([C@:2]([C@@:3]([C:4]([S:5][H:15])([H:13])[H:14])([N:6]"
+                    "([H:16])[H:17])[H:12])([O:7][H:18])[H:11])([H:8])([H:9])[H:10]"
+                ),
+                atom_names={
+                    1: "CG2",
+                    2: "CB",
+                    3: "CA",
+                    4: "C",
+                    5: "SG",
+                    6: "N",
+                    7: "OG1",
+                    8: "HG2",
+                    9: "HG2A",
+                    10: "HG2B",
+                    11: "HB",
+                    12: "HA",
+                    13: "HX",
+                    14: "HXA",
+                    15: "HSG",
+                    16: "H",
+                    17: "H2",
+                    18: "HOG1",
+                },
+                residue_name="B27",
+                description="(2R,3S) 3-amino-4-mercapto-2-butanol",
+                linking_bond=PEPTIDE_BOND,
+                crosslink=DISULFIDE_BOND,
+                leaving_atoms=[17, 15],
+            ),
+        ]
+    )
+
+    return residue_library
 
 
 def list_of_dicts_to_csv(list_of_dicts, csv_path):

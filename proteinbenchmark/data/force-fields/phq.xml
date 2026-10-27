@@ -1,0 +1,67 @@
+<ForceField>
+  <AtomTypes>
+    <Type element="O" name="protein-OS" class="protein-OS" mass="16.0"/>
+  </AtomTypes>
+  <Residues>
+    <Residue name="PHQ">
+      <Atom name="C1" type="protein-C" charge="0.6235705882352941"/>
+      <Atom name="O1" type="protein-O" charge="-0.5405294117647059"/>
+      <Atom name="O2" type="protein-OS" charge="-0.4626294117647059"/>
+      <Atom name="C2" type="protein-CT" charge="0.2233705882352941"/>
+      <Atom name="H21" type="protein-H1" charge="0.0781705882352941"/>
+      <Atom name="H22" type="protein-H1" charge="0.0781705882352941"/>
+      <Atom name="C3" type="protein-CA" charge="-0.1228294117647059"/>
+      <Atom name="C4" type="protein-CA" charge="-0.0840294117647059"/>
+      <Atom name="H41" type="protein-HA" charge="0.1309705882352941"/>
+      <Atom name="C5" type="protein-CA" charge="-0.1150294117647059"/>
+      <Atom name="H51" type="protein-HA" charge="0.1189705882352941"/>
+      <Atom name="C6" type="protein-CA" charge="-0.0965294117647059"/>
+      <Atom name="H61" type="protein-HA" charge="0.1174705882352941"/>
+      <Atom name="C7" type="protein-CA" charge="-0.1150294117647059"/>
+      <Atom name="H71" type="protein-HA" charge="0.1189705882352941"/>
+      <Atom name="C8" type="protein-CA" charge="-0.0840294117647059"/>
+      <Atom name="H81" type="protein-HA" charge="0.1309705882352941"/>
+      <Bond atomName1="C1" atomName2="O1"/>
+      <Bond atomName1="C1" atomName2="O2"/>
+      <Bond atomName1="O2" atomName2="C2"/>
+      <Bond atomName1="C2" atomName2="H21"/>
+      <Bond atomName1="C2" atomName2="H22"/>
+      <Bond atomName1="C2" atomName2="C3"/>
+      <Bond atomName1="C3" atomName2="C4"/>
+      <Bond atomName1="C3" atomName2="C8"/>
+      <Bond atomName1="C4" atomName2="H41"/>
+      <Bond atomName1="C4" atomName2="C5"/>
+      <Bond atomName1="C5" atomName2="H51"/>
+      <Bond atomName1="C5" atomName2="C6"/>
+      <Bond atomName1="C6" atomName2="H61"/>
+      <Bond atomName1="C6" atomName2="C7"/>
+      <Bond atomName1="C7" atomName2="H71"/>
+      <Bond atomName1="C7" atomName2="C8"/>
+      <Bond atomName1="C8" atomName2="H81"/>
+      <ExternalBond atomName="C1"/>
+    </Residue>
+  </Residues>
+  <HarmonicBondForce>
+    <Bond class1="protein-C" class2="protein-OS" length="0.1323" k="376559.99999999994"/>
+    <Bond class1="protein-CT" class2="protein-OS" length="0.141" k="267775.99999999994"/>
+  </HarmonicBondForce>
+  <HarmonicAngleForce>
+    <Angle class1="protein-O" class2="protein-C" class3="protein-OS" angle="2.181661564992912" k="669.44"/>
+    <Angle class1="protein-H1" class2="protein-CT" class3="protein-OS" angle="1.911135530933791" k="418.40000000000003"/>
+    <Angle class1="protein-C" class2="protein-OS" class3="protein-CT" angle="2.0420352248333655" k="502.08000000000004"/>
+    <Angle class1="protein-CA" class2="protein-CT" class3="protein-H1" angle="1.911135530933791" k="418.40000000000003"/>
+    <!-- GAFF 2.2.20 ns-c -os angle parameter -->
+    <Angle class1="protein-N" class2="protein-C" class3="protein-OS" angle="1.900314489571426" k="740.90272"/>
+    <!-- GAFF 2.2.20 ca-ct-os angle parameter -->
+    <Angle class1="protein-CA" class2="protein-CT" class3="protein-OS" angle="1.900314489571426" k="649.3568"/>
+  </HarmonicAngleForce>
+  <PeriodicTorsionForce ordering="amber">
+    <Proper class1="" class2="protein-C" class3="protein-OS" class4="" periodicity1="2" phase1="3.141592653589793" k1="11.296800000000001"/>
+    <Proper class1="" class2="protein-CT" class3="protein-OS" class4="" periodicity1="3" phase1="0.0" k1="1.6038666666666666"/>
+    <Proper class1="protein-O" class2="protein-C" class3="protein-OS" class4="protein-CT" periodicity1="2" phase1="3.141592653589793" k1="11.296800000000001" periodicity2="1" phase2="3.141592653589793" k2="5.8576"/>
+  </PeriodicTorsionForce>
+  <NonbondedForce coulomb14scale="0.8333333333333334" lj14scale="0.5">
+    <UseAttributeFromResidue name="charge"/>
+    <Atom class="protein-OS" sigma="0.3000012343465779" epsilon="0.7112800000000001"/>
+  </NonbondedForce>
+</ForceField>

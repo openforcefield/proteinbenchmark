@@ -144,12 +144,19 @@ class ProteinBenchmarkSystem:
                     self.target_parameters["initial_pdb"].read_text()
                 )
 
-                build_initial_coordinates(
-                    build_method="pdb",
-                    ph=self.target_parameters["ph"],
-                    initial_pdb=self.initial_pdb,
-                    protonated_pdb=self.protonated_pdb,
-                )
+                if "protonated_pdb" in self.target_parameters:
+                    # Copy initial PDB to results directory
+                    Path(self.protonated_pdb).write_text(
+                        self.target_parameters["protonated_pdb"].read_text()
+                    )
+
+                else:
+                    build_initial_coordinates(
+                        build_method="pdb",
+                        ph=self.target_parameters["ph"],
+                        initial_pdb=self.initial_pdb,
+                        protonated_pdb=self.protonated_pdb,
+                    )
 
             elif "aa_sequence" in self.target_parameters:
                 if "build_method" in self.target_parameters:
@@ -184,6 +191,14 @@ class ProteinBenchmarkSystem:
                 )
 
         # Solvate and add ions using Amber ff14SB as a reference force field
+        if "additional_openmm_ffxmls" in self.target_parameters:
+            additional_openmm_ffxmls = [
+                str(ffxml)
+                for ffxml in self.target_parameters["additional_openmm_ffxmls"]
+            ]
+        else:
+            additional_openmm_ffxmls = None
+
         if not exists_and_not_empty(solvated_pdb):
             print(f"Solvating system {self.system_name}")
 
@@ -201,6 +216,7 @@ class ProteinBenchmarkSystem:
                 solvated_pdb_file=solvated_pdb,
                 water_model=self.water_model,
                 solvent_padding=solvent_padding,
+                additional_openmm_ffxmls=additional_openmm_ffxmls,
             )
 
         # Construct parametrized system
@@ -218,6 +234,7 @@ class ProteinBenchmarkSystem:
                 force_field_file=self.force_field_file,
                 water_model_file=self.water_model_file,
                 setup_prefix=self.setup_prefix,
+                additional_openmm_ffxmls=additional_openmm_ffxmls,
             )
 
         # Minimize energy of solvated system with Cartesian restraints on
@@ -478,8 +495,8 @@ class ProteinBenchmarkSystem:
 
     def analyze_observables(
         self,
-        replica: int=1,
-        time_series_analysis: bool=False,
+        replica: int = 1,
+        time_series_analysis: bool = False,
     ):
         """Process trajectories and estimate observables."""
 
@@ -590,7 +607,10 @@ class ProteinBenchmarkSystem:
         # Compute chemical shifts
         chemical_shifts = f"{analysis_prefix}-chemical-shifts.dat"
 
-        if "chemical_shifts" in target_observables and not exists_and_not_empty(chemical_shifts):
+        if (
+            "chemical_shifts" in target_observables
+            or "fraction_helix" in target_observables
+        ) and not exists_and_not_empty(chemical_shifts):
             print(f"Computing chemical shifts for system {self.system_name} {replica}")
 
             # fragment_index = compute_chemical_shifts_shiftx2(
@@ -599,8 +619,8 @@ class ProteinBenchmarkSystem:
                 trajectory_path=reimaged_trajectory,
                 frame_length=frame_length,
                 output_path=chemical_shifts,
-                #ph=self.target_parameters["ph"],
-                #temperature=self.target_parameters["temperature"],
+                # ph=self.target_parameters["ph"],
+                # temperature=self.target_parameters["temperature"],
             )
 
             if fragment_index > 0:

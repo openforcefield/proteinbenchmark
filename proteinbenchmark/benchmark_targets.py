@@ -6,6 +6,7 @@ from openff.units import unit
 
 from proteinbenchmark.utilities import package_data_directory
 
+ff_directory = Path(package_data_directory, "force-fields")
 observable_directory = Path(package_data_directory, "observables")
 pdb_directory = Path(package_data_directory, "pdbs")
 
@@ -823,6 +824,44 @@ benchmark_targets = {
             "sidechain_rdc": "higman_jbnmr_2004",
         },
     },
+    "hrv3c": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "hrv3c-2IN2-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 298.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.02 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["bjorndahl_biochem_2007"],
+                "observable_path": Path(
+                    observable_directory, "hrv3c", "hrv3c-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
+    "hrv3c-lealfq": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "hrv3c-lealfq-2B0F-model-1.pdb"),
+        "protonated_pdb": Path(pdb_directory, "hrv3c-lealfq-2B0F-protonated.pdb"),
+        "additional_openmm_ffxmls": [
+            Path(ff_directory, "ytf.xml"),
+        ],
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 298.0 * unit.kelvin,
+        "ph": 6.5,
+        "ionic_strength": 0.02 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["bjorndahl_biochem_2007"],
+                "observable_path": Path(
+                    observable_directory,
+                    "hrv3c-lealfq",
+                    "hrv3c-lealfq-scalar-couplings.dat",
+                ),
+            },
+        },
+    },
     "mrr110b": {
         "target_type": "folded",
         "initial_pdb": Path(pdb_directory, "mrr110b-2K5V-model-1.pdb"),
@@ -883,6 +922,43 @@ benchmark_targets = {
                 "experimental_datasets": ["mao_jacs_2014"],
                 "observable_path": Path(
                     observable_directory, "srr115c", "srr115c-noe-upper-distances.dat"
+                ),
+            },
+        },
+    },
+    "srta": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "srta-1IJA-model-1.pdb"),
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 306.0 * unit.kelvin,
+        "ph": 6.7,
+        "ionic_strength": 0.1 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["ilangovan_pnas_2001"],
+                "observable_path": Path(
+                    observable_directory, "srta", "srta-scalar-couplings.dat"
+                ),
+            },
+        },
+    },
+    "srta-lpat": {
+        "target_type": "folded",
+        "initial_pdb": Path(pdb_directory, "srta-lpat-2KID-model-1.pdb"),
+        "protonated_pdb": Path(pdb_directory, "srta-lpat-2KID-protonated.pdb"),
+        "additional_openmm_ffxmls": [
+            Path(ff_directory, "b27.xml"),
+            Path(ff_directory, "phq.xml"),
+        ],
+        "pressure": 1.0 * unit.atmosphere,
+        "temperature": 302.0 * unit.kelvin,
+        "ph": 6.0,
+        "ionic_strength": 0.1 * unit.molar,
+        "observables": {
+            "scalar_couplings": {
+                "experimental_datasets": ["suree_jbc_2009"],
+                "observable_path": Path(
+                    observable_directory, "srta-lpat", "srta-lpat-scalar-couplings.dat"
                 ),
             },
         },
@@ -1092,6 +1168,12 @@ experimental_datasets = {
             "J. Magn. Reson. 104, 240-249.",
         ],
     },
+    "bjorndahl_biochem_2007": {
+        "references": [
+            "Bjorndahl TC, Andrew LC, Semenchenko V, Wishart DS. (2007). "
+            "Biochem. 46, 12945-12958.",
+        ],
+    },
     "buck_biochem_1995": {
         "references": [
             "Buck M, Boyd J, Redfield C, MacKenzie DA, Jeenes DJ, Archer DB, "
@@ -1152,6 +1234,12 @@ experimental_datasets = {
         "references": [
             "Hus JC, Peti W, Griesinger C, Bruschweiler R. (2003). J. Am. "
             "Chem. Soc. 125, 5596-5597.",
+        ],
+    },
+    "ilangovan_pnas_2001": {
+        "references": [
+            "Ilangovan U, Ton-That H, Iwahara J, Schneewind O, Clubb RT. "
+            "(2001). Proc. Natl. Acad. Sci. 98, 6056-6061.",
         ],
     },
     "lee_jacs_1999": {
@@ -1231,6 +1319,12 @@ experimental_datasets = {
         "references": [
             "Shalongo W, Dugad L, Stellwagen E. (1994). J. Am. Chem. Soc. 116, "
             "8288-8293.",
+        ],
+    },
+    "suree_jbc_2009": {
+        "references": [
+            "Suree N, Liew CK, Villareal VA, Thieu W, Fadeev EA, Clemens JJ, "
+            "Jung ME, Clubb RT. (2009). J. Biol. Chem. 284. 24465-24477.",
         ],
     },
     "tjandra_jacs_1995": {
