@@ -2,11 +2,11 @@ from pathlib import Path
 
 import numpy
 import openmm
-from openff.toolkit import ForceField, Molecule, Topology
+from openff.pablo import STD_CCD_CACHE, topology_from_pdb
+from openff.toolkit import ForceField
 from openff.units import unit
 from openmm import app
 from openmm import unit as openmm_unit
-from openmmforcefields.generators import EspalomaTemplateGenerator
 
 from proteinbenchmark.force_fields import force_fields
 from proteinbenchmark.utilities import (
@@ -525,34 +525,38 @@ def assign_parameters(
     openmm_topology = solvated_pdb.topology
 
     # Check bond between OXT and HO for protonated C terminus
+    protonated_c_term_residues = set()
+
     for chain in openmm_topology.chains():
         for residue in chain.residues():
             # Check for both OXT and HO atoms in the same residue
             oxt = None
             ho = None
+
             for atom in residue.atoms():
                 if atom.name == "OXT":
                     oxt = atom
+
                 elif atom.name == "HO":
                     ho = atom
+
             if oxt is not None and ho is not None:
+                protonated_c_term_residues.add(residue.name)
+
                 # Check that there is a bond between these atoms
                 for bond in openmm_topology.bonds():
                     if (bond[0] == oxt and bond[1] == ho) or (
                         bond[0] == ho and bond[1] == oxt
                     ):
                         break
+
                 else:
                     # Create a bond between these atoms
                     openmm_topology.addBond(oxt, ho)
 
     # Set up force field
     ff_extension = Path(force_field_file).suffix
-    if str(force_field_file).endswith("NAGL.offxml"):
-        ff_type = "nagl"
-        ff_class = ForceField
-
-    elif ff_extension == ".offxml":
+    if ff_extension == ".offxml":
         ff_type = "smirnoff"
         ff_class = ForceField
 
@@ -562,7 +566,7 @@ def assign_parameters(
         # Make a force field with the water model, then add espaloma using a
         # template generator from openmmforcefields
         ff_class = app.ForceField
-        espaloma_model_file = force_field_file
+        espaloma_model_file = str(force_field_file)
         force_field_file = water_model_file
         water_model_file = None
 
@@ -582,82 +586,53 @@ def assign_parameters(
         )
 
     # Create the parametrized system from the solvated topology
-    if ff_type in {"smirnoff", "nagl", "espaloma"}:
-        # Get list of OpenFF Molecules in solute OpenMM topology
-        openff_solute_topology = Topology.from_pdb(protonated_pdb_file)
-        openff_solute_molecules = openff_solute_topology.unique_molecules
+    if ff_type in {"smirnoff", "espaloma"}:
+        # Set up Pablo residue library
 
-    if ff_type in {"smirnoff", "nagl"}:
-        # Get unique molecules (solute, water, sodium ion, chloride ion) needed
-        # for openff.toolkit.topology.Topology.from_openmm()
-        unique_molecules = [*openff_solute_molecules]
-        unique_solvent_molecules = [
-            mol
-            for mol in [
-                Molecule.from_smiles("O"),
-                Molecule.from_smiles("[Na+1]"),
-                Molecule.from_smiles("[Cl-1]"),
+        # Set up atom name synonyms for pmx atom names in caps
+        residue_library = STD_CCD_CACHE.with_(
+            resdef.with_synonyms({"H1": ["HH31"], "H2": ["HH32"], "H3": ["HH33"]})
+            for resdef in STD_CCD_CACHE["ACE"]
+        )
+
+        # Set up NH2 cap
+        from openff.pablo import ResidueDefinition
+        from openff.pablo.chem import PEPTIDE_BOND
+
+        residue_library = residue_library.with_(
+            [
+                ResidueDefinition.from_smiles(
+                    mapped_smiles="[H:2][N:1]([H:3])[H:4]",
+                    atom_names={1: "N", 2: "HN1", 3: "HN2", 4: "HN3"},
+                    residue_name="NH2",
+                    description="Amide cap",
+                    linking_bond=PEPTIDE_BOND,
+                    leaving_atoms=[4],
+                )
             ]
-            if mol not in unique_molecules
-        ]
-        unique_molecules.extend(unique_solvent_molecules)
+        )
 
-        if water_model in {"opc", "tip4p-fb"}:
-            # Create a new OpenMM topology without water virtual sites
-            no_vsite_topology = app.Topology()
-            no_vsite_topology.setPeriodicBoxVectors(
-                openmm_topology.getPeriodicBoxVectors()
-            )
-            no_vsite_atoms = dict()
+        # Set up OpenMM water virtual site
+        residue_library = residue_library.with_virtual_sites(
+            "HOH",
+            virtual_sites=["M"],
+        )
 
-            for chain in openmm_topology.chains():
-                no_vsite_chain = no_vsite_topology.addChain(chain.id)
+        if len(protonated_c_term_residues) > 0:
+            # Add residues with protonated C termini
+            for residue_name in protonated_c_term_residues:
+                residue_library = residue_library.with_varied_protonation(
+                    residue_name,
+                    basic=[("OXT", "HO")],
+                )
 
-                for residue in chain.residues():
-                    no_vsite_residue = no_vsite_topology.addResidue(
-                        residue.name,
-                        no_vsite_chain,
-                        residue.id,
-                        residue.insertionCode,
-                    )
+    if ff_type == "smirnoff":
+        openff_topology = topology_from_pdb(
+            solvated_pdb_file,
+            residue_library=residue_library,
+        )
 
-                    for atom in residue.atoms():
-                        if residue.name != "HOH" or atom.name in {"O", "H1", "H2"}:
-                            no_vsite_atom = no_vsite_topology.addAtom(
-                                atom.name, atom.element, no_vsite_residue
-                            )
-                            no_vsite_atoms[atom] = no_vsite_atom
-
-            # Include bonds only between non-virtual site atoms
-            for bond in openmm_topology.bonds():
-                if bond[0] in no_vsite_atoms and bond[1] in no_vsite_atoms:
-                    no_vsite_topology.addBond(
-                        no_vsite_atoms[bond[0]], no_vsite_atoms[bond[1]]
-                    )
-
-            openff_topology = Topology.from_openmm(
-                no_vsite_topology,
-                unique_molecules=unique_molecules,
-            )
-
-        else:
-            openff_topology = Topology.from_openmm(
-                openmm_topology,
-                unique_molecules=unique_molecules,
-            )
-
-        if ff_type == "nagl":
-            from openff.toolkit import RDKitToolkitWrapper, ToolkitRegistry
-            from openff.toolkit.utils import toolkit_registry_manager
-            from openff.toolkit.utils.nagl_wrapper import NAGLToolkitWrapper
-
-            with toolkit_registry_manager(
-                ToolkitRegistry([RDKitToolkitWrapper, NAGLToolkitWrapper])
-            ):
-                openmm_system = force_field.create_openmm_system(openff_topology)
-
-        else:
-            openmm_system = force_field.create_openmm_system(openff_topology)
+        openmm_system = force_field.create_openmm_system(openff_topology)
 
         # Repartition hydrogen mass to bonded heavy atom
         if simulation_platform == "openmm":
@@ -685,9 +660,16 @@ def assign_parameters(
 
     else:
         if ff_type == "espaloma":
+            from openmmforcefields.generators import EspalomaTemplateGenerator
+
+            openff_solute_topology = topology_from_pdb(
+                protonated_pdb_file,
+                residue_library=residue_library,
+            )
+
             # Set up template generator with espaloma model
             espaloma_generator = EspalomaTemplateGenerator(
-                molecules=openff_solute_molecules,
+                molecules=openff_solute_topology.unique_molecules,
                 forcefield=espaloma_model_file,
             )
             force_field.registerTemplateGenerator(espaloma_generator.generator)
